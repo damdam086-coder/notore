@@ -1,0 +1,1228 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>NoTore</title>
+<style>
+/* ============================================================
+   Design tokens
+   ============================================================ */
+:root{
+  --bg:#f6f7f9;
+  --surface:#ffffff;
+  --surface-2:#f0f2f5;
+  --text:#15181d;
+  --text-2:#5b6472;
+  --text-3:#8b94a3;
+  --line:#e3e6ec;
+  --line-2:#d3d8e0;
+  --accent:#2f6bff;
+  --accent-soft:rgba(47,107,255,.10);
+  --ok:#1a9d5a;
+  --ng:#d94141;
+  --lock:#b3bac5;
+
+  --s1:4px; --s2:8px; --s3:12px; --s4:16px; --s5:24px; --s6:32px; --s7:48px;
+  --r1:10px; --r2:14px; --r3:20px; --r4:28px;
+  --shadow:0 1px 2px rgba(16,20,28,.05), 0 8px 24px rgba(16,20,28,.05);
+  --font:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Helvetica Neue",Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#0e1014;
+    --surface:#171a20;
+    --surface-2:#1e222a;
+    --text:#e9edf3;
+    --text-2:#a3abb9;
+    --text-3:#78808e;
+    --line:#252a33;
+    --line-2:#333a45;
+    --accent:#5b8cff;
+    --accent-soft:rgba(91,140,255,.14);
+    --ok:#35c17c;
+    --ng:#ff6b6b;
+    --lock:#4a5261;
+    --shadow:0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.25);
+  }
+}
+
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0;height:100%}
+body{
+  background:var(--bg); color:var(--text); font-family:var(--font);
+  -webkit-font-smoothing:antialiased; overscroll-behavior:none;
+  font-size:16px; line-height:1.5;
+}
+button{font-family:inherit;color:inherit}
+.tnum{font-variant-numeric:tabular-nums}
+
+/* ============================================================
+   Shell
+   ============================================================ */
+.app{
+  max-width:520px; margin:0 auto; min-height:100dvh;
+  display:flex; flex-direction:column;
+  padding:max(12px,env(safe-area-inset-top)) var(--s4) max(16px,env(safe-area-inset-bottom));
+}
+.topbar{
+  display:flex; align-items:center; gap:var(--s2);
+  height:52px; flex:none;
+}
+.topbar h1{
+  font-size:17px; font-weight:650; letter-spacing:.01em; margin:0;
+}
+.topbar .sub{font-size:13px;color:var(--text-3);font-weight:500}
+.iconbtn{
+  width:36px;height:36px;flex:none;display:grid;place-items:center;
+  background:none;border:none;border-radius:var(--r1);cursor:pointer;
+  color:var(--text-2); margin-left:-8px;
+}
+.iconbtn:active{background:var(--surface-2)}
+.iconbtn svg{width:22px;height:22px}
+.spacer{flex:1}
+
+.screen{display:none; flex:1; flex-direction:column; min-height:0}
+.screen.on{display:flex; animation:in .22s cubic-bezier(.2,.7,.3,1)}
+@keyframes in{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+
+/* ============================================================
+   Building blocks
+   ============================================================ */
+.card{
+  background:var(--surface); border:1px solid var(--line);
+  border-radius:var(--r3); box-shadow:var(--shadow);
+}
+.pad{padding:var(--s4)}
+.stack>*+*{margin-top:var(--s3)}
+
+.menu{
+  display:flex; align-items:center; gap:var(--s4);
+  width:100%; text-align:left; padding:var(--s4);
+  background:var(--surface); border:1px solid var(--line);
+  border-radius:var(--r3); box-shadow:var(--shadow);
+  cursor:pointer; transition:transform .14s ease;
+}
+.menu:active{transform:scale(.985)}
+.menu .ico{
+  width:46px;height:46px;flex:none;border-radius:var(--r2);
+  display:grid;place-items:center;background:var(--accent-soft);color:var(--accent);
+}
+.menu .ico svg{width:24px;height:24px}
+.menu .t{flex:1;min-width:0}
+.menu .t h2{margin:0;font-size:16px;font-weight:640;letter-spacing:.01em}
+.menu .t p{margin:2px 0 0;font-size:13px;color:var(--text-3);line-height:1.45}
+.menu .chev{color:var(--text-3);flex:none}
+.menu .chev svg{width:18px;height:18px;display:block}
+
+.scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;min-height:0;padding-bottom:var(--s4)}
+
+.row{
+  display:flex;align-items:center;justify-content:space-between;gap:var(--s2) var(--s3);
+  flex-wrap:wrap; padding:var(--s3) 0; border-bottom:1px solid var(--line);
+}
+.row:last-child{border-bottom:none}
+.row .lbl{font-size:15px;font-weight:500;white-space:nowrap}
+.row .val{font-size:15px;font-weight:650;color:var(--accent)}
+.hint{font-size:13px;color:var(--text-3);line-height:1.6;margin-top:var(--s2)}
+
+.seg{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;flex:1 1 auto}
+.seg button{
+  padding:7px 13px;border:1px solid var(--line-2);background:var(--surface);
+  border-radius:999px;font-size:13.5px;font-weight:560;cursor:pointer;color:var(--text-2);
+}
+.seg button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+
+input[type=range]{
+  -webkit-appearance:none;appearance:none;width:100%;height:28px;background:none;margin:0;
+}
+input[type=range]::-webkit-slider-runnable-track{height:4px;background:var(--line-2);border-radius:2px}
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;width:24px;height:24px;border-radius:50%;background:var(--surface);
+  border:1.5px solid var(--line-2);box-shadow:0 1px 4px rgba(16,20,28,.18);margin-top:-10px;cursor:pointer;
+}
+input[type=range]::-moz-range-track{height:4px;background:var(--line-2);border-radius:2px}
+input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;background:var(--surface);border:1.5px solid var(--line-2);cursor:pointer}
+
+.toggle{
+  width:48px;height:29px;border-radius:999px;background:var(--line-2);
+  border:none;position:relative;cursor:pointer;flex:none;transition:background .18s;
+}
+.toggle::after{
+  content:"";position:absolute;top:3px;left:3px;width:23px;height:23px;border-radius:50%;
+  background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .18s;
+}
+.toggle.on{background:var(--accent)}
+.toggle.on::after{transform:translateX(19px)}
+
+.btn{
+  display:block;width:100%;padding:15px;border:none;border-radius:var(--r2);
+  background:var(--accent);color:#fff;font-size:16px;font-weight:650;cursor:pointer;
+  transition:transform .12s ease, opacity .12s;
+}
+.btn:active{transform:scale(.985);opacity:.9}
+.btn.sub{background:var(--surface);color:var(--text);border:1px solid var(--line-2);box-shadow:none}
+.btn.quiet{background:var(--surface-2);color:var(--text-2)}
+.btnrow{display:flex;gap:var(--s2);flex:none;margin-top:var(--s3)}
+.btnrow .btn{margin:0}
+.foot{flex:none;padding-top:var(--s3)}
+
+/* ============================================================
+   Play surface
+   ============================================================ */
+.stage{flex:1;display:flex;flex-direction:column;min-height:0}
+.hud{
+  display:flex;justify-content:space-between;align-items:center;gap:var(--s3);
+  padding:0 2px var(--s3);flex:none;font-size:13px;color:var(--text-3);font-weight:500;
+}
+.hud b{color:var(--text);font-weight:680;font-size:14px}
+
+.field{
+  flex:1;min-height:200px;position:relative;border-radius:var(--r4);
+  background:var(--surface);border:1px solid var(--line);
+  display:grid;place-items:center;overflow:hidden;
+}
+.field.light{background:#fff;border-color:rgba(0,0,0,.08)}
+.tag{
+  position:absolute;top:16px;left:0;right:0;text-align:center;
+  font-size:13px;font-weight:640;color:var(--text-3);letter-spacing:.02em;
+}
+.field.light .tag{color:#6b7280}
+
+/* arrow */
+/* rotation lives on the <svg>; the pop scale animates the wrapper so it never
+   overrides the rotate() transform (otherwise the arrow flashes upright) */
+#aArrow{width:100%;display:grid;place-items:center}
+#aArrow.pop{animation:pop .16s cubic-bezier(.2,.8,.3,1)}
+.arrow{width:min(58%,300px);color:var(--text);display:block}
+@keyframes pop{from{transform:scale(.72);opacity:.25}to{transform:scale(1);opacity:1}}
+
+/* stroop word */
+.word{font-weight:750;line-height:1.08;white-space:nowrap;letter-spacing:.01em}
+.word.pop{animation:pop .16s cubic-bezier(.2,.8,.3,1)}
+
+/* stroop grid (sheet of many words) */
+#gField{place-items:stretch}
+.gridwrap{
+  width:100%;height:100%;overflow-y:auto;-webkit-overflow-scrolling:touch;
+  padding:44px 14px 16px;display:grid;gap:10px;justify-items:stretch;
+}
+.gw{display:grid;place-items:center;font-weight:750;line-height:1.05;white-space:nowrap;text-align:center;z-index:1}
+.gw.cellbg{border-radius:13px}
+.band{border-radius:11px;z-index:0}
+.prep-two{display:flex;flex-direction:column;gap:8px;margin-top:var(--s4)}
+.prep-two .prep-ex{margin-top:0;position:relative}
+.prep-ex .bl{position:absolute;top:-9px;right:12px;font-size:10px;font-weight:700;color:#fff;background:var(--accent);padding:2px 8px;border-radius:999px}
+.cellsw{display:inline-grid;place-items:center;width:36px;height:36px;flex:none;border-radius:10px;background:#eef0f3;font-weight:750;font-size:17px;color:#333}
+
+/* overlays */
+.veil{
+  position:absolute;inset:0;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:var(--s2);
+  background:var(--surface);z-index:5;
+}
+.field.light .veil{background:#fff}
+.veil .big{font-size:76px;font-weight:750;color:var(--accent);line-height:1}
+.veil .lab{font-size:14px;color:var(--text-3);font-weight:550}
+.field.light .veil{color:#15181d}
+.field.light .veil .lab{color:#6b7280}
+
+/* rule confirmation before a session starts */
+.prep{padding:var(--s5) var(--s4);text-align:center;max-width:340px;width:100%}
+.prep-k{font-size:11px;font-weight:700;letter-spacing:.14em;color:var(--text-3)}
+.field.light .prep-k{color:#8b94a3}
+.prep-t{font-size:22px;font-weight:700;margin-top:6px;letter-spacing:.01em}
+.prep-s{font-size:13.5px;color:var(--text-3);margin-top:8px;line-height:1.65}
+.field.light .prep-s{color:#6b7280}
+.prep-ex{
+  display:flex;align-items:center;justify-content:center;gap:14px;
+  margin-top:var(--s4);padding:14px;border-radius:var(--r2);
+  background:var(--surface-2);font-size:15px;
+}
+.field.light .prep-ex{background:#f1f2f5}
+.prep-ex .w{font-size:32px;font-weight:750;line-height:1.1}
+.prep-ex .ar{color:var(--text-3);font-size:17px}
+.field.light .prep-ex .ar{color:#8b94a3}
+.prep-ex .a{font-size:19px;font-weight:700}
+.prep-b{margin-top:var(--s5)}
+.prep-list{margin-top:var(--s4);display:flex;flex-direction:column;gap:8px;text-align:left}
+.prep-li{
+  display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:var(--r2);
+  background:var(--surface-2);font-size:15px;line-height:1.35;
+}
+.field.light .prep-li{background:#f1f2f5}
+.prep-li .ma{flex:none}
+.prep-li .act{margin-left:auto;font-weight:700;white-space:nowrap}
+.prep-li .act.same{color:var(--accent)}
+.prep-li .act.opp{color:var(--ng)}
+.veil .mark{width:76px;height:76px}
+.veil .ans{font-size:19px;font-weight:680}
+.veil .said{font-size:13px;color:var(--text-3)}
+.field.light .veil .ans{color:#15181d}
+.field.light .veil .said{color:#8b94a3}
+
+/* number ring */
+.ring{position:relative;width:min(78%,300px);aspect-ratio:1;display:grid;place-items:center}
+.ring svg{position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg)}
+.ring .track{fill:none;stroke:var(--surface-2);stroke-width:8}
+.ring .bar{fill:none;stroke:var(--accent);stroke-width:8;stroke-linecap:round;transition:stroke-dashoffset linear,stroke .3s}
+.ring .num{font-weight:750;letter-spacing:.02em;white-space:nowrap;z-index:1}
+.below{margin-top:var(--s4);text-align:center;flex:none}
+.below .rem{font-size:15px;color:var(--text-3);font-weight:550}
+.below .rem b{font-size:22px;color:var(--accent);font-weight:750}
+.below .rem.low b{color:var(--ng)}
+
+.numpad{width:100%;text-align:center}
+.numin{
+  width:100%;padding:14px;font-size:28px;font-weight:650;text-align:center;letter-spacing:.1em;
+  border:1px solid var(--line-2);border-radius:var(--r2);background:var(--surface);color:var(--text);
+  outline:none;
+}
+.numin:focus{border-color:var(--accent)}
+
+/* voice status */
+.vstat{
+  flex:none;display:flex;align-items:center;justify-content:center;gap:8px;
+  padding:var(--s3) 0;font-size:14px;color:var(--text-3);min-height:44px;text-align:center;
+}
+.vstat svg{width:17px;height:17px;flex:none}
+.vstat b{color:var(--text);font-weight:640}
+
+/* ============================================================
+   Results
+   ============================================================ */
+.verdict{text-align:center;padding:var(--s5) var(--s4) var(--s4)}
+.verdict .ic{width:56px;height:56px;margin:0 auto var(--s3);display:grid;place-items:center;border-radius:50%;
+  background:var(--accent-soft);color:var(--accent)}
+.verdict .ic svg{width:30px;height:30px}
+.verdict h2{margin:0;font-size:21px;font-weight:700;letter-spacing:.01em}
+.verdict p{margin:6px 0 0;font-size:14px;color:var(--text-3)}
+
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:var(--s2);padding:0 var(--s4) var(--s4)}
+.stat{background:var(--surface-2);border-radius:var(--r2);padding:14px;text-align:center}
+.stat .n{font-size:23px;font-weight:730;letter-spacing:-.01em}
+.stat .l{font-size:12px;color:var(--text-3);margin-top:3px;font-weight:520}
+
+.qlist{padding:0 var(--s4) var(--s4)}
+.qrow{
+  display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line);
+  font-size:14px;
+}
+.qrow:last-child{border-bottom:none}
+.qrow .qi{width:20px;color:var(--text-3);font-size:12.5px;flex:none}
+.qrow .qm{width:18px;height:18px;flex:none}
+.qrow .qm.ok{color:var(--ok)} .qrow .qm.ng{color:var(--ng)}
+.qrow .qa{flex:1;font-weight:600}
+.qrow .qb{color:var(--text-3);font-size:12.5px}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="topbar">
+    <button class="iconbtn" id="back" style="display:none" aria-label="戻る"></button>
+    <div>
+      <h1 id="ttl">NoTore</h1>
+      <div class="sub" id="sub">脳のトレーニング</div>
+    </div>
+    <div class="spacer"></div>
+  </div>
+
+  <!-- ============ HOME ============ -->
+  <section class="screen on" id="home">
+    <div class="scroll stack" id="homeList"></div>
+  </section>
+
+  <!-- ============ TRAINING SETTINGS ============ -->
+  <section class="screen" id="hub">
+    <div class="scroll" id="hubCustom"></div>
+    <div class="foot">
+      <button class="btn" id="customStart">スタート</button>
+    </div>
+  </section>
+
+  <!-- ============ PLAY: ARROW ============ -->
+  <section class="screen" id="playArrow">
+    <div class="stage">
+      <div class="hud">
+        <span>セット <b id="aSet">1/1</b></span>
+        <span>残り <b class="tnum" id="aClock">30</b>s</span>
+        <span>回数 <b class="tnum" id="aCount">0</b></span>
+      </div>
+      <div class="field" id="aField">
+        <div class="tag" id="aTag"></div>
+        <div id="aArrow"></div>
+        <div class="veil" id="aVeil" style="display:none"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ PLAY: NUMBER ============ -->
+  <section class="screen" id="playNum">
+    <div class="stage">
+      <div class="hud">
+        <span>問 <b class="tnum" id="nProg">1/5</b></span>
+        <span id="nMode"></span>
+        <span>正答 <b class="tnum" id="nHits">0</b></span>
+      </div>
+      <div class="field" id="nField"></div>
+      <div class="below" id="nBelow"></div>
+    </div>
+  </section>
+
+  <!-- ============ PLAY: STROOP (tempo) ============ -->
+  <section class="screen" id="playStroop">
+    <div class="stage">
+      <div class="hud">
+        <span>セット <b id="sSet">1/1</b></span>
+        <span>残り <b class="tnum" id="sClock">30</b>s</span>
+        <span>回数 <b class="tnum" id="sCount">0</b></span>
+      </div>
+      <div class="field light" id="sField">
+        <div class="tag" id="sTag"></div>
+        <div class="word" id="sWord"></div>
+        <div class="veil" id="sVeil" style="display:none"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ PLAY: STROOP VOICE ============ -->
+  <section class="screen" id="playVoice">
+    <div class="stage">
+      <div class="hud">
+        <span>問 <b class="tnum" id="vProg">1/10</b></span>
+        <span id="vRule"></span>
+        <span>正答 <b class="tnum" id="vHits">0</b></span>
+      </div>
+      <div class="field light" id="vField">
+        <div class="tag" id="vTag"></div>
+        <div class="word" id="vWord"></div>
+        <div class="veil" id="vVeil" style="display:none"></div>
+      </div>
+      <div class="vstat" id="vStat"></div>
+      <button class="btn quiet" id="vSkip">スキップ</button>
+    </div>
+  </section>
+
+  <!-- ============ PLAY: STROOP GRID ============ -->
+  <section class="screen" id="playGrid">
+    <div class="stage">
+      <div class="hud">
+        <span id="gRule"></span>
+        <span>経過 <b class="tnum" id="gClock">0.0</b>s</span>
+        <span></span>
+      </div>
+      <div class="field light" id="gField">
+        <div class="tag" id="gTag"></div>
+        <div class="gridwrap" id="gWrap"></div>
+        <div class="veil" id="gVeil" style="display:none"></div>
+      </div>
+      <button class="btn" id="gDone" style="margin-top:var(--s3)">読み終わった</button>
+    </div>
+  </section>
+
+  <!-- ============ RESULTS ============ -->
+  <section class="screen" id="results">
+    <div class="scroll">
+      <div class="card">
+        <div class="verdict" id="verdict"></div>
+        <div class="grid2" id="stats"></div>
+        <div class="qlist" id="qlist"></div>
+      </div>
+    </div>
+    <div class="foot">
+      <div class="btnrow">
+        <button class="btn sub" id="rHome">ホーム</button>
+        <button class="btn" id="rAgain">もう一度</button>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<script>
+"use strict";
+
+/* ============================================================
+   Icons (inline SVG, single grid, uniform stroke)
+   ============================================================ */
+const svg=(p,vb)=>`<svg viewBox="${vb||'0 0 24 24'}" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
+const ICON={
+  arrow : svg('<path d="M12 4v16M4 12h16"/><path d="M12 4l-3.2 3.2M12 4l3.2 3.2M12 20l-3.2-3.2M12 20l3.2-3.2M4 12l3.2-3.2M4 12l3.2 3.2M20 12l-3.2-3.2M20 12l-3.2 3.2"/>'),
+  timer : svg('<path d="M9.5 2.75h5"/><circle cx="12" cy="13.5" r="7.75"/><path d="M12 13.5V9.75"/>'),
+  color : svg('<circle cx="9.25" cy="12" r="6.25"/><circle cx="14.75" cy="12" r="6.25"/>'),
+  chev  : svg('<path d="M9 5l7 7-7 7"/>'),
+  back  : svg('<path d="M15 5l-7 7 7 7"/>'),
+  check : svg('<path d="M20 6.5L9.5 17 4 11.5"/>'),
+  cross : svg('<path d="M6 6l12 12M18 6L6 18"/>'),
+  mic   : svg('<rect x="9" y="2.75" width="6" height="11" rx="3"/><path d="M4.75 11.5a7.25 7.25 0 0 0 14.5 0"/><path d="M12 18.75V21.5"/>'),
+  dash  : svg('<path d="M6 12h12"/>')
+};
+// big arrow used as the stimulus
+const BIG_ARROW = `<svg class="arrow" id="aSvg" viewBox="0 0 100 100" fill="none" stroke="currentColor"
+  stroke-width="11" stroke-linecap="round" stroke-linejoin="round"><path d="M50 87V21"/><path d="M27 43L50 19l23 24"/></svg>`;
+
+/* ============================================================
+   Data
+   ============================================================ */
+const DIRS4=['up','right','down','left'];
+const DIRS8=['up','upright','right','downright','down','downleft','left','upleft'];
+const ANGLE={up:0,upright:45,right:90,downright:135,down:180,downleft:225,left:270,upleft:315};
+
+// warm = go (same direction), cool = anti (opposite)
+const GO_COLS  =[{n:'赤',c:'#e5484d'},{n:'黄',c:'#d9a400'},{n:'橙',c:'#e07b26'}];
+const ANTI_COLS=[{n:'青',c:'#3b6fe0'},{n:'紫',c:'#8351d4'},{n:'緑',c:'#149a68'}];
+
+const COLORS=[
+  {n:'赤',h:'あか',e:'RED',   ink:'#d93a30'},
+  {n:'青',h:'あお',e:'BLUE',  ink:'#2a63d8'},
+  {n:'緑',h:'みどり',e:'GREEN', ink:'#178f4e'},
+  {n:'黒',h:'くろ',e:'BLACK', ink:'#1b1b1b'},
+  {n:'紫',h:'むらさき',e:'PURPLE',ink:'#7b3fd4'},
+  {n:'黄',h:'きいろ',e:'YELLOW',ink:'#e0a800'}
+];
+const SPOKEN=[
+  ['あか','赤','あかい','アカ','red'],
+  ['あお','青','あおい','アオ','blue'],
+  ['みどり','緑','ミドリ','グリーン','green'],
+  ['くろ','黒','くろい','クロ','black'],
+  ['むらさき','紫','ムラサキ','パープル','purple'],
+  ['きいろ','きいろい','黄色','黄','キイロ','イエロー','yellow']
+];
+function detectColor(t){
+  const s=(t||'').toLowerCase().replace(/\s/g,'');
+  for(let i=0;i<SPOKEN.length;i++) if(SPOKEN[i].some(f=>s.includes(f.toLowerCase()))) return i;
+  return -1;
+}
+const wordOf=(i,sc)=> sc==='kana'?COLORS[i].h : sc==='en'?COLORS[i].e : COLORS[i].n;
+
+const SCRIPT_JP={kanji:'漢字',kana:'ひらがな',en:'English'};
+
+const TRAININGS={
+  arrow :{icon:'arrow',name:'方向トレーニング',desc:'矢印を見て頭を振る'},
+  num   :{icon:'timer',name:'数字記憶',       desc:'一瞬の数字を覚える'},
+  stroop:{icon:'color',name:'ストループ',      desc:'文字と色の食い違い'}
+};
+
+/* ============================================================
+   Router
+   ============================================================ */
+const $=id=>document.getElementById(id);
+const scr=[...document.querySelectorAll('.screen')];
+let curTrain=null;
+function show(id,title,sub){
+  scr.forEach(s=>s.classList.toggle('on',s.id===id));
+  $('back').style.display = id==='home'?'none':'grid';
+  if(title!==undefined) $('ttl').textContent=title;
+  if(sub!==undefined) $('sub').textContent=sub;
+}
+$('back').innerHTML=ICON.back;
+$('back').onclick=()=>{ stopAll(); if(['hub','results'].includes(document.querySelector('.screen.on').id)) goHome(); else if(curTrain) openHub(curTrain); else goHome(); };
+function stopAll(){ stopArrow(); stopNum(); stopStroop(); stopVoice(); stopGrid(); }
+
+/* ============================================================
+   Home
+   ============================================================ */
+function goHome(){
+  const box=$('homeList'); box.innerHTML='';
+  Object.keys(TRAININGS).forEach(t=>{
+    const T=TRAININGS[t];
+    const b=document.createElement('button');
+    b.className='menu';
+    b.innerHTML=`<span class="ico">${ICON[T.icon]}</span>
+      <span class="t"><h2>${T.name}</h2><p>${T.desc}</p></span>
+      <span class="chev">${ICON.chev}</span>`;
+    b.onclick=()=>openHub(t);
+    box.appendChild(b);
+  });
+  show('home','NoTore','脳のトレーニング');
+  curTrain=null;
+}
+
+/* ============================================================
+   Hub (level list + custom settings)
+   ============================================================ */
+function openHub(t){
+  curTrain=t; const T=TRAININGS[t];
+  renderCustom(t);
+  show('hub',T.name,T.desc);
+}
+
+/* ---------- custom panels ---------- */
+let cfgUI={}, binds=[];
+function seg(name,opts,def,onch){
+  const id='sg_'+name;
+  const html=`<div class="seg" id="${id}">`+opts.map(o=>`<button data-v="${o.v}"${o.v==def?' class="on"':''}>${o.l}</button>`).join('')+`</div>`;
+  binds.push(()=>{
+    const c=$(id); if(!c) return;
+    c.querySelectorAll('button').forEach(b=>b.onclick=()=>{
+      c.querySelectorAll('button').forEach(x=>x.classList.remove('on'));
+      b.classList.add('on'); cfgUI[name]=b.dataset.v; onch&&onch(b.dataset.v);
+    });
+  });
+  cfgUI[name]=String(def);
+  return html;
+}
+const segVal=n=>cfgUI[n];
+function rowSeg(label,name,opts,def,onch){ return `<div class="row"><span class="lbl">${label}</span>${seg(name,opts,def,onch)}</div>`; }
+function rowRange(label,id,min,max,step,def,fmt){
+  binds.push(()=>{ const r=$(id); if(r) r.oninput=()=>{ $(id+'V').textContent=fmt?fmt(r.value):r.value; }; });
+  return `<div class="row" style="border-bottom:none;padding-bottom:2px"><span class="lbl">${label}</span><span class="val"><span id="${id}V">${fmt?fmt(def):def}</span></span></div>
+          <div style="padding-bottom:var(--s3);border-bottom:1px solid var(--line)"><input type="range" id="${id}" min="${min}" max="${max}" step="${step}" value="${def}"></div>`;
+}
+function rowToggle(label,id,def,onch){
+  binds.push(()=>{ const t=$(id); if(t) t.onclick=()=>{ t.classList.toggle('on'); onch&&onch(t.classList.contains('on')); }; });
+  return `<div class="row"><span class="lbl">${label}</span><button class="toggle${def?' on':''}" id="${id}"></button></div>`;
+}
+
+function renderCustom(t){
+  const box=$('hubCustom'); cfgUI={}; binds=[];
+  if(t==='arrow'){
+    box.innerHTML=`<div class="card pad">
+      ${rowSeg('反応','aRule',[{v:'anti',l:'反対を向く'},{v:'same',l:'同じ方向'},{v:'color',l:'色で判断'}],'anti',v=>{
+        $('aColRow').style.display = v==='color'?'flex':'none';
+        $('aRuleHint').textContent = v==='anti'?'矢印と正反対の方向へ頭を向けます。'
+          : v==='color'?'暖色はそのままの方向、寒色は反対方向へ。'
+          : '矢印が指す方向へ頭を向けます。';
+      })}
+      ${rowSeg('矢印の種類','aDirs',[{v:'4',l:'4方向'},{v:'8',l:'8方向'}],'4')}
+      <div class="row" id="aColRow" style="display:none"><span class="lbl">色の数</span>${seg('aCols',[{v:'2',l:'2色'},{v:'4',l:'4色'},{v:'6',l:'6色'}],'2')}</div>
+      ${rowRange('切替スピード','aIv',0.6,2,0.1,1.0,v=>(+v).toFixed(1)+'秒')}
+      ${rowRange('1セットの時間','aDur',20,60,10,30,v=>v+'秒')}
+      ${rowSeg('セット数','aSets',[{v:'1',l:'1'},{v:'2',l:'2'},{v:'3',l:'3'}],'1')}
+      <div class="hint" id="aRuleHint">矢印と正反対の方向へ頭を向けます。</div>
+    </div>`;
+  }
+  if(t==='num'){
+    box.innerHTML=`<div class="card pad">
+      ${rowRange('桁数','nDig',5,10,1,8,v=>v+'桁')}
+      ${rowRange('表示時間','nT',5,10,1,5,v=>v+'秒')}
+      ${rowToggle('逆唱モード','nRev',false,v=>{ $('nHint').textContent = v?'表示された数字を、後ろから逆の順で入力します。':'表示された数字を、そのままの順で入力します。'; })}
+      ${rowSeg('出題数','nQ',[{v:'3',l:'3問'},{v:'5',l:'5問'},{v:'10',l:'10問'}],'5')}
+      <div class="hint" id="nHint">表示された数字を、そのままの順で入力します。</div>
+    </div>`;
+  }
+  if(t==='stroop'){
+    box.innerHTML=`<div class="card pad">
+      ${rowSeg('ルール','sRule',[{v:'color',l:'色を答える'},{v:'read',l:'文字を読む'}],'color',v=>{
+        $('sHint').textContent = v==='color'?'文字の意味は無視して、インクの色を言います。':'書かれている単語をそのまま読みます。';
+      })}
+      ${rowSeg('文字の種類','sSc',[{v:'kanji',l:'漢字'},{v:'kana',l:'かな'},{v:'en',l:'English'}],'kanji')}
+      ${rowSeg('形式','sForm',[{v:'single',l:'1文字ずつ'},{v:'grid',l:'一覧'}],'single',v=>{
+        const g=v==='grid';
+        $('sSingle').style.display=g?'none':'block';
+        $('sGrid').style.display=g?'block':'none';
+        $('sHintGrid').style.display=g?'block':'none';
+        $('sHintBand').style.display=(g&&segVal('sBg')==='line')?'block':'none';
+        $('sHintCell').style.display=(g&&segVal('sBg')==='cell')?'block':'none';
+        $('sHint2').style.display=(!g&&$('sVoice').classList.contains('on'))?'block':'none';
+      })}
+      <div id="sSingle">
+        ${rowToggle('音声で正解判定','sVoice',false,v=>{
+          $('sTempo').style.display=v?'none':'block'; $('sVoiceBox').style.display=v?'block':'none';
+          $('sHint2').style.display=v?'block':'none';
+        })}
+        <div id="sTempo">
+          ${rowRange('切替スピード','sIv',0.8,3,0.1,1.5,v=>(+v).toFixed(1)+'秒')}
+          ${rowRange('1セットの時間','sDur',20,60,10,30,v=>v+'秒')}
+          ${rowSeg('セット数','sSets',[{v:'1',l:'1'},{v:'2',l:'2'},{v:'3',l:'3'}],'1')}
+        </div>
+        <div id="sVoiceBox" style="display:none">
+          ${rowSeg('出題数','sQ',[{v:'5',l:'5問'},{v:'10',l:'10問'},{v:'20',l:'20問'}],'10')}
+        </div>
+      </div>
+      <div id="sGrid" style="display:none">
+        ${rowSeg('文字数','sCount',[{v:'20',l:'20字'},{v:'30',l:'30字'},{v:'40',l:'40字'}],'30')}
+        ${rowSeg('背景','sBg',[{v:'none',l:'なし'},{v:'line',l:'ライン'},{v:'cell',l:'マス'}],'none',v=>{
+          $('sHintBand').style.display=v==='line'?'block':'none';
+          $('sHintCell').style.display=v==='cell'?'block':'none';
+        })}
+      </div>
+      <div class="hint" id="sHint">文字の意味は無視して、インクの色を言います。</div>
+      <div class="hint" id="sHintGrid" style="display:none">一覧をすべて声に出したら「読み終わった」を押します。かかった時間を計測します。</div>
+      <div class="hint" id="sHintBand" style="display:none">背景に色のあるマスだけルールが逆（文字を読む↔色を答える）に。ラインの場所は毎回ランダムです。</div>
+      <div class="hint" id="sHintCell" style="display:none">マスごとに背景色がランダムに散らばります。背景の色ごとに読み方のルールが変わります。</div>
+      <div class="hint" id="sHint2" style="display:none">マイクを使います。localhost 経由で開き、マイクを許可してください。認識には通信が必要です。</div>
+    </div>`;
+  }
+  binds.forEach(f=>f()); binds=[];   // attach handlers now that the DOM exists
+}
+$('customStart').onclick=()=>{
+  if(curTrain==='arrow') runArrow({
+    rule:segVal('aRule'), dirs:+segVal('aDirs'), cols:+segVal('aCols'),
+    iv:+$('aIv').value, dur:+$('aDur').value, sets:+segVal('aSets')
+  });
+  if(curTrain==='num') runNum({
+    dig:+$('nDig').value, t:+$('nT').value, rev:$('nRev').classList.contains('on'),
+    total:+segVal('nQ')
+  });
+  if(curTrain==='stroop'){
+    if(segVal('sForm')==='grid')
+      runGrid({ sc:segVal('sSc'), rule:segVal('sRule'), count:+segVal('sCount'), bg:segVal('sBg') });
+    else if($('sVoice').classList.contains('on'))
+      runVoice({ sc:segVal('sSc'), rule:segVal('sRule'), total:+segVal('sQ') });
+    else
+      runStroop({ sc:segVal('sSc'), rule:segVal('sRule'), iv:+$('sIv').value, dur:+$('sDur').value, sets:+segVal('sSets') });
+  }
+};
+
+/* ============================================================
+   Shared: ready countdown
+   ============================================================ */
+function veilShow(el,html){ el.innerHTML=html; el.style.display='flex'; }
+function veilHide(el){ el.style.display='none'; el.innerHTML=''; }
+function veilCountdown(el,label,cb){
+  let n=3;
+  veilShow(el,`<div class="lab">${label}</div><div class="big tnum">${n}</div>`);
+  const tk=setInterval(()=>{
+    n--; const b=el.querySelector('.big');
+    if(n>0){ if(b) b.textContent=n; }
+    else{ clearInterval(tk); veilHide(el); cb(); }
+  },700);
+  return ()=>clearInterval(tk);
+}
+function veilRest(el,secs,cb){
+  let r=secs;
+  veilShow(el,`<div class="lab">レスト</div><div class="big tnum">${r}</div><div class="lab">目を閉じて深呼吸</div>`);
+  const tk=setInterval(()=>{
+    r--; const b=el.querySelector('.big'); if(b) b.textContent=Math.max(0,r);
+    if(r<=0){ clearInterval(tk); veilHide(el); cb(); }
+  },1000);
+  return ()=>clearInterval(tk);
+}
+// show the rule and wait for the user before counting in
+function veilPrepare(el,info,cb){
+  let inner=null;
+  veilShow(el,`<div class="prep">
+      <div class="prep-k">ルール</div>
+      <div class="prep-t">${info.title}</div>
+      ${info.sub?`<div class="prep-s">${info.sub}</div>`:''}
+      ${info.ex||''}
+      <button class="btn prep-b" id="prepGo">はじめる</button>
+    </div>`);
+  el.querySelector('#prepGo').onclick=()=>{ inner=veilCountdown(el,info.title,cb); };
+  return ()=>{ if(inner) inner(); };
+}
+
+/* ---- rule descriptions shown before starting ---- */
+function stroopRuleInfo(cfg){
+  const w=0, c=2;                                  // 「赤」を緑インクで
+  const ansIdx = cfg.rule==='read' ? w : c;
+  const ans = cfg.sc==='en' ? COLORS[ansIdx].e : COLORS[ansIdx].h;
+  return {
+    title: cfg.rule==='read' ? '文字を読む' : 'インクの色を答える',
+    sub: cfg.rule==='read'
+      ? 'インクの色は無視して、書かれている単語をそのまま読みます。'
+      : '単語の意味は無視して、インクの色を声に出します。',
+    ex:`<div class="prep-ex"><span class="w" style="color:${COLORS[c].ink}">${wordOf(w,cfg.sc)}</span>
+        <span class="ar">→</span><span class="a">${ans}</span></div>`
+  };
+}
+// small colored arrow used in the rule list
+const miniArrow=(color)=>`<svg class="ma" viewBox="0 0 100 100" width="26" height="26" fill="none"
+  stroke="${color}" stroke-width="13" stroke-linecap="round" stroke-linejoin="round"><path d="M50 84V26"/><path d="M29 46L50 24l21 22"/></svg>`;
+function arrowRuleInfo(cfg,go,anti){
+  if(cfg.rule==='color') return {
+    title:'色で判断',
+    sub:'矢印の色でルールが変わります。色ごとの向きを覚えましょう。',
+    ex:`<div class="prep-list">`+
+       go.map(x=>`<div class="prep-li">${miniArrow(x.c)}<span><b style="color:${x.c}">${x.n}</b>の矢印</span><span class="act same">同じ方向</span></div>`).join('')+
+       anti.map(x=>`<div class="prep-li">${miniArrow(x.c)}<span><b style="color:${x.c}">${x.n}</b>の矢印</span><span class="act opp">反対方向</span></div>`).join('')+
+       `</div>`
+  };
+  const rev = cfg.rule==='anti';
+  return {
+    title: rev?'反対を向く':'同じ方向を向く',
+    sub: rev?'矢印と正反対の方向へ頭を向けます。':'矢印が指す方向へ頭を向けます。',
+    ex:`<div class="prep-list"><div class="prep-li">${miniArrow('currentColor')}<span>矢印が出たら</span>
+        <span class="act ${rev?'opp':'same'}">${rev?'反対を向く':'同じ方向を向く'}</span></div></div>`
+  };
+}
+function fitText(el,box,maxRatio,availRatio){
+  let fs=Math.min(box.clientWidth*(maxRatio||.5),300);
+  el.style.fontSize=fs+'px';
+  const avail=box.clientWidth*(availRatio||0.84);
+  while(el.scrollWidth>avail && fs>20){ fs-=3; el.style.fontSize=fs+'px'; }
+}
+
+/* ============================================================
+   ARROW engine
+   ============================================================ */
+let A=null;
+function stopArrow(){ if(A){ A.stops.forEach(f=>f&&f()); clearInterval(A.tick); clearInterval(A.clock); clearInterval(A.rest); A=null; } }
+function shuffle(arr){ const a=arr.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.random()*(i+1)|0; [a[i],a[j]]=[a[j],a[i]]; } return a; }
+function runArrow(cfg){
+  stopAll();
+  // RANDOMLY choose which colors appear (warm ones and cool ones stay distinct for legibility),
+  // then RANDOMLY assign half to「同じ方向」/ half to「反対方向」— all re-rolled every session
+  const half=cfg.cols/2;
+  const palette=[...shuffle(GO_COLS).slice(0,half), ...shuffle(ANTI_COLS).slice(0,half)];
+  const sh=shuffle(palette), idx=c=>palette.indexOf(c);
+  const go=sh.slice(0,half).sort((a,b)=>idx(a)-idx(b));
+  const anti=sh.slice(half).sort((a,b)=>idx(a)-idx(b));
+  A={cfg, go, anti, pool:palette, set:1, count:0, last:null, stops:[]};
+  $('aArrow').innerHTML=BIG_ARROW;
+  $('aSet').textContent=`1/${cfg.sets}`;
+  $('aCount').textContent='0';
+  $('aTag').innerHTML = cfg.rule==='color'
+    ? go.map(c=>`<span style="color:${c.c}">${c.n}</span>`).join('')+'=そのまま　'+anti.map(c=>`<span style="color:${c.c}">${c.n}</span>`).join('')+'=反対'
+    : (cfg.rule==='anti'?'反対を向く':'同じ方向を向く');
+  show('playArrow','方向トレーニング', cfg.rule==='color'?'色で判断':cfg.rule==='anti'?'反対を向く':'同じ方向');
+  arrowSet(true);
+}
+function arrowSet(first){
+  const c=A.cfg;
+  $('aSet').textContent=`${A.set}/${c.sets}`;
+  $('aClock').textContent=c.dur;
+  const begin=()=>{
+    if(!A) return;
+    let left=c.dur;
+    $('aClock').textContent=left;
+    A.clock=setInterval(()=>{
+      left--; $('aClock').textContent=Math.max(0,left);
+      if(left<=0){ clearInterval(A.clock); clearInterval(A.tick); arrowEnd(); }
+    },1000);
+    arrowNext();
+    A.tick=setInterval(arrowNext, Math.round(c.iv*1000));
+  };
+  A.stops.push(first
+    ? veilPrepare($('aVeil'), arrowRuleInfo(c,A.go,A.anti), begin)
+    : veilCountdown($('aVeil'), $('aTag').textContent, begin));
+}
+function arrowNext(){
+  if(!A) return;
+  const list=A.cfg.dirs===8?DIRS8:DIRS4;
+  let d; do{ d=list[Math.random()*list.length|0]; }while(d===A.last);
+  A.last=d; A.count++;
+  $('aCount').textContent=A.count;
+  const s=$('aSvg'), w=$('aArrow');
+  s.style.transform=`rotate(${ANGLE[d]}deg)`;
+  s.style.color = A.cfg.rule==='color' ? A.pool[Math.random()*A.pool.length|0].c : '';
+  w.classList.remove('pop'); void w.offsetWidth; w.classList.add('pop');
+}
+function arrowEnd(){
+  if(A.set>=A.cfg.sets) return arrowDone();
+  A.stops.push(veilRest($('aVeil'),15,()=>{ if(A){ A.set++; arrowSet(false); } }));
+}
+function arrowDone(){
+  const c=A.cfg, n=A.count; stopArrow();
+  finish({
+    type:'arrow', cfg:c, title:'完了', note:'おつかれさまでした',
+    stats:[['こなした回数',n+'回'],['セット',c.sets],['1セット',c.dur+'秒'],['スピード',c.iv.toFixed(1)+'秒']]
+  });
+}
+
+/* ============================================================
+   NUMBER engine
+   ============================================================ */
+let N=null;
+function stopNum(){ if(N){ clearInterval(N.cd); clearInterval(N.sec); clearTimeout(N.to); N=null; } }
+function runNum(cfg){
+  stopAll();
+  N={cfg, q:0, hits:0, log:[]};
+  $('nHits').textContent='0';
+  $('nMode').textContent=cfg.rev?'逆唱':'通常';
+  show('playNum','数字記憶', `${cfg.dig}桁 ・ ${cfg.rev?'逆唱':'通常'}`);
+  numNext();
+}
+function genNum(d){ let s=''+(1+Math.random()*9|0); for(let i=1;i<d;i++) s+=Math.random()*10|0; return s; }
+function numNext(){
+  if(!N) return;
+  if(N.q>=N.cfg.total) return numDone();
+  N.q++;
+  $('nProg').textContent=`${N.q}/${N.cfg.total}`;
+  $('nBelow').innerHTML='';
+  const target=genNum(N.cfg.dig);
+  let n=3;
+  $('nField').innerHTML=`<div class="veil" style="display:flex"><div class="lab">記憶の準備</div><div class="big tnum">${n}</div></div>`;
+  N.cd=setInterval(()=>{
+    n--;
+    if(n>0){ $('nField').querySelector('.big').textContent=n; }
+    else{ clearInterval(N.cd); numShow(target); }
+  },700);
+}
+function numShow(target){
+  if(!N) return;
+  const secs=N.cfg.t, R=46, C=2*Math.PI*R;
+  $('nField').innerHTML=`<div class="ring">
+      <svg viewBox="0 0 100 100"><circle class="track" cx="50" cy="50" r="${R}"></circle>
+      <circle class="bar" id="nBar" cx="50" cy="50" r="${R}" stroke-dasharray="${C}" stroke-dashoffset="0"></circle></svg>
+      <div class="num tnum" id="nNum">${target}</div></div>`;
+  $('nBelow').innerHTML=`<div class="rem" id="nRem">残り <b class="tnum">${secs}</b> 秒</div>`;
+  const numEl=$('nNum'); fitText(numEl,$('nField').querySelector('.ring'),.28,.70);
+  const bar=$('nBar');
+  bar.style.transitionDuration=(secs*1000)+'ms';
+  requestAnimationFrame(()=>{ bar.style.strokeDashoffset=C; });
+  let s=secs;
+  N.sec=setInterval(()=>{
+    s--; const r=$('nRem'); if(r){ r.querySelector('b').textContent=Math.max(0,s); if(s<=1) r.classList.add('low'); }
+    if(s<=1) bar.style.stroke='var(--ng)';
+    if(s<=0) clearInterval(N.sec);
+  },1000);
+  N.to=setTimeout(()=>{ clearInterval(N.sec); numAsk(target); }, secs*1000);
+}
+function numAsk(target){
+  if(!N) return;
+  $('nField').innerHTML=`<div class="numpad" style="padding:0 var(--s5)">
+      <div class="lab" style="font-size:14px;color:var(--text-3);margin-bottom:var(--s3)">${N.cfg.rev?'逆の順で入力':'そのままの順で入力'}</div>
+      <input class="numin tnum" id="nIn" type="text" inputmode="numeric" autocomplete="off" placeholder="- - -"></div>`;
+  $('nBelow').innerHTML=`<button class="btn" id="nOk">決定</button>`;
+  const inp=$('nIn'); inp.focus();
+  const submit=()=>{
+    if(!N) return;
+    const ans=inp.value.replace(/\D/g,'');
+    const exp=N.cfg.rev?target.split('').reverse().join(''):target;
+    const ok=ans===exp;
+    if(ok) N.hits++;
+    N.log.push({exp,ans,ok});
+    $('nHits').textContent=N.hits;
+    $('nField').innerHTML=`<div class="veil" style="display:flex">
+        <div class="mark" style="color:var(--${ok?'ok':'ng'})">${ok?ICON.check:ICON.cross}</div>
+        <div class="ans tnum">${exp}</div>
+        ${ok?'':`<div class="said">あなた：${ans||'—'}</div>`}</div>`;
+    $('nBelow').innerHTML='';
+    N.to=setTimeout(()=>{ if(N) numNext(); }, ok?800:1500);
+  };
+  $('nOk').onclick=submit;
+  inp.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); submit(); } });
+}
+function numDone(){
+  const c=N.cfg, hits=N.hits, log=N.log.slice(); stopNum();
+  const acc=Math.round(hits/c.total*100);
+  finish({
+    type:'num', cfg:c, title:'完了', note:'おつかれさまでした',
+    stats:[['正答率',acc+'%'],['正答数',hits+'/'+c.total],['桁数',c.dig+'桁'],['モード',c.rev?'逆唱':'通常']],
+    log
+  });
+}
+
+/* ============================================================
+   STROOP engine (tempo)
+   ============================================================ */
+let S=null;
+function stopStroop(){ if(S){ S.stops.forEach(f=>f&&f()); clearInterval(S.tick); clearInterval(S.clock); clearInterval(S.rest); S=null; } }
+function runStroop(cfg){
+  stopAll();
+  S={cfg,set:1,count:0,last:null,stops:[]};
+  $('sSet').textContent=`1/${cfg.sets}`;
+  $('sCount').textContent='0';
+  $('sTag').textContent = cfg.rule==='read'?'文字を読む':'インクの色を答える';
+  $('sWord').textContent='';
+  show('playStroop','ストループ', `${SCRIPT_JP[cfg.sc]} ・ ${cfg.rule==='read'?'文字を読む':'色を答える'}`);
+  stroopSet(true);
+}
+function stroopSet(first){
+  const c=S.cfg;
+  $('sSet').textContent=`${S.set}/${c.sets}`;
+  $('sClock').textContent=c.dur;
+  const begin=()=>{
+    if(!S) return;
+    let left=c.dur; $('sClock').textContent=left;
+    S.clock=setInterval(()=>{
+      left--; $('sClock').textContent=Math.max(0,left);
+      if(left<=0){ clearInterval(S.clock); clearInterval(S.tick); stroopEnd(); }
+    },1000);
+    stroopNext();
+    S.tick=setInterval(stroopNext, Math.round(c.iv*1000));
+  };
+  S.stops.push(first
+    ? veilPrepare($('sVeil'), stroopRuleInfo(c), begin)
+    : veilCountdown($('sVeil'), $('sTag').textContent, begin));
+}
+function stroopNext(){
+  if(!S) return;
+  let w,c,k;
+  do{ w=Math.random()*COLORS.length|0; c=Math.random()*COLORS.length|0; k=w+'-'+c; }while(k===S.last);
+  S.last=k; S.count++;
+  $('sCount').textContent=S.count;
+  const el=$('sWord');
+  el.textContent=wordOf(w,S.cfg.sc);
+  el.style.color=COLORS[c].ink;
+  fitText(el,$('sField'),.42);
+  el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop');
+}
+function stroopEnd(){
+  if(S.set>=S.cfg.sets) return stroopDone();
+  $('sWord').textContent='';
+  S.stops.push(veilRest($('sVeil'),15,()=>{ if(S){ S.set++; stroopSet(false); } }));
+}
+function stroopDone(){
+  const c=S.cfg,n=S.count; stopStroop();
+  finish({
+    type:'stroop', cfg:c, title:'完了', note:'おつかれさまでした',
+    stats:[['こなした回数',n+'回'],['ルール',c.rule==='read'?'文字を読む':'色を答える'],
+           ['文字',SCRIPT_JP[c.sc]],['スピード',c.iv.toFixed(1)+'秒']]
+  });
+}
+
+/* ============================================================
+   STROOP voice (β)
+   ============================================================ */
+let V=null, rec=null;
+function stopVoice(){
+  if(rec){ rec.onend=null; rec.onresult=null; rec.onerror=null; try{rec.stop();}catch(e){} rec=null; }
+  if(V){ clearTimeout(V.to); if(V.stop) V.stop(); V=null; }
+}
+function vStat(html){ $('vStat').innerHTML=html; }
+function runVoice(cfg){
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  stopAll();
+  if(!SR){ alert('このブラウザは音声認識に対応していません。Chrome 系のブラウザでお試しください。'); return; }
+  V={cfg,q:0,hits:0,lock:true,w:0,c:0,last:null,end:false,log:[]};
+  $('vHits').textContent='0';
+  $('vProg').textContent=`1/${cfg.total}`;
+  $('vRule').textContent = cfg.rule==='read'?'文字を読む':'色を答える';
+  $('vTag').textContent  = cfg.rule==='read'?'文字を読む':'インクの色を答える';
+  show('playVoice','ストループ（音声）', `${SCRIPT_JP[cfg.sc]} ・ ${cfg.rule==='read'?'文字を読む':'色を答える'}`);
+  vStat(ICON.mic+'<span>マイクを準備しています…</span>');
+  rec=new SR(); rec.lang='ja-JP'; rec.continuous=true; rec.interimResults=true;
+  rec.onresult=e=>{
+    if(!V) return;
+    const t=e.results[e.results.length-1][0].transcript;
+    if(!V.lock) vStat(ICON.mic+`<b>${t}</b>`);
+    const i=detectColor(t);
+    if(i>=0 && !V.lock) vJudge(i,t.trim());
+  };
+  rec.onerror=e=>{
+    if(e.error==='not-allowed'||e.error==='service-not-allowed')
+      vStat('<span>マイクが使えません。localhost 経由で開き、マイクを許可してください。</span>');
+    else if(e.error==='network') vStat('<span>通信エラー（音声認識には接続が必要です）</span>');
+  };
+  rec.onend=()=>{ if(V&&!V.end){ try{rec.start();}catch(e){} } };
+  try{ rec.start(); }catch(e){}
+  V.stop=veilPrepare($('vVeil'), stroopRuleInfo(cfg), ()=>{ if(V) vNext(); });
+}
+function vNext(){
+  if(!V) return;
+  if(V.q>=V.cfg.total) return vDone();
+  V.q++;
+  veilHide($('vVeil'));
+  let w,c,k; do{ w=Math.random()*COLORS.length|0; c=Math.random()*COLORS.length|0; k=w+'-'+c; }while(k===V.last);
+  V.last=k; V.w=w; V.c=c;
+  const el=$('vWord');
+  el.textContent=wordOf(w,V.cfg.sc); el.style.color=COLORS[c].ink;
+  fitText(el,$('vField'),.42);
+  el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop');
+  $('vProg').textContent=`${V.q}/${V.cfg.total}`;
+  vStat(ICON.mic+'<span>声で答えてください</span>');
+  V.lock=false;
+}
+function vFeedback(state,ansTxt,saidTxt){   // state: true / false / null(skip)
+  const col = state===null?'text-3':state?'ok':'ng';
+  const ico = state===null?ICON.dash:state?ICON.check:ICON.cross;
+  veilShow($('vVeil'),`<div class="mark" style="color:var(--${col})">${ico}</div>
+    <div class="ans">${ansTxt}</div>${saidTxt?`<div class="said">${saidTxt}</div>`:''}`);
+  vStat('');
+}
+function vJudge(said,txt){
+  if(!V||V.lock) return;
+  V.lock=true;
+  const exp = V.cfg.rule==='read'?V.w:V.c;
+  const ok = said===exp;
+  if(ok) V.hits++;
+  V.log.push({exp:COLORS[exp].h,ans:txt,ok});
+  $('vHits').textContent=V.hits;
+  vFeedback(ok, ok?'正解':'正解：'+COLORS[exp].h, txt?'あなた：'+txt:'');
+  V.to=setTimeout(()=>{ if(V) vNext(); }, ok?800:1500);
+}
+$('vSkip').onclick=()=>{
+  if(!V||V.lock) return;
+  V.lock=true;
+  const exp=V.cfg.rule==='read'?V.w:V.c;
+  V.log.push({exp:COLORS[exp].h,ans:'',ok:false});
+  vFeedback(null,'正解：'+COLORS[exp].h,'');
+  V.to=setTimeout(()=>{ if(V) vNext(); }, 800);
+};
+function vDone(){
+  const c=V.cfg,hits=V.hits,log=V.log.slice(); if(V) V.end=true; stopVoice();
+  const acc=Math.round(hits/c.total*100);
+  finish({
+    type:'voice', cfg:c, title:'完了', note:'おつかれさまでした',
+    stats:[['正答率',acc+'%'],['正答数',hits+'/'+c.total],
+           ['ルール',c.rule==='read'?'文字を読む':'色を答える'],['文字',SCRIPT_JP[c.sc]]],
+    log
+  });
+}
+
+/* ============================================================
+   STROOP grid (read a whole sheet, timed)
+   ============================================================ */
+let G=null;
+function stopGrid(){ if(G){ G.stops.forEach(f=>f&&f()); clearInterval(G.tick); G=null; } }
+const BAND_TINTS=['#e4ecff','#fff1d6','#e3f6ea','#ffe7f0','#efe7ff','#e9edf2'];
+const CELL_BGS=[
+  {n:'緑',bg:'#d3efdb'},{n:'黄',bg:'#fdeeb0'},{n:'桃',bg:'#ffd6e5'},
+  {n:'青',bg:'#d3e3ff'},{n:'紫',bg:'#e7dbff'},{n:'橙',bg:'#ffdcc0'}
+];
+const RULE_LAB={read:'文字を読む',color:'色を答える'};
+function runGrid(cfg){
+  stopAll();
+  G={cfg, words:genWords(cfg), tint:null, band:null, cellCols:null, t0:0, started:false, tick:null, stops:[]};
+  if(cfg.bg==='line') G.tint=BAND_TINTS[Math.random()*BAND_TINTS.length|0];
+  if(cfg.bg==='cell') setupCellRules(cfg);
+  $('gRule').textContent = cfg.rule==='read'?'文字を読む':'色を答える';
+  $('gTag').textContent =
+    cfg.bg==='line' ? '色つきマスはルールが逆' :
+    cfg.bg==='cell' ? '背景の色でルールが変わる' :
+    (cfg.rule==='read'?'文字を読む':'インクの色を答える');
+  $('gClock').textContent='0.0';
+  $('gDone').style.display='none';
+  const bgLabel = cfg.bg==='line'?' ・ 背景ライン' : cfg.bg==='cell'?' ・ 背景マス' : '';
+  show('playGrid','ストループ 一覧',
+    `${SCRIPT_JP[cfg.sc]} ・ ${cfg.rule==='read'?'文字を読む':'色を答える'}${bgLabel}`);
+  buildGrid();
+  const info = cfg.bg==='cell'?cellRuleInfo(cfg) : cfg.bg==='line'?gridRuleInfo(cfg) : stroopRuleInfo(cfg);
+  G.stops.push(veilPrepare($('gVeil'), info, gridStart));
+}
+// one random background colour = the flipped rule; scatter it onto random cells
+function setupCellRules(cfg){
+  const col=shuffle(CELL_BGS)[0];
+  const other = cfg.rule==='read' ? 'color' : 'read';
+  G.cellCols=[{bg:col.bg,name:col.n,rule:other}];
+  G.words.forEach(cell=>{ cell.bgi = Math.random()<0.35 ? 0 : -1; });
+}
+function cellRuleInfo(cfg){
+  const rows=[`<div class="prep-li"><span class="cellsw">字</span><span>背景なし</span><span class="act">${RULE_LAB[cfg.rule]}</span></div>`]
+    .concat(G.cellCols.map(cc=>`<div class="prep-li"><span class="cellsw" style="background:${cc.bg}">字</span><span>この背景</span><span class="act">${RULE_LAB[cc.rule]}</span></div>`));
+  return {
+    title:'背景でルールが変わる',
+    sub:'マスの背景の色ごとに、読み方が変わります。散らばった背景に注意。',
+    ex:`<div class="prep-list">${rows.join('')}</div>`
+  };
+}
+function genWords(cfg){
+  const arr=[]; let lw=-1,lc=-1;
+  for(let i=0;i<cfg.count;i++){
+    let w,c; do{ w=Math.random()*COLORS.length|0; c=Math.random()*COLORS.length|0; }while(w===lw&&c===lc);
+    lw=w; lc=c; arr.push({w,c});
+  }
+  return arr;
+}
+// randomly choose row- OR column-bands, and which lines get one
+function pickBands(C,R){
+  const orient=Math.random()<0.5?'row':'col';
+  const n=orient==='row'?R:C;
+  const set=new Set();
+  for(let i=0;i<n;i++) if(Math.random()<0.45) set.add(i);
+  if(set.size===0) set.add(Math.random()*n|0);
+  if(set.size>=n) set.delete(Math.random()*n|0);
+  return {orient,set,C,R};
+}
+// pick columns + font so the words fill the white panel (bigger = better)
+function computeGridLayout(cfg){
+  const wrap=$('gWrap');
+  const padX=14, padTop=44, padBot=16, gap=10;
+  const innerW=wrap.clientWidth - padX*2;
+  const innerH=wrap.clientHeight - padTop - padBot;
+  if(innerW<=0||innerH<=0) return null;
+  const factor = cfg.sc==='en'?3.6 : cfg.sc==='kana'?4.0 : 1.05;  // widest word ≈ factor×em
+  const N=cfg.count;
+  let best={f:0,C:1,R:N};
+  for(let C=1;C<=N;C++){
+    const R=Math.ceil(N/C);
+    const cellW=(innerW-(C-1)*gap)/C;
+    const cellH=(innerH-(R-1)*gap)/R;
+    const f=Math.min(cellW*0.92/factor, cellH*0.72);
+    if(f>best.f) best={f,C,R};
+  }
+  const MINF=20, MAXF=76, fits=best.f>=MINF;
+  return {C:best.C, R:best.R, font:Math.max(MINF,Math.min(MAXF,best.f)), fits};
+}
+function buildGrid(){
+  if(!G) return;
+  const cfg=G.cfg, wrap=$('gWrap');
+  const L=computeGridLayout(cfg); if(!L) return;
+  const {C,R,font,fits}=L;
+  wrap.style.gridTemplateColumns=`repeat(${C},1fr)`;
+  wrap.style.gridTemplateRows  = fits?`repeat(${R},1fr)`:`repeat(${R},minmax(0,auto))`;
+  wrap.style.alignContent='stretch';
+  wrap.innerHTML='';
+  // line bands (row/column) behind the words
+  if(cfg.bg==='line'){
+    if(!G.band || G.band.C!==C || G.band.R!==R) G.band=pickBands(C,R);
+    G.band.set.forEach(idx=>{
+      const el=document.createElement('div'); el.className='band'; el.style.background=G.tint;
+      if(G.band.orient==='row'){ el.style.gridRow=idx+1; el.style.gridColumn='1 / -1'; }
+      else { el.style.gridColumn=idx+1; el.style.gridRow='1 / -1'; }
+      wrap.appendChild(el);
+    });
+  }
+  // words (with per-cell scattered backgrounds in 'cell' mode)
+  G.words.forEach((cell,i)=>{
+    const d=document.createElement('div');
+    d.className='gw'; d.style.color=COLORS[cell.c].ink; d.style.fontSize=font+'px';
+    d.style.gridColumn=(i%C)+1; d.style.gridRow=Math.floor(i/C)+1;
+    d.textContent=wordOf(cell.w,cfg.sc);
+    if(cfg.bg==='cell' && cell.bgi>=0){ d.classList.add('cellbg'); d.style.background=G.cellCols[cell.bgi].bg; }
+    wrap.appendChild(d);
+  });
+}
+// rule screen for LINE mode (band-flip explanation)
+function gridRuleInfo(cfg){
+  const rd=cfg.rule==='read';
+  const normalTitle=rd?'文字を読む':'インクの色を答える';
+  const oppTitle   =rd?'インクの色を答える':'文字を読む';
+  const wd=wordOf(0,cfg.sc);                 // 赤 / あか / RED  (green ink)
+  const norm=rd?wd:COLORS[2].h, opp=rd?COLORS[2].h:wd;
+  return {
+    title:normalTitle,
+    sub:`ふつうは「${normalTitle}」。ただし<b>背景に色があるマスだけ、ルールが逆</b>（${oppTitle}）になります。`,
+    ex:`<div class="prep-two">
+      <div class="prep-ex"><span class="w" style="color:${COLORS[2].ink}">${wd}</span><span class="ar">→</span><span class="a">${norm}</span></div>
+      <div class="prep-ex" style="background:${G&&G.tint?G.tint:'#e4ecff'}"><span class="w" style="color:${COLORS[2].ink}">${wd}</span><span class="ar">→</span><span class="a">${opp}</span><span class="bl">背景色</span></div>
+    </div>`
+  };
+}
+function gridStart(){
+  if(!G) return;
+  G.started=true; G.t0=performance.now();
+  $('gDone').style.display='block';
+  $('gClock').textContent='0.0';
+  G.tick=setInterval(()=>{ if(G) $('gClock').textContent=((performance.now()-G.t0)/1000).toFixed(1); },100);
+}
+window.addEventListener('resize',()=>{ if(G) buildGrid(); });
+$('gDone').onclick=()=>{
+  if(!G||!G.started) return;
+  const secs=(performance.now()-G.t0)/1000, c=G.cfg; stopGrid();
+  finish({
+    type:'grid', cfg:c, title:'完了', note:'おつかれさまでした',
+    stats:[['所要時間',secs.toFixed(1)+'秒'],['文字数',c.count+'字'],
+           ['ルール',c.rule==='read'?'文字を読む':'色を答える'],['文字',SCRIPT_JP[c.sc]]]
+  });
+};
+
+/* ============================================================
+   Results
+   ============================================================ */
+let last=null;
+const TYPE_NAME={arrow:'方向トレーニング',num:'数字記憶',stroop:'ストループ',voice:'ストループ（音声）',grid:'ストループ 一覧'};
+function finish(r){
+  last=r;
+  $('verdict').innerHTML=`<div class="ic">${ICON.check}</div><h2>${r.title}</h2><p>${r.note}</p>`;
+  $('stats').innerHTML=r.stats.map(s=>`<div class="stat"><div class="n tnum">${s[1]}</div><div class="l">${s[0]}</div></div>`).join('');
+  $('qlist').innerHTML = r.log&&r.log.length
+    ? r.log.map((l,i)=>`<div class="qrow"><span class="qi">${i+1}</span>
+        <span class="qm ${l.ok?'ok':'ng'}">${l.ok?ICON.check:ICON.cross}</span>
+        <span class="qa tnum">${l.exp}</span>
+        ${l.ok?'':`<span class="qb tnum">${l.ans||'—'}</span>`}</div>`).join('')
+    : '';
+  show('results','結果', TYPE_NAME[r.type]||'');
+}
+$('rHome').onclick=()=>{ stopAll(); goHome(); };
+$('rAgain').onclick=()=>{ if(!last) return; rerun(last.type,last.cfg); };
+function rerun(type,cfg){
+  if(type==='arrow') runArrow(cfg);
+  else if(type==='num') runNum(cfg);
+  else if(type==='stroop') runStroop(cfg);
+  else if(type==='grid') runGrid(cfg);
+  else runVoice(cfg);
+}
+
+/* ============================================================
+   Boot
+   ============================================================ */
+goHome();
+</script>
+</body>
+</html>
