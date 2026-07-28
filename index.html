@@ -22,6 +22,7 @@
   --accent-soft:rgba(47,107,255,.10);
   --ok:#1a9d5a;
   --ng:#d94141;
+  --gold:#c8931b;
   --lock:#b3bac5;
 
   --s1:4px; --s2:8px; --s3:12px; --s4:16px; --s5:24px; --s6:32px; --s7:48px;
@@ -43,6 +44,7 @@
     --accent-soft:rgba(91,140,255,.14);
     --ok:#35c17c;
     --ng:#ff6b6b;
+    --gold:#e8b93f;
     --lock:#4a5261;
     --shadow:0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.25);
   }
@@ -304,6 +306,43 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 .stat .n{font-size:23px;font-weight:730;letter-spacing:-.01em}
 .stat .l{font-size:12px;color:var(--text-3);margin-top:3px;font-weight:520}
 
+/* quick-start (auto program) card */
+.quick{margin-bottom:var(--s4)}
+.quick .qk{font-size:11px;font-weight:700;letter-spacing:.14em;color:var(--accent)}
+.quick .qt{margin:6px 0 0;font-size:19px;font-weight:700;letter-spacing:.01em}
+.quick .qp{margin:8px 0 var(--s4);font-size:13.5px;color:var(--text-3);line-height:1.65}
+.seclbl{font-size:11px;font-weight:700;letter-spacing:.14em;color:var(--text-3);margin:0 0 var(--s2) 2px}
+
+/* stage break */
+.brkstage{justify-content:center;align-items:center}
+.brk{text-align:center;padding:var(--s5) var(--s4)}
+.brk-k{font-size:14px;color:var(--text-3);font-weight:550}
+.brk-num{font-size:76px;font-weight:750;color:var(--accent);line-height:1.1;margin-top:var(--s3)}
+.brk-lab{font-size:13.5px;color:var(--text-3);margin-top:4px}
+.dots{display:flex;gap:7px;justify-content:center;margin-top:var(--s4)}
+.dots i{width:9px;height:9px;border-radius:50%;background:var(--line-2);display:block}
+.dots i.on{background:var(--accent)}
+
+/* completion celebration */
+.cele{text-align:center;padding:var(--s6) var(--s4) var(--s4)}
+.cele .medal{position:relative;width:132px;height:132px;margin:0 auto var(--s4)}
+.cele .medal svg{position:absolute;inset:0;transform:rotate(-90deg)}
+.cele .mt{fill:none;stroke:var(--surface-2);stroke-width:7}
+.cele .mb{fill:none;stroke:var(--accent);stroke-width:7;stroke-linecap:round;
+  animation:draw 1s cubic-bezier(.2,.8,.3,1) forwards}
+.cele.perfect .mb{stroke:var(--gold)}
+.cele.good .mb{stroke:var(--ok)}
+@keyframes draw{from{stroke-dashoffset:var(--c)}to{stroke-dashoffset:var(--o)}}
+.cele .mnum{position:absolute;inset:0;display:grid;place-items:center;flex-direction:column}
+.cele .mnum b{font-size:38px;font-weight:750;line-height:1}
+.cele .mnum s{text-decoration:none;font-size:12px;color:var(--text-3);margin-top:2px}
+.cele .ck{font-size:11px;font-weight:700;letter-spacing:.16em;color:var(--accent)}
+.cele.perfect .ck{color:var(--gold)} .cele.good .ck{color:var(--ok)}
+.cele h2{margin:8px 0 0;font-size:24px;font-weight:750;letter-spacing:.01em}
+.cele p{margin:8px 0 0;font-size:14px;color:var(--text-3);line-height:1.6}
+.pop-in{animation:popin .5s cubic-bezier(.2,.8,.3,1) both}
+@keyframes popin{from{opacity:0;transform:scale(.82)}to{opacity:1;transform:none}}
+
 .qlist{padding:0 var(--s4) var(--s4)}
 .qrow{
   display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line);
@@ -336,17 +375,39 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 
   <!-- ============ TRAINING SETTINGS ============ -->
   <section class="screen" id="hub">
-    <div class="scroll" id="hubCustom"></div>
-    <div class="foot">
-      <button class="btn" id="customStart">スタート</button>
+    <div class="scroll">
+      <div class="card pad quick">
+        <div class="qk">おまかせ</div>
+        <h2 class="qt">設定なしではじめる</h2>
+        <p class="qp" id="quickDesc"></p>
+        <button class="btn" id="quickStart">トレーニング開始</button>
+      </div>
+      <div class="seclbl">自分で設定する</div>
+      <div id="hubCustom"></div>
     </div>
+    <div class="foot">
+      <button class="btn sub" id="customStart">この設定ではじめる</button>
+    </div>
+  </section>
+
+  <!-- ============ STAGE BREAK ============ -->
+  <section class="screen" id="playBreak">
+    <div class="stage brkstage">
+      <div class="brk">
+        <div class="brk-k">ステージ <span class="tnum" id="bkNow">1</span> / <span class="tnum" id="bkAll">5</span> 完了</div>
+        <div class="dots" id="bkDots"></div>
+        <div class="brk-num tnum" id="bkNum">15</div>
+        <div class="brk-lab">レスト — 次はもう少し難しくなります</div>
+      </div>
+    </div>
+    <div class="foot"><button class="btn" id="bkSkip">すぐに次へ</button></div>
   </section>
 
   <!-- ============ PLAY: ARROW ============ -->
   <section class="screen" id="playArrow">
     <div class="stage">
       <div class="hud">
-        <span>セット <b id="aSet">1/1</b></span>
+        <span><span id="aSetLbl">セット</span> <b id="aSet">1/1</b></span>
         <span>残り <b class="tnum" id="aClock">30</b>s</span>
         <span>回数 <b class="tnum" id="aCount">0</b></span>
       </div>
@@ -375,7 +436,7 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
   <section class="screen" id="playStroop">
     <div class="stage">
       <div class="hud">
-        <span>セット <b id="sSet">1/1</b></span>
+        <span><span id="sSetLbl">セット</span> <b id="sSet">1/1</b></span>
         <span>残り <b class="tnum" id="sClock">30</b>s</span>
         <span>回数 <b class="tnum" id="sCount">0</b></span>
       </div>
@@ -518,7 +579,7 @@ function show(id,title,sub){
   if(sub!==undefined) $('sub').textContent=sub;
 }
 $('back').innerHTML=ICON.back;
-$('back').onclick=()=>{ stopAll(); if(['hub','results'].includes(document.querySelector('.screen.on').id)) goHome(); else if(curTrain) openHub(curTrain); else goHome(); };
+$('back').onclick=()=>{ stopAll(); stopProg(); if(['hub','results'].includes(document.querySelector('.screen.on').id)) goHome(); else if(curTrain) openHub(curTrain); else goHome(); };
 function stopAll(){ stopArrow(); stopNum(); stopStroop(); stopVoice(); stopGrid(); }
 
 /* ============================================================
@@ -543,10 +604,126 @@ function goHome(){
 /* ============================================================
    Hub (level list + custom settings)
    ============================================================ */
+const QUICK_DESC={
+  arrow :'「同じ方向」からはじめて、反対 → 色で判断へ。矢印は4方向から8方向、スピードも1.2秒から1.0秒へ上がります。1セット30秒。',
+  num   :'8桁からスタートして10桁まで。後半は逆唱に切り替わります。表示は5秒。全10問クリアを目指します。',
+  stroop:'かな → 漢字 → English。1文字ずつからはじめて、一覧・背景ラインやマスへと進みます。'
+};
 function openHub(t){
   curTrain=t; const T=TRAININGS[t];
   renderCustom(t);
+  $('quickDesc').textContent=QUICK_DESC[t];
   show('hub',T.name,T.desc);
+}
+$('quickStart').onclick=()=>{ if(curTrain) startAuto(curTrain); };
+
+/* ============================================================
+   Auto program — no setup, gets harder as it goes
+   ============================================================ */
+let PROG=null;
+function stopProg(){ if(PROG){ clearInterval(PROG.bkTick); PROG=null; } }
+const rnd=n=>Math.random()*n|0;
+
+// 方向：同じ方向 → 反対 → 色で判断／4→8方向／1.2→1.0秒
+function buildArrowProgram(){
+  const N=5+rnd(4);                      // 5–8 stages
+  let nSame=1+rnd(2), nAnti=2+rnd(2);
+  while(nSame+nAnti>N-2){ if(nAnti>1) nAnti--; else nSame--; }   // leave ≥2 color stages
+  const dirSwitch=1+rnd(Math.max(1,nSame+nAnti));                // when 8-way kicks in
+  const stages=[];
+  for(let i=0;i<N;i++){
+    const p=N>1?i/(N-1):1;
+    const rule=i<nSame?'same':i<nSame+nAnti?'anti':'color';
+    let cols=2;
+    if(rule==='color'){
+      const ci=i-(nSame+nAnti), cn=N-(nSame+nAnti), q=cn>1?ci/(cn-1):1;
+      cols=q<0.34?2:q<0.7?4:6;
+    }
+    stages.push({rule, dirs:i>=dirSwitch?8:4, cols,
+                 iv:+(1.2-0.2*p).toFixed(1), dur:30, sets:1});
+  }
+  return stages;
+}
+// ストループ：かな → 漢字 → English／1文字ずつ → 一覧（20→30字）／背景なし → ライン・マス
+function buildStroopProgram(){
+  const N=4+rnd(3);                       // 4–6 stages
+  const singles=Math.max(1,Math.round(N*0.4));
+  const stages=[];
+  for(let i=0;i<N;i++){
+    const sc=['kana','kanji','en'][Math.min(2,Math.floor(i/(N/3)))];
+    const rule=Math.random()<0.5?'read':'color';
+    if(i<singles) stages.push({form:'single', sc, rule, iv:1.5, dur:30, sets:1});
+    else{
+      const g=(i-singles)/Math.max(1,N-singles-1);   // 0→1 across grid stages
+      stages.push({form:'grid', sc, rule, count:g<0.5?20:30,
+                   bg:g<0.34?'none':(Math.random()<0.5?'line':'cell')});
+    }
+  }
+  return stages;
+}
+// 数字：8桁→10桁で通常、後半は逆唱（桁を落として再スタート）。全10問
+function buildNumPlan(){
+  const total=10, nNormal=5+rnd(2), plan=[];
+  const digAt=q=>q<0.34?8:q<0.7?9:10;
+  for(let i=0;i<total;i++){
+    if(i<nNormal) plan.push({dig:digAt(nNormal>1?i/(nNormal-1):1), t:5, rev:false});
+    else{
+      const j=i-nNormal, m=total-nNormal;
+      plan.push({dig:digAt(m>1?j/(m-1):1), t:j===0?6:5, rev:true});
+    }
+  }
+  return plan;
+}
+
+function startAuto(t){
+  stopAll(); stopProg();
+  if(t==='num'){ runNum({auto:true, total:10, plan:buildNumPlan()}); return; }
+  PROG={type:t, stages:t==='arrow'?buildArrowProgram():buildStroopProgram(),
+        i:0, count:0, secs:0, bkTick:null};
+  progStage();
+}
+function progStage(){
+  const st=PROG.stages[PROG.i];
+  if(PROG.type==='arrow') runArrow(st);
+  else if(st.form==='grid') runGrid(st);
+  else runStroop(st);
+  progLabel();
+}
+function progLabel(){
+  const n=PROG.i+1, N=PROG.stages.length;
+  $('sub').textContent=`ステージ ${n} / ${N}`;
+  if(PROG.type==='arrow'){ $('aSetLbl').textContent='ステージ'; $('aSet').textContent=`${n}/${N}`; }
+  else { $('sSetLbl').textContent='ステージ'; $('sSet').textContent=`${n}/${N}`; }
+}
+function progAdvance(add){
+  if(!PROG) return false;
+  PROG.count+=add.count||0; PROG.secs+=add.secs||0;
+  PROG.i++;
+  if(PROG.i>=PROG.stages.length){ progFinish(); return true; }
+  progBreak(); return true;
+}
+function progBreak(){
+  const N=PROG.stages.length;
+  $('bkNow').textContent=PROG.i; $('bkAll').textContent=N;
+  $('bkDots').innerHTML=Array.from({length:N},(_,k)=>`<i class="${k<PROG.i?'on':''}"></i>`).join('');
+  let r=15; $('bkNum').textContent=r;
+  show('playBreak','休憩',`ステージ ${PROG.i+1} / ${N} へ`);
+  PROG.bkTick=setInterval(()=>{
+    r--; $('bkNum').textContent=Math.max(0,r);
+    if(r<=0){ clearInterval(PROG.bkTick); if(PROG) progStage(); }
+  },1000);
+}
+$('bkSkip').onclick=()=>{ if(!PROG) return; clearInterval(PROG.bkTick); progStage(); };
+function progFinish(){
+  const p=PROG, N=p.stages.length; PROG=null;
+  const stats=[['ステージ',N+'本']];
+  if(p.count) stats.push(['こなした回数',p.count+'回']);
+  if(p.secs)  stats.push(['読み上げ時間',p.secs.toFixed(1)+'秒']);
+  const last=p.stages[N-1];
+  stats.push(['最終ステージ', p.type==='arrow'
+    ? (last.rule==='color'?`色で判断・${last.dirs}方向`:last.rule==='anti'?`反対・${last.dirs}方向`:`同じ方向・${last.dirs}方向`)
+    : (last.form==='grid'?`一覧${last.count}字${last.bg!=='none'?'・背景':''}`:`1文字ずつ・${SCRIPT_JP[last.sc]}`)]);
+  finish({ type:p.type, autoType:p.type, title:'プログラム完了', note:`${N}ステージをやり切りました`, stats });
 }
 
 /* ---------- custom panels ---------- */
@@ -763,6 +940,7 @@ function runArrow(cfg){
   const anti=sh.slice(half).sort((a,b)=>idx(a)-idx(b));
   A={cfg, go, anti, pool:palette, set:1, count:0, last:null, stops:[]};
   $('aArrow').innerHTML=BIG_ARROW;
+  $('aSetLbl').textContent='セット';
   $('aSet').textContent=`1/${cfg.sets}`;
   $('aCount').textContent='0';
   $('aTag').innerHTML = cfg.rule==='color'
@@ -807,6 +985,7 @@ function arrowEnd(){
 }
 function arrowDone(){
   const c=A.cfg, n=A.count; stopArrow();
+  if(PROG && progAdvance({count:n})) return;
   finish({
     type:'arrow', cfg:c, title:'完了', note:'おつかれさまでした',
     stats:[['こなした回数',n+'回'],['セット',c.sets],['1セット',c.dur+'秒'],['スピード',c.iv.toFixed(1)+'秒']]
@@ -820,10 +999,10 @@ let N=null;
 function stopNum(){ if(N){ clearInterval(N.cd); clearInterval(N.sec); clearTimeout(N.to); N=null; } }
 function runNum(cfg){
   stopAll();
-  N={cfg, q:0, hits:0, log:[]};
+  N={cfg, q:0, hits:0, log:[], cur:cfg.plan?cfg.plan[0]:cfg};
   $('nHits').textContent='0';
-  $('nMode').textContent=cfg.rev?'逆唱':'通常';
-  show('playNum','数字記憶', `${cfg.dig}桁 ・ ${cfg.rev?'逆唱':'通常'}`);
+  $('nMode').textContent=N.cur.rev?'逆唱':'通常';
+  show('playNum','数字記憶', cfg.auto?'おまかせ 全10問':`${cfg.dig}桁 ・ ${cfg.rev?'逆唱':'通常'}`);
   numNext();
 }
 function genNum(d){ let s=''+(1+Math.random()*9|0); for(let i=1;i<d;i++) s+=Math.random()*10|0; return s; }
@@ -831,9 +1010,12 @@ function numNext(){
   if(!N) return;
   if(N.q>=N.cfg.total) return numDone();
   N.q++;
+  // per-question difficulty when running the auto program
+  N.cur = N.cfg.plan ? N.cfg.plan[N.q-1] : N.cfg;
+  $('nMode').textContent=`${N.cur.dig}桁 ・ ${N.cur.rev?'逆唱':'通常'}`;
   $('nProg').textContent=`${N.q}/${N.cfg.total}`;
   $('nBelow').innerHTML='';
-  const target=genNum(N.cfg.dig);
+  const target=genNum(N.cur.dig);
   let n=3;
   $('nField').innerHTML=`<div class="veil" style="display:flex"><div class="lab">記憶の準備</div><div class="big tnum">${n}</div></div>`;
   N.cd=setInterval(()=>{
@@ -844,7 +1026,7 @@ function numNext(){
 }
 function numShow(target){
   if(!N) return;
-  const secs=N.cfg.t, R=46, C=2*Math.PI*R;
+  const secs=N.cur.t, R=46, C=2*Math.PI*R;
   $('nField').innerHTML=`<div class="ring">
       <svg viewBox="0 0 100 100"><circle class="track" cx="50" cy="50" r="${R}"></circle>
       <circle class="bar" id="nBar" cx="50" cy="50" r="${R}" stroke-dasharray="${C}" stroke-dashoffset="0"></circle></svg>
@@ -865,14 +1047,14 @@ function numShow(target){
 function numAsk(target){
   if(!N) return;
   $('nField').innerHTML=`<div class="numpad" style="padding:0 var(--s5)">
-      <div class="lab" style="font-size:14px;color:var(--text-3);margin-bottom:var(--s3)">${N.cfg.rev?'逆の順で入力':'そのままの順で入力'}</div>
+      <div class="lab" style="font-size:14px;color:var(--text-3);margin-bottom:var(--s3)">${N.cur.rev?'逆の順で入力':'そのままの順で入力'}</div>
       <input class="numin tnum" id="nIn" type="text" inputmode="numeric" autocomplete="off" placeholder="- - -"></div>`;
   $('nBelow').innerHTML=`<button class="btn" id="nOk">決定</button>`;
   const inp=$('nIn'); inp.focus();
   const submit=()=>{
     if(!N) return;
     const ans=inp.value.replace(/\D/g,'');
-    const exp=N.cfg.rev?target.split('').reverse().join(''):target;
+    const exp=N.cur.rev?target.split('').reverse().join(''):target;
     const ok=ans===exp;
     if(ok) N.hits++;
     N.log.push({exp,ans,ok});
@@ -890,6 +1072,23 @@ function numAsk(target){
 function numDone(){
   const c=N.cfg, hits=N.hits, log=N.log.slice(); stopNum();
   const acc=Math.round(hits/c.total*100);
+  if(c.auto){
+    const revHits=log.filter((l,i)=>c.plan[i].rev&&l.ok).length;
+    const maxDig=Math.max(...c.plan.map(p=>p.dig));
+    finish({
+      type:'num', autoType:'num',
+      celebrate:{hits, total:c.total,
+        tier: hits===c.total?'perfect':hits>=Math.ceil(c.total*0.8)?'good':'',
+        title: hits===c.total?'パーフェクト':hits>=Math.ceil(c.total*0.8)?'クリア':'コンプリート',
+        note: hits===c.total?'全10問すべて正解。文句なしです。'
+             :hits>=Math.ceil(c.total*0.8)?'高い正答率でやり切りました。'
+             :'全10問やり切りました。次はもう一歩。'},
+      stats:[['正答率',acc+'%'],['正答数',hits+'/'+c.total],
+             ['最大の桁数',maxDig+'桁'],['逆唱の正答',revHits+'問']],
+      log
+    });
+    return;
+  }
   finish({
     type:'num', cfg:c, title:'完了', note:'おつかれさまでした',
     stats:[['正答率',acc+'%'],['正答数',hits+'/'+c.total],['桁数',c.dig+'桁'],['モード',c.rev?'逆唱':'通常']],
@@ -905,6 +1104,7 @@ function stopStroop(){ if(S){ S.stops.forEach(f=>f&&f()); clearInterval(S.tick);
 function runStroop(cfg){
   stopAll();
   S={cfg,set:1,count:0,last:null,stops:[]};
+  $('sSetLbl').textContent='セット';
   $('sSet').textContent=`1/${cfg.sets}`;
   $('sCount').textContent='0';
   $('sTag').textContent = cfg.rule==='read'?'文字を読む':'インクの色を答える';
@@ -949,6 +1149,7 @@ function stroopEnd(){
 }
 function stroopDone(){
   const c=S.cfg,n=S.count; stopStroop();
+  if(PROG && progAdvance({count:n})) return;
   finish({
     type:'stroop', cfg:c, title:'完了', note:'おつかれさまでした',
     stats:[['こなした回数',n+'回'],['ルール',c.rule==='read'?'文字を読む':'色を答える'],
@@ -1185,6 +1386,7 @@ window.addEventListener('resize',()=>{ if(G) buildGrid(); });
 $('gDone').onclick=()=>{
   if(!G||!G.started) return;
   const secs=(performance.now()-G.t0)/1000, c=G.cfg; stopGrid();
+  if(PROG && progAdvance({secs})) return;
   finish({
     type:'grid', cfg:c, title:'完了', note:'おつかれさまでした',
     stats:[['所要時間',secs.toFixed(1)+'秒'],['文字数',c.count+'字'],
@@ -1199,7 +1401,23 @@ let last=null;
 const TYPE_NAME={arrow:'方向トレーニング',num:'数字記憶',stroop:'ストループ',voice:'ストループ（音声）',grid:'ストループ 一覧'};
 function finish(r){
   last=r;
-  $('verdict').innerHTML=`<div class="ic">${ICON.check}</div><h2>${r.title}</h2><p>${r.note}</p>`;
+  if(r.celebrate){
+    const cb=r.celebrate, R=58, C=2*Math.PI*R, o=C*(1-cb.hits/cb.total);
+    $('verdict').className='verdict cele pop-in '+(cb.tier||'');
+    $('verdict').innerHTML=`
+      <div class="medal">
+        <svg viewBox="0 0 132 132">
+          <circle class="mt" cx="66" cy="66" r="${R}"></circle>
+          <circle class="mb" cx="66" cy="66" r="${R}" stroke-dasharray="${C}"
+                  style="--c:${C};--o:${o};stroke-dashoffset:${o}"></circle>
+        </svg>
+        <div class="mnum"><div><b class="tnum">${cb.hits}</b><s> / ${cb.total} 問</s></div></div>
+      </div>
+      <div class="ck">COMPLETE</div><h2>${cb.title}</h2><p>${cb.note}</p>`;
+  } else {
+    $('verdict').className='verdict';
+    $('verdict').innerHTML=`<div class="ic">${ICON.check}</div><h2>${r.title}</h2><p>${r.note}</p>`;
+  }
   $('stats').innerHTML=r.stats.map(s=>`<div class="stat"><div class="n tnum">${s[1]}</div><div class="l">${s[0]}</div></div>`).join('');
   $('qlist').innerHTML = r.log&&r.log.length
     ? r.log.map((l,i)=>`<div class="qrow"><span class="qi">${i+1}</span>
@@ -1209,8 +1427,12 @@ function finish(r){
     : '';
   show('results','結果', TYPE_NAME[r.type]||'');
 }
-$('rHome').onclick=()=>{ stopAll(); goHome(); };
-$('rAgain').onclick=()=>{ if(!last) return; rerun(last.type,last.cfg); };
+$('rHome').onclick=()=>{ stopAll(); stopProg(); goHome(); };
+$('rAgain').onclick=()=>{
+  if(!last) return;
+  if(last.autoType) startAuto(last.autoType);   // build a fresh random program
+  else rerun(last.type,last.cfg);
+};
 function rerun(type,cfg){
   if(type==='arrow') runArrow(cfg);
   else if(type==='num') runNum(cfg);
