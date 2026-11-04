@@ -378,6 +378,28 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 .mv-dir.flip{animation:pop .3s cubic-bezier(.2,.8,.3,1)}
 .veil .mv-intro{font-size:34px;font-weight:750;letter-spacing:.02em;margin:4px 0}
 .veil .mv-mode{font-size:15px;font-weight:640;color:var(--text-2)}
+
+/* ============================================================
+   Hands (copy left / right hand shapes)
+   ============================================================ */
+#hField{place-items:stretch}
+.hands{display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:center;width:100%;height:100%;padding:44px 12px 20px}
+.hcol{display:flex;flex-direction:column;align-items:center;min-width:0}
+.hl{font-size:16px;font-weight:720;color:var(--text-2);letter-spacing:.06em;margin-bottom:6px}
+.hbox{width:100%;display:grid;place-items:center}
+.hbox.pop{animation:pop .2s cubic-bezier(.2,.8,.3,1)}
+.hand{width:100%;max-width:210px;display:block}
+.hand-img{width:100%;max-width:210px;display:block}
+.hand-img.mir{transform:scaleX(-1)}
+.hand .hs{fill:none;stroke:#c98f6c;stroke-width:6;stroke-linejoin:round}
+.hand .hf{fill:#f6d3b5;fill-rule:evenodd}
+.hand .hn rect{fill:#fbe8da;stroke:#e2b393;stroke-width:1.5}
+.hand .hn .cr{fill:none;stroke:#d39d7b;stroke-width:2.5;stroke-linecap:round}
+.hname{font-size:16px;font-weight:700;margin-top:8px;min-height:24px;visibility:hidden}
+#hField.named .hname{visibility:visible}
+.hands-ex{gap:18px}
+.hands-ex>div{width:96px;text-align:center}
+.hands-ex .hl{font-size:12px;margin-bottom:2px}
 </style>
 </head>
 <body>
@@ -507,6 +529,25 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
     </div>
   </section>
 
+  <!-- ============ PLAY: HANDS ============ -->
+  <section class="screen" id="playHands">
+    <div class="stage">
+      <div class="hud">
+        <span><span id="hSetLbl">セット</span> <b id="hSet">1/1</b></span>
+        <span>残り <b class="tnum" id="hClock">30</b>s</span>
+        <span>回数 <b class="tnum" id="hCount">0</b></span>
+      </div>
+      <div class="field" id="hField">
+        <div class="tag">同じ形を両手で</div>
+        <div class="hands">
+          <div class="hcol"><div class="hl">左手</div><div class="hbox" id="hL"></div><div class="hname" id="hLn"></div></div>
+          <div class="hcol"><div class="hl">右手</div><div class="hbox" id="hR"></div><div class="hname" id="hRn"></div></div>
+        </div>
+        <div class="veil" id="hVeil" style="display:none"></div>
+      </div>
+    </div>
+  </section>
+
   <!-- ============ PLAY: RHYTHM EXERCISE ============ -->
   <section class="screen" id="playMove">
     <div class="stage">
@@ -565,6 +606,7 @@ const ICON={
   cross : svg('<path d="M6 6l12 12M18 6L6 18"/>'),
   mic   : svg('<rect x="9" y="2.75" width="6" height="11" rx="3"/><path d="M4.75 11.5a7.25 7.25 0 0 0 14.5 0"/><path d="M12 18.75V21.5"/>'),
   dash  : svg('<path d="M6 12h12"/>'),
+  hand  : svg('<path d="M8 12.5V6.25a1.5 1.5 0 0 1 3 0V11"/><path d="M11 10.5V4.75a1.5 1.5 0 0 1 3 0V11"/><path d="M14 10.75V6.25a1.5 1.5 0 0 1 3 0v7.5a7 7 0 0 1-7 7h-.5a6 6 0 0 1-4.6-2.2L3.6 15.5a1.4 1.4 0 0 1 2.1-1.85L8 15.5"/>'),
   metro : svg('<path d="M9.5 3h5l4 18h-13z"/><path d="M7 16.5h10"/><path d="M12 16.5l4.5-9.5"/>')
 };
 // big arrow used as the stimulus
@@ -611,7 +653,8 @@ const TRAININGS={
   arrow :{icon:'arrow',name:'方向トレーニング',desc:'矢印を見て頭を振る'},
   num   :{icon:'timer',name:'数字記憶',       desc:'一瞬の数字を覚える'},
   stroop:{icon:'color',name:'ストループ',      desc:'文字と色の食い違い'},
-  move  :{icon:'metro',name:'リズム運動',      desc:'読めないテンポや秒数に合わせて回す'}
+  move  :{icon:'metro',name:'リズム運動',      desc:'読めないテンポや秒数に合わせて回す'},
+  hands :{icon:'hand', name:'左右の手まね',    desc:'左右ちがう手の形をすぐにまねる'}
 };
 
 /* ============================================================
@@ -628,7 +671,7 @@ function show(id,title,sub){
 }
 $('back').innerHTML=ICON.back;
 $('back').onclick=()=>{ stopAll(); stopProg(); if(['hub','results'].includes(document.querySelector('.screen.on').id)) goHome(); else if(curTrain) openHub(curTrain); else goHome(); };
-function stopAll(){ stopArrow(); stopNum(); stopStroop(); stopVoice(); stopGrid(); stopMove(); }
+function stopAll(){ stopArrow(); stopNum(); stopStroop(); stopVoice(); stopGrid(); stopMove(); stopHands(); }
 
 /* ============================================================
    Home
@@ -656,6 +699,7 @@ const QUICK_DESC={
   arrow :'「同じ方向」からはじめて、反対 → 色で判断へ。矢印は4方向から8方向、スピードも1.2秒から1.0秒へ上がります。1セット30秒。',
   num   :'8桁からスタートして10桁まで。後半は逆唱に切り替わります。表示は5秒。全10問クリアを目指します。',
   stroop:'かな → 漢字 → English。1文字ずつからはじめて、一覧・背景ラインやマスへと進みます。',
+  hands :'まずは数字（グー〜5）だけ、ゆっくり（3〜5秒）から。数字のテンポを上げてから、キツネやグッドなどのポーズも混ざり、最後は1.5〜3秒で切り替わります。1ステージ30秒×4本。',
   move  :'メトロノーム（テンポが予告なく変わる）と、秒数（5〜20秒がランダム）を交互に全6ラウンド。動きも毎回ランダムで、後半ほどテンポがよく変わります。'
 };
 function openHub(t){
@@ -728,13 +772,14 @@ function startAuto(t){
   stopAll(); stopProg();
   if(t==='num'){ runNum({auto:true, total:10, plan:buildNumPlan()}); return; }
   if(t==='move'){ runMove(moveAutoCfg()); return; }
-  PROG={type:t, stages:t==='arrow'?buildArrowProgram():buildStroopProgram(),
+  PROG={type:t, stages:t==='arrow'?buildArrowProgram():t==='hands'?buildHandsProgram():buildStroopProgram(),
         i:0, count:0, secs:0, bkTick:null};
   progStage();
 }
 function progStage(){
   const st=PROG.stages[PROG.i];
   if(PROG.type==='arrow') runArrow(st);
+  else if(PROG.type==='hands') runHands(st);
   else if(st.form==='grid') runGrid(st);
   else runStroop(st);
   progLabel();
@@ -743,6 +788,7 @@ function progLabel(){
   const n=PROG.i+1, N=PROG.stages.length;
   $('sub').textContent=`ステージ ${n} / ${N}`;
   if(PROG.type==='arrow'){ $('aSetLbl').textContent='ステージ'; $('aSet').textContent=`${n}/${N}`; }
+  else if(PROG.type==='hands'){ $('hSetLbl').textContent='ステージ'; $('hSet').textContent=`${n}/${N}`; }
   else { $('sSetLbl').textContent='ステージ'; $('sSet').textContent=`${n}/${N}`; }
 }
 function progAdvance(add){
@@ -770,7 +816,9 @@ function progFinish(){
   if(p.count) stats.push(['こなした回数',p.count+'回']);
   if(p.secs)  stats.push(['読み上げ時間',p.secs.toFixed(1)+'秒']);
   const last=p.stages[N-1];
-  stats.push(['最終ステージ', p.type==='arrow'
+  stats.push(['最終ステージ', p.type==='hands'
+    ? `${last.set==='all'?'いろいろ':'数字だけ'}・${HAND_SPEED_JP[last.spd]}`
+    : p.type==='arrow'
     ? (last.rule==='color'?`色で判断・${last.dirs}方向`:last.rule==='anti'?`反対・${last.dirs}方向`:`同じ方向・${last.dirs}方向`)
     : (last.form==='grid'?`一覧${last.count}字${last.bg!=='none'?'・背景':''}`:`1文字ずつ・${SCRIPT_JP[last.sc]}`)]);
   finish({ type:p.type, autoType:p.type, title:'プログラム完了', note:`${N}ステージをやり切りました`, stats });
@@ -897,6 +945,22 @@ function renderCustom(t){
       <div class="hint" id="sHint2" style="display:none">マイクを使います。localhost 経由で開き、マイクを許可してください。認識には通信が必要です。</div>
     </div>`;
   }
+  if(t==='hands'){
+    box.innerHTML=`<div class="card pad">
+      ${rowSeg('ポーズ','hSetSel',[{v:'num',l:'数字だけ'},{v:'all',l:'いろんなポーズも'}],'num',v=>{
+        $('hHint').textContent = v==='num'
+          ? 'グー・1・2・3・4・5 の6種類。'
+          : 'グー〜5 に加えて、キツネ・グッド・ピストル・電話・アイラブユー・OK も出ます。';
+      })}
+      ${rowSeg('切り替え','hSpd',[{v:'slow',l:'3〜5秒'},{v:'mid',l:'2〜4秒'},{v:'fast',l:'1.5〜3秒'}],'mid')}
+      ${rowRange('1セットの時間','hDur',20,60,10,30,v=>v+'秒')}
+      ${rowSeg('セット数','hSets',[{v:'1',l:'1'},{v:'2',l:'2'},{v:'3',l:'3'}],'1')}
+      ${rowToggle('ポーズ名も出す','hNames',false)}
+      ${rowToggle('切り替わりの音','hBeep',true)}
+      <div class="hint" id="hHint">グー・1・2・3・4・5 の6種類。</div>
+      <div class="hint">左右は毎回ちがう形になります。切り替わる間隔は毎回ランダムです。</div>
+    </div>`;
+  }
   if(t==='move'){
     box.innerHTML=`<div class="card pad">
       ${rowSeg('やり方','mMode',[{v:'metro',l:'メトロノーム'},{v:'sec',l:'秒数'},{v:'mix',l:'まぜる'}],'metro',moveModeUI)}
@@ -930,6 +994,10 @@ $('customStart').onclick=()=>{
   if(curTrain==='num') runNum({
     dig:+$('nDig').value, t:+$('nT').value, rev:$('nRev').classList.contains('on'),
     total:+segVal('nQ')
+  });
+  if(curTrain==='hands') runHands({
+    set:segVal('hSetSel'), spd:segVal('hSpd'), dur:+$('hDur').value, sets:+segVal('hSets'),
+    names:$('hNames').classList.contains('on'), beep:$('hBeep').classList.contains('on')
   });
   if(curTrain==='move') runMove({
     mode:segVal('mMode'), moves:cfgUI.mMoves.slice(), rounds:+segVal('mRounds'), rest:+segVal('mRest'),
@@ -1785,11 +1853,155 @@ function mDone(){
   finish({ type:'move', cfg:c, autoType:c.auto?'move':undefined, title:'完了', note:'おつかれさまでした', stats, log:m.log });
 }
 
+/* ---- hand illustrations (back of the hand, thumb toward the centre) ---- */
+// num:true = 数字のポーズ（設定「数字だけ」で使う）
+const HAND_POSES={
+  g    :{n:'グー',       f:[0,0,0,0], t:'fist', num:true},
+  p1   :{n:'1',          f:[1,0,0,0], t:'in',   num:true},
+  p2   :{n:'2',          f:[1,1,0,0], t:'in',   num:true},
+  p3   :{n:'3',          f:[1,1,1,0], t:'in',   num:true},
+  p4   :{n:'4',          f:[1,1,1,1], t:'in',   num:true},
+  p5   :{n:'5',          f:[1,1,1,1], t:'out',  num:true},
+  fox  :{n:'キツネ',     f:[1,0,0,1], t:'fox'},
+  good :{n:'グッド',     f:[0,0,0,0], t:'up'},
+  gun  :{n:'ピストル',   f:[1,0,0,0], t:'out'},
+  phone:{n:'電話',       f:[0,0,0,1], t:'out'},
+  love :{n:'アイラブユー',f:[1,0,0,1], t:'out'},
+  ok   :{n:'OK',         f:[-1,1,1,1],t:'none', ring:true}
+};
+// 外で作った絵（Codex など）に差し替えるときは「ポーズ記号: 画像の場所」を書く。
+// 右手の絵を用意すれば、左手は左右反転して使う。 例: g:'hands/g.png'
+const HAND_IMAGES={};
+const FINGERS=[
+  {cx:73, w:25,len:84,a:-9},   // 人差し指
+  {cx:99, w:26,len:95,a:-2},   // 中指
+  {cx:124,w:25,len:87,a:5},    // 薬指
+  {cx:147,w:21,len:66,a:13}    // 小指
+];
+const THUMB={
+  out :{x:64,y:192,len:74,a:-40,nail:true},
+  in  :{x:64,y:202,len:46,a:-14},
+  fist:{x:62,y:206,len:58,a:-20},
+  fox :{x:62,y:204,len:52,a:-6},
+  up  :{x:60,y:150,len:80,a:-4,nail:true}
+};
+function handArt(key,side){
+  const P=HAND_POSES[key];
+  if(HAND_IMAGES[key]) return `<img class="hand-img${side==='L'?' mir':''}" src="${HAND_IMAGES[key]}" alt="">`;
+  const body=[], deco=[];
+  const cap=(x,y,len,w,a)=>`<rect x="${x-w/2}" y="${y-len}" width="${w}" height="${len+w}" rx="${w/2}" transform="rotate(${a} ${x} ${y})"/>`;
+  const nail=(x,y,len,w,a)=>`<rect x="${x-w*0.28}" y="${y-len+w*0.18}" width="${w*0.56}" height="${w*0.66}" rx="${w*0.24}" transform="rotate(${a} ${x} ${y})"/>`;
+  const T=THUMB[P.t];
+  if(T){ body.push(cap(T.x,T.y,T.len,27,T.a)); if(T.nail) deco.push(nail(T.x,T.y,T.len,27,T.a)); }
+  FINGERS.forEach((F,i)=>{
+    if(P.f[i]===1){ body.push(cap(F.cx,132,F.len,F.w,F.a)); deco.push(nail(F.cx,132,F.len,F.w,F.a)); }
+    else if(P.f[i]===0){
+      body.push(cap(F.cx,132,22,F.w,F.a*0.4));
+      deco.push(`<path d="M${F.cx-F.w*0.26} 118 q${F.w*0.26} -5 ${F.w*0.52} 0" class="cr" transform="rotate(${F.a*0.4} ${F.cx} 132)"/>`);
+    }
+  });
+  if(P.ring){   // 親指と人差し指の輪（OK）
+    const cx=64,cy=100,R=25,r=10;
+    body.push(`<path fill-rule="evenodd" d="M${cx-R} ${cy}a${R} ${R} 0 1 0 ${2*R} 0a${R} ${R} 0 1 0 ${-2*R} 0Z M${cx-r} ${cy}a${r} ${r} 0 1 0 ${2*r} 0a${r} ${r} 0 1 0 ${-2*r} 0Z"/>`);
+    body.push(cap(66,150,30,26,-10));
+  }
+  body.push(`<path d="M58 132 Q57 120 70 119 L150 121 Q160 123 159 136 L155 196 Q152 226 130 232 L132 252 L78 252 L80 232 Q58 224 57 196 Z"/>`);
+  const shapes=body.join('');
+  const inner=`<g class="hs">${shapes}</g><g class="hf">${shapes}</g><g class="hn">${deco.join('')}</g>`;
+  return `<svg class="hand" viewBox="0 0 210 256">${side==='L'?`<g transform="translate(210 0) scale(-1 1)">${inner}</g>`:inner}</svg>`;
+}
+const HAND_SPEED={fast:[1.5,3], mid:[2,4], slow:[3,5]};
+const HAND_SPEED_JP={fast:'1.5〜3秒', mid:'2〜4秒', slow:'3〜5秒'};
+const handPool=set=>Object.keys(HAND_POSES).filter(k=>set==='all'||HAND_POSES[k].num);
+
+/* ============================================================
+   HANDS engine — copy the left / right hand shapes at once
+   ============================================================ */
+let H=null;
+function stopHands(){ if(H){ H.stops.forEach(f=>f&&f()); clearTimeout(H.next); clearInterval(H.clock); H=null; } }
+function runHands(cfg){
+  stopAll();
+  if(cfg.beep) audioOn();
+  H={cfg, pool:handPool(cfg.set), set:1, count:0, L:null, R:null, stops:[]};
+  $('hSetLbl').textContent='セット';
+  $('hSet').textContent=`1/${cfg.sets}`;
+  $('hCount').textContent='0';
+  $('hField').classList.toggle('named',!!cfg.names);
+  $('hL').innerHTML=''; $('hR').innerHTML=''; $('hLn').textContent=''; $('hRn').textContent='';
+  show('playHands','左右の手まね', `${cfg.set==='all'?'いろんなポーズ':'数字だけ'} ・ ${HAND_SPEED_JP[cfg.spd]}`);
+  handsSet(true);
+}
+function handsRuleInfo(cfg){
+  const pool=handPool(cfg.set);
+  const ex=`<div class="prep-ex hands-ex"><div><div class="hl">左手</div>${handArt('p2','L')}</div><div><div class="hl">右手</div>${handArt('p4','R')}</div></div>`;
+  return {
+    title:'左右の手をまねする',
+    sub:`左手と右手の絵と同じ形を、すぐに自分の両手で作ります。形は ${HAND_SPEED_JP[cfg.spd]} ごとに変わります（${pool.length}種類）。`,
+    ex
+  };
+}
+function handsSet(first){
+  const c=H.cfg;
+  $('hSet').textContent=`${H.set}/${c.sets}`;
+  $('hClock').textContent=c.dur;
+  const begin=()=>{
+    if(!H) return;
+    let left=c.dur; $('hClock').textContent=left;
+    H.clock=setInterval(()=>{
+      left--; $('hClock').textContent=Math.max(0,left);
+      if(left<=0){ clearInterval(H.clock); clearTimeout(H.next); handsEnd(); }
+    },1000);
+    handsNext();
+  };
+  H.stops.push(first
+    ? veilPrepare($('hVeil'), handsRuleInfo(c), begin)
+    : veilCountdown($('hVeil'), '左右の手をまねする', begin));
+}
+function handsNext(){
+  if(!H) return;
+  const p=H.pool; let L,R,n=0;
+  do{ L=p[rnd(p.length)]; R=p[rnd(p.length)]; n++; }
+  while((L===R || (L===H.L && R===H.R)) && n<100);
+  const chL=L!==H.L, chR=R!==H.R;
+  H.L=L; H.R=R; H.count++;
+  $('hCount').textContent=H.count;
+  const put=(side,key,changed)=>{
+    const box=$('h'+side), nm=$('h'+side+'n');
+    box.innerHTML=handArt(key,side); nm.textContent=HAND_POSES[key].n;
+    if(changed){ box.classList.remove('pop'); void box.offsetWidth; box.classList.add('pop'); }
+  };
+  put('L',L,chL); put('R',R,chR);
+  if(H.cfg.beep){ const t=now()+0.01; tone(t,1040,0.09,0.4); }
+  const [a,b]=HAND_SPEED[H.cfg.spd];
+  H.next=setTimeout(handsNext, Math.round((a+Math.random()*(b-a))*1000));
+}
+function handsEnd(){
+  if(H.set>=H.cfg.sets) return handsDone();
+  H.stops.push(veilRest($('hVeil'),15,()=>{ if(H){ H.set++; handsSet(false); } }));
+}
+function handsDone(){
+  const c=H.cfg, n=H.count; stopHands();
+  if(PROG && progAdvance({count:n})) return;
+  finish({
+    type:'hands', cfg:c, title:'完了', note:'おつかれさまでした',
+    stats:[['こなした回数',n+'回'],['セット',c.sets],['切り替え',HAND_SPEED_JP[c.spd]],['ポーズ',c.set==='all'?'いろいろ':'数字だけ']]
+  });
+}
+// おまかせ：数字・ゆっくり → 数字・ふつう → いろいろ・ふつう → いろいろ・はやい
+function buildHandsProgram(){
+  return [
+    {set:'num',spd:'slow',dur:30,sets:1,names:false,beep:true},
+    {set:'num',spd:'mid', dur:30,sets:1,names:false,beep:true},
+    {set:'all',spd:'mid', dur:30,sets:1,names:false,beep:true},
+    {set:'all',spd:'fast',dur:30,sets:1,names:false,beep:true}
+  ];
+}
+
 /* ============================================================
    Results
    ============================================================ */
 let last=null;
-const TYPE_NAME={arrow:'方向トレーニング',num:'数字記憶',stroop:'ストループ',voice:'ストループ（音声）',grid:'ストループ 一覧',move:'リズム運動'};
+const TYPE_NAME={arrow:'方向トレーニング',num:'数字記憶',stroop:'ストループ',voice:'ストループ（音声）',grid:'ストループ 一覧',move:'リズム運動',hands:'左右の手まね'};
 function finish(r){
   last=r;
   if(r.celebrate){
@@ -1830,6 +2042,7 @@ function rerun(type,cfg){
   else if(type==='stroop') runStroop(cfg);
   else if(type==='grid') runGrid(cfg);
   else if(type==='move') runMove(cfg);
+  else if(type==='hands') runHands(cfg);
   else runVoice(cfg);
 }
 
