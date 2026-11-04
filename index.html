@@ -354,6 +354,30 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 .qrow .qm.ok{color:var(--ok)} .qrow .qm.ng{color:var(--ng)}
 .qrow .qa{flex:1;font-weight:600}
 .qrow .qb{color:var(--text-3);font-size:12.5px}
+
+/* ============================================================
+   Rhythm exercise (metronome / seconds)
+   ============================================================ */
+.mv{display:flex;flex-direction:column;align-items:center;gap:4px;padding:40px 16px 18px;width:100%}
+.mv-ex{font-size:30px;font-weight:750;letter-spacing:.02em;text-align:center;line-height:1.2}
+.mv-d{font-size:13.5px;color:var(--text-3);text-align:center}
+.pulse{--p:0;position:relative;width:min(60vw,230px);aspect-ratio:1;border-radius:50%;margin-top:var(--s4);
+  background:conic-gradient(var(--accent) calc(var(--p) * 1turn), var(--surface-2) 0);display:grid;place-items:center}
+.pulse-in{width:calc(100% - 16px);aspect-ratio:1;border-radius:50%;background:var(--surface);
+  display:flex;flex-direction:column;align-items:center;justify-content:center}
+.pulse b{font-size:66px;font-weight:750;line-height:1;color:var(--text)}
+.pulse b.chg{animation:chg .9s ease-out}
+@keyframes chg{0%{color:var(--ng);transform:scale(1.18)}100%{color:var(--text);transform:none}}
+.pulse span{font-size:12.5px;color:var(--text-3);margin-top:6px;font-weight:550}
+.pulse.hit{animation:beat .2s ease-out}
+.pulse.hit .pulse-in{animation:flash .24s ease-out}
+@keyframes beat{0%{transform:scale(1.06)}100%{transform:scale(1)}}
+@keyframes flash{0%{background:var(--accent-soft)}100%{background:var(--surface)}}
+.mv-dir{min-height:28px;font-size:14px;font-weight:550;color:var(--text-3);margin-top:var(--s3);text-align:center}
+.mv-dir.on{font-size:19px;font-weight:720;color:var(--accent)}
+.mv-dir.flip{animation:pop .3s cubic-bezier(.2,.8,.3,1)}
+.veil .mv-intro{font-size:34px;font-weight:750;letter-spacing:.02em;margin:4px 0}
+.veil .mv-mode{font-size:15px;font-weight:640;color:var(--text-2)}
 </style>
 </head>
 <body>
@@ -483,6 +507,28 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
     </div>
   </section>
 
+  <!-- ============ PLAY: RHYTHM EXERCISE ============ -->
+  <section class="screen" id="playMove">
+    <div class="stage">
+      <div class="hud">
+        <span>ラウンド <b class="tnum" id="mRound">1/5</b></span>
+        <span>残り <b class="tnum" id="mClock">30</b>s</span>
+        <span id="mModeLbl"></span>
+      </div>
+      <div class="field" id="mField">
+        <div class="mv">
+          <div class="mv-ex" id="mEx"></div>
+          <div class="mv-d" id="mDesc"></div>
+          <div class="pulse" id="mPulse"><div class="pulse-in"><b class="tnum" id="mBig">—</b><span id="mUnit"></span></div></div>
+          <div class="mv-dir" id="mDir"></div>
+        </div>
+        <div class="veil" id="mVeil" style="display:none"></div>
+      </div>
+      <div class="below"><div class="rem" id="mNext"></div></div>
+      <button class="btn quiet" id="mSkip" style="margin-top:var(--s3)">次へ</button>
+    </div>
+  </section>
+
   <!-- ============ RESULTS ============ -->
   <section class="screen" id="results">
     <div class="scroll">
@@ -518,7 +564,8 @@ const ICON={
   check : svg('<path d="M20 6.5L9.5 17 4 11.5"/>'),
   cross : svg('<path d="M6 6l12 12M18 6L6 18"/>'),
   mic   : svg('<rect x="9" y="2.75" width="6" height="11" rx="3"/><path d="M4.75 11.5a7.25 7.25 0 0 0 14.5 0"/><path d="M12 18.75V21.5"/>'),
-  dash  : svg('<path d="M6 12h12"/>')
+  dash  : svg('<path d="M6 12h12"/>'),
+  metro : svg('<path d="M9.5 3h5l4 18h-13z"/><path d="M7 16.5h10"/><path d="M12 16.5l4.5-9.5"/>')
 };
 // big arrow used as the stimulus
 const BIG_ARROW = `<svg class="arrow" id="aSvg" viewBox="0 0 100 100" fill="none" stroke="currentColor"
@@ -563,7 +610,8 @@ const SCRIPT_JP={kanji:'漢字',kana:'ひらがな',en:'English'};
 const TRAININGS={
   arrow :{icon:'arrow',name:'方向トレーニング',desc:'矢印を見て頭を振る'},
   num   :{icon:'timer',name:'数字記憶',       desc:'一瞬の数字を覚える'},
-  stroop:{icon:'color',name:'ストループ',      desc:'文字と色の食い違い'}
+  stroop:{icon:'color',name:'ストループ',      desc:'文字と色の食い違い'},
+  move  :{icon:'metro',name:'リズム運動',      desc:'読めないテンポや秒数に合わせて回す'}
 };
 
 /* ============================================================
@@ -580,7 +628,7 @@ function show(id,title,sub){
 }
 $('back').innerHTML=ICON.back;
 $('back').onclick=()=>{ stopAll(); stopProg(); if(['hub','results'].includes(document.querySelector('.screen.on').id)) goHome(); else if(curTrain) openHub(curTrain); else goHome(); };
-function stopAll(){ stopArrow(); stopNum(); stopStroop(); stopVoice(); stopGrid(); }
+function stopAll(){ stopArrow(); stopNum(); stopStroop(); stopVoice(); stopGrid(); stopMove(); }
 
 /* ============================================================
    Home
@@ -607,7 +655,8 @@ function goHome(){
 const QUICK_DESC={
   arrow :'「同じ方向」からはじめて、反対 → 色で判断へ。矢印は4方向から8方向、スピードも1.2秒から1.0秒へ上がります。1セット30秒。',
   num   :'8桁からスタートして10桁まで。後半は逆唱に切り替わります。表示は5秒。全10問クリアを目指します。',
-  stroop:'かな → 漢字 → English。1文字ずつからはじめて、一覧・背景ラインやマスへと進みます。'
+  stroop:'かな → 漢字 → English。1文字ずつからはじめて、一覧・背景ラインやマスへと進みます。',
+  move  :'メトロノーム（テンポが予告なく変わる）と、秒数（5〜20秒がランダム）を交互に全6ラウンド。動きも毎回ランダムで、後半ほどテンポがよく変わります。'
 };
 function openHub(t){
   curTrain=t; const T=TRAININGS[t];
@@ -678,6 +727,7 @@ function buildNumPlan(){
 function startAuto(t){
   stopAll(); stopProg();
   if(t==='num'){ runNum({auto:true, total:10, plan:buildNumPlan()}); return; }
+  if(t==='move'){ runMove(moveAutoCfg()); return; }
   PROG={type:t, stages:t==='arrow'?buildArrowProgram():buildStroopProgram(),
         i:0, count:0, secs:0, bkTick:null};
   progStage();
@@ -753,6 +803,30 @@ function rowToggle(label,id,def,onch){
   return `<div class="row"><span class="lbl">${label}</span><button class="toggle${def?' on':''}" id="${id}"></button></div>`;
 }
 
+// multi-select chips (at least one stays on)
+function chips(name,opts,defs){
+  const id='ch_'+name; defs=defs.map(String);
+  cfgUI[name]=defs.slice();
+  binds.push(()=>{
+    const c=$(id); if(!c) return;
+    c.querySelectorAll('button').forEach(b=>b.onclick=()=>{
+      const on=!b.classList.contains('on');
+      if(!on && c.querySelectorAll('button.on').length<=1) return;
+      b.classList.toggle('on',on);
+      cfgUI[name]=[...c.querySelectorAll('button.on')].map(x=>x.dataset.v);
+    });
+  });
+  return `<div class="seg" id="${id}">`+opts.map(o=>`<button data-v="${o.v}"${defs.includes(String(o.v))?' class="on"':''}>${o.l}</button>`).join('')+`</div>`;
+}
+function moveModeUI(v){
+  $('mMetroBox').style.display = v==='sec'?'none':'block';
+  $('mSecBox').style.display   = v==='metro'?'none':'block';
+  $('mHint').textContent =
+    v==='metro' ? 'メトロノームの音1回で1周。テンポは予告なしに変わるので、聞きながら合わせ直します。'
+  : v==='sec'   ? '「足首回し、10秒」のように秒数がランダムに出ます。1秒ごとに音が鳴り、最後の3秒は高い音、終わりはチャイムです。'
+  :               'ラウンドごとに、メトロノームか秒数かがランダムに決まります。';
+}
+
 function renderCustom(t){
   const box=$('hubCustom'); cfgUI={}; binds=[];
   if(t==='arrow'){
@@ -823,7 +897,30 @@ function renderCustom(t){
       <div class="hint" id="sHint2" style="display:none">マイクを使います。localhost 経由で開き、マイクを許可してください。認識には通信が必要です。</div>
     </div>`;
   }
+  if(t==='move'){
+    box.innerHTML=`<div class="card pad">
+      ${rowSeg('やり方','mMode',[{v:'metro',l:'メトロノーム'},{v:'sec',l:'秒数'},{v:'mix',l:'まぜる'}],'metro',moveModeUI)}
+      <div class="row"><span class="lbl">動き</span>${chips('mMoves',MOVES.map(m=>({v:m.k,l:m.n})),['ankle','shoulder','wrist','arm'])}</div>
+      <div id="mMetroBox">
+        ${rowSeg('テンポの幅','mRange',[{v:'slow',l:'ゆっくり'},{v:'mid',l:'ふつう'},{v:'fast',l:'速め'},{v:'wide',l:'ばらばら'}],'mid',v=>{
+          const r=TEMPO_RANGE[v]; $('mRangeHint').textContent=`テンポは 1分間に ${r[0]}〜${r[1]} 回 のあいだで変わります。`;
+        })}
+        ${rowSeg('変わる頻度','mGap',[{v:'rare',l:'ときどき'},{v:'mid',l:'ふつう'},{v:'often',l:'よく変わる'}],'mid')}
+        ${rowRange('1ラウンドの時間','mDur',20,90,10,40,v=>v+'秒')}
+        ${rowToggle('ときどき逆回し','mFlip',false)}
+        <div class="hint" id="mRangeHint">テンポは 1分間に 50〜110 回 のあいだで変わります。</div>
+      </div>
+      <div id="mSecBox" style="display:none">
+        <div class="row"><span class="lbl">秒数の候補</span>${chips('mSecs',[5,10,15,20,30].map(v=>({v,l:v+'秒'})),['5','10','15'])}</div>
+        ${rowSeg('数え方','mCount',[{v:'beep',l:'ピッという音'},{v:'voice',l:'声で数える'}],'beep')}
+      </div>
+      ${rowSeg('ラウンド数','mRounds',[3,5,8,10].map(v=>({v,l:String(v)})),'5')}
+      ${rowSeg('ラウンドの間の休み','mRest',[{v:'0',l:'なし'},{v:'5',l:'5秒'},{v:'10',l:'10秒'},{v:'15',l:'15秒'}],'5')}
+      <div class="hint" id="mHint"></div>
+    </div>`;
+  }
   binds.forEach(f=>f()); binds=[];   // attach handlers now that the DOM exists
+  if(t==='move') moveModeUI(segVal('mMode'));
 }
 $('customStart').onclick=()=>{
   if(curTrain==='arrow') runArrow({
@@ -833,6 +930,11 @@ $('customStart').onclick=()=>{
   if(curTrain==='num') runNum({
     dig:+$('nDig').value, t:+$('nT').value, rev:$('nRev').classList.contains('on'),
     total:+segVal('nQ')
+  });
+  if(curTrain==='move') runMove({
+    mode:segVal('mMode'), moves:cfgUI.mMoves.slice(), rounds:+segVal('mRounds'), rest:+segVal('mRest'),
+    range:segVal('mRange'), gap:segVal('mGap'), dur:+$('mDur').value, flip:$('mFlip').classList.contains('on'),
+    secs:cfgUI.mSecs.map(Number), count:segVal('mCount')
   });
   if(curTrain==='stroop'){
     if(segVal('sForm')==='grid')
@@ -1395,10 +1497,299 @@ $('gDone').onclick=()=>{
 };
 
 /* ============================================================
+   RHYTHM EXERCISE engine — metronome with random tempo / random seconds
+   ============================================================ */
+const MOVES=[
+  {k:'ankle',   n:'足首回し',   d:'足首を大きく回す'},
+  {k:'shoulder',n:'肩回し',     d:'肩を思いきり大きく回す'},
+  {k:'wrist',   n:'手首回し',   d:'手首をぐるぐる回す'},
+  {k:'arm',     n:'腕回し',     d:'腕を伸ばして大きく回す'},
+  {k:'hip',     n:'股関節回し', d:'片ひざを上げて大きな円を描く'},
+  {k:'waist',   n:'腰回し',     d:'腰で大きな円を描く'},
+  {k:'knee',    n:'ひざ回し',   d:'ひざに手を当てて回す'}
+];
+const TEMPO_RANGE={slow:[40,80], mid:[50,110], fast:[70,140], wide:[40,140]};   // 1分間に鳴る回数
+const CHANGE_GAP ={rare:[12,25], mid:[6,15], often:[3,8]};                      // テンポが変わるまでの秒数
+const KANA_NUM=['','いち','に','さん','よん','ご','ろく','なな','はち','きゅう','じゅう'];
+
+/* ---- sound (Web Audio: scheduled ahead so the beat stays steady) ---- */
+const AU={ctx:null,out:null};
+function audioOn(){
+  try{
+    if(!AU.ctx){ const C=window.AudioContext||window.webkitAudioContext; if(!C) return null; AU.ctx=new C(); }
+    if(AU.ctx.state!=='running') AU.ctx.resume();
+    if(!AU.out){ AU.out=AU.ctx.createGain(); AU.out.connect(AU.ctx.destination); }
+    // iOS: a silent blip inside the tap unlocks output
+    const b=AU.ctx.createBuffer(1,1,22050), s=AU.ctx.createBufferSource(); s.buffer=b; s.connect(AU.out); s.start(0);
+  }catch(e){ return null; }
+  return AU.ctx;
+}
+// drop everything already queued (used when stopping / skipping)
+function audioCut(keep){
+  if(AU.out){ try{ AU.out.disconnect(); }catch(e){} AU.out=null; }
+  if(keep && AU.ctx){ AU.out=AU.ctx.createGain(); AU.out.connect(AU.ctx.destination); }
+}
+const now=()=>AU.ctx?AU.ctx.currentTime:0;
+function tone(t,f,dur,vol,type){
+  if(!AU.ctx||!AU.out) return;
+  const c=AU.ctx, o=c.createOscillator(), g=c.createGain();
+  o.type=type||'sine'; o.frequency.setValueAtTime(f,t);
+  g.gain.setValueAtTime(0.0001,t);
+  g.gain.exponentialRampToValueAtTime(vol,t+0.004);
+  g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+  o.connect(g); g.connect(AU.out); o.start(t); o.stop(t+dur+0.03);
+}
+const SND={
+  click :t=>{ tone(t,1800,0.035,0.55,'triangle'); tone(t,900,0.05,0.35); },
+  tick  :t=>tone(t,880,0.08,0.5),
+  tickHi:t=>tone(t,1320,0.1,0.55),
+  count :t=>tone(t,660,0.12,0.45),
+  go    :t=>tone(t,1320,0.3,0.55),
+  flip  :t=>{ tone(t,520,0.1,0.5,'triangle'); tone(t+0.12,520,0.1,0.5,'triangle'); },
+  end   :t=>{ tone(t,1046,0.18,0.45); tone(t+0.16,1318,0.18,0.45); tone(t+0.32,1568,0.5,0.45); }
+};
+
+/* ---- voice (speech synthesis, Japanese) ---- */
+const SAY={ok:'speechSynthesis' in window, voice:null};
+function pickVoice(){ try{ SAY.voice=speechSynthesis.getVoices().find(v=>/^ja/i.test(v.lang))||null; }catch(e){} }
+if(SAY.ok){ pickVoice(); try{ speechSynthesis.addEventListener('voiceschanged',pickVoice); }catch(e){} }
+function say(text,cut){
+  if(!SAY.ok) return;
+  try{
+    if(cut) speechSynthesis.cancel();
+    const u=new SpeechSynthesisUtterance(text); u.lang='ja-JP'; if(SAY.voice) u.voice=SAY.voice; u.rate=1.1;
+    speechSynthesis.speak(u);
+  }catch(e){}
+}
+function sayStop(){ if(SAY.ok) try{ speechSynthesis.cancel(); }catch(e){} }
+
+/* ---- keep the screen on while exercising ---- */
+let WL=null;
+async function wakeOn(){ try{ if('wakeLock' in navigator) WL=await navigator.wakeLock.request('screen'); }catch(e){} }
+function wakeOff(){ try{ if(WL) WL.release(); }catch(e){} WL=null; }
+document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible' && M && M.phase!=='prep') wakeOn(); });
+
+/* ---- plan ---- */
+function moveAutoCfg(){
+  return {auto:true, mode:'mix', moves:['ankle','shoulder','wrist','arm','hip'], rounds:6, rest:5,
+          range:'mid', gap:'mid', dur:30, flip:false, secs:[5,10,15,20], count:'beep'};
+}
+function buildMovePlan(cfg){
+  let pool=MOVES.filter(m=>cfg.moves.includes(m.k)); if(!pool.length) pool=MOVES.slice(0,2);
+  const plan=[]; let lastM=null, lastS=null, metroN=0;
+  for(let i=0;i<cfg.rounds;i++){
+    let mv; do{ mv=pool[rnd(pool.length)]; }while(pool.length>1 && mv===lastM); lastM=mv;
+    let mode=cfg.mode;
+    if(mode==='mix') mode = cfg.auto ? (i%2?'sec':'metro') : (Math.random()<0.5?'metro':'sec');
+    const r={mv,mode};
+    if(mode==='sec'){
+      let s; do{ s=cfg.secs[rnd(cfg.secs.length)]; }while(cfg.secs.length>1 && s===lastS); lastS=s;
+      r.dur=s;
+    }else{
+      r.dur=cfg.dur; r.range=cfg.range; r.gap=cfg.gap;
+      if(cfg.auto){ r.range=metroN===0?'mid':'wide'; r.gap=['mid','mid','often'][Math.min(2,metroN)]; }
+      metroN++;
+    }
+    plan.push(r);
+  }
+  return plan;
+}
+function pickBpm(rg,old){
+  const [lo,hi]=TEMPO_RANGE[rg], minDiff=Math.max(10,Math.round((hi-lo)*0.25));
+  let b,n=0; do{ b=lo+rnd(hi-lo+1); n++; }while(old!=null && Math.abs(b-old)<minDiff && n<60);
+  return b;
+}
+const gapRand=g=>{ const [a,b]=CHANGE_GAP[g]; return a+Math.random()*(b-a); };
+const fmtSecs=s=>{ s=Math.round(s); return s>=60?`${Math.floor(s/60)}分${s%60?s%60+'秒':''}`:`${s}秒`; };
+
+/* ---- state & timers (every callback is tied to the current phase) ---- */
+let M=null;
+function stopMove(){
+  if(!M) return;
+  M.timers.forEach(clearTimeout); M.pivs.forEach(clearInterval);
+  audioCut(false); sayStop(); wakeOff();
+  M=null;
+}
+function mPhase(name){ M.phase=name; M.pid++; M.pivs.forEach(clearInterval); M.pivs=[]; }
+function mLater(fn,ms){
+  const m=M, p=m.pid;
+  const id=setTimeout(()=>{ if(M===m && m.pid===p) fn(); }, Math.max(0,ms));
+  m.timers.push(id); if(m.timers.length>400) m.timers.splice(0,200);
+}
+function mEvery(fn,ms){ M.pivs.push(setInterval(fn,ms)); }
+const atAudio=(t,fn)=>mLater(fn,(t-now())*1000);   // run fn when the sound at audio-time t plays
+
+function runMove(cfg){
+  stopAll();
+  M={cfg, plan:buildMovePlan(cfg), i:-1, pid:0, phase:'prep', timers:[], pivs:[],
+     active:0, changes:0, flips:0, bpmMin:Infinity, bpmMax:0, log:[], dir:1, r:null};
+  const N=M.plan.length;
+  $('mRound').textContent=`1/${N}`; $('mClock').textContent=M.plan[0].dur;
+  $('mModeLbl').textContent=''; $('mEx').textContent=''; $('mDesc').textContent='';
+  $('mBig').textContent='—'; $('mUnit').textContent=''; $('mDir').textContent=''; $('mDir').className='mv-dir';
+  $('mPulse').style.setProperty('--p',0); $('mNext').textContent='';
+  $('mSkip').style.display='none';
+  const modeTxt = cfg.mode==='metro'?'メトロノーム':cfg.mode==='sec'?'秒数':'メトロノーム＋秒数';
+  show('playMove','リズム運動', cfg.auto?`おまかせ 全${N}ラウンド`:`${modeTxt} ・ ${N}ラウンド`);
+  const sub = cfg.mode==='metro'
+      ? 'メトロノームの音1回で1周。テンポは予告なく変わるので、音を聞いて合わせ直します。'
+    : cfg.mode==='sec'
+      ? '「足首回し、10秒」のように秒数がランダムに出ます。鳴っているあいだ回し続けます。'
+      : 'ラウンドごとに「テンポが変わるメトロノーム」か「ランダムな秒数」が出ます。';
+  const names=MOVES.filter(m=>cfg.moves.includes(m.k)).map(m=>m.n).join('・');
+  veilShow($('mVeil'),`<div class="prep">
+      <div class="prep-k">ルール</div>
+      <div class="prep-t">音に合わせて大きく回す</div>
+      <div class="prep-s">${sub}</div>
+      <div class="prep-ex" style="font-size:14px;line-height:1.6">${names}</div>
+      <div class="prep-s">音が出るので、音量を上げてください。痛みが出たら無理をせず止めましょう。</div>
+      <button class="btn prep-b" id="mGo">はじめる</button>
+    </div>`);
+  $('mGo').onclick=()=>{
+    if(!M) return;
+    audioOn(); say(' ',true); wakeOn();   // unlock sound & voice inside the tap
+    mIntro();
+  };
+}
+function mIntro(){
+  M.i++;
+  if(M.i>=M.plan.length) return mDone();
+  mPhase('intro');
+  const r=M.plan[M.i], N=M.plan.length; M.r=r;
+  $('mRound').textContent=`${M.i+1}/${N}`;
+  $('mClock').textContent=r.dur;
+  $('mModeLbl').textContent=r.mode==='sec'?'秒数':'メトロノーム';
+  $('mEx').textContent=r.mv.n; $('mDesc').textContent=r.mv.d;
+  $('mPulse').style.setProperty('--p',0);
+  $('mBig').textContent = r.mode==='sec'?r.dur:'—';
+  $('mUnit').textContent= r.mode==='sec'?'秒':'テンポ';
+  M.dir=1;
+  const dirEl=$('mDir');
+  if(r.mode==='metro' && M.cfg.flip){ dirEl.className='mv-dir on'; dirEl.textContent='↻ 右回り'; }
+  else { dirEl.className='mv-dir'; dirEl.textContent = r.mode==='sec'?'鳴っているあいだ回し続ける':'音1回で1周'; }
+  const nx=M.plan[M.i+1];
+  $('mNext').textContent = nx?`次：${nx.mv.n}`:'最後のラウンド';
+  $('mSkip').style.display='none';
+  veilShow($('mVeil'),`<div class="lab">ラウンド ${M.i+1} / ${N}</div>
+    <div class="mv-intro">${r.mv.n}</div>
+    <div class="mv-mode">${r.mode==='sec'?`${r.dur}秒`:`メトロノーム ・ ${r.dur}秒`}</div>
+    <div class="lab">${r.mode==='sec'?'鳴っているあいだ回し続けます':'テンポは途中でランダムに変わります'}</div>
+    <div class="big tnum" id="mCd" style="margin-top:8px;min-height:76px"></div>`);
+  say(`${r.mv.n}、${r.dur}秒`,true);
+  [3,2,1].forEach((n,k)=>mLater(()=>{ const e=$('mCd'); if(e) e.textContent=n; SND.count(now()+0.01); },1600+k*1000));
+  mLater(()=>{ veilHide($('mVeil')); mGo(r); },1600+3000);
+}
+function mGo(r){
+  mPhase('active');
+  if(!audioOn()){ /* no audio: still run visually */ }
+  const t0=now()+0.06;
+  M.t0=t0; M.tEnd=t0+r.dur;
+  $('mSkip').style.display='block'; $('mSkip').textContent='このラウンドを終える';
+  if(r.mode==='sec') mGoSec(r,t0); else mGoMetro(r,t0);
+  // shared clock: remaining time + ring
+  mEvery(()=>{
+    const t=now(), left=Math.max(0,M.tEnd-t);
+    $('mClock').textContent=Math.ceil(left);
+    $('mPulse').style.setProperty('--p',Math.min(1,(t-M.t0)/r.dur));
+    if(t>=M.tEnd+0.25) mEndRound(false);   // a hair late so the last count shows
+  },100);
+}
+function mGoMetro(r,t0){
+  M.bpm=pickBpm(r.range,null); M.nextBeat=t0; M.nextChange=t0+gapRand(r.gap);
+  M.bpmMin=Math.min(M.bpmMin,M.bpm); M.bpmMax=Math.max(M.bpmMax,M.bpm);
+  $('mBig').textContent=M.bpm;
+  mEvery(()=>{
+    const t=now();
+    if(M.nextBeat<t-0.05) M.nextBeat=t+0.03;            // tab was asleep: don't burst
+    while(M.nextBeat<t+0.12 && M.nextBeat<M.tEnd-0.03){
+      const bt=M.nextBeat; let changed=false;
+      if(bt>=M.nextChange){
+        M.bpm=pickBpm(r.range,M.bpm); M.changes++; changed=true;
+        M.bpmMin=Math.min(M.bpmMin,M.bpm); M.bpmMax=Math.max(M.bpmMax,M.bpm);
+        M.nextChange=bt+gapRand(r.gap);
+        if(M.cfg.flip && Math.random()<0.4 && M.tEnd-bt>3) mFlip(bt);
+      }
+      SND.click(bt);
+      const bpm=M.bpm;
+      atAudio(bt,()=>{
+        const p=$('mPulse'), b=$('mBig');
+        p.classList.remove('hit'); void p.offsetWidth; p.classList.add('hit');
+        if(changed){ b.textContent=bpm; b.classList.remove('chg'); void b.offsetWidth; b.classList.add('chg'); }
+      });
+      M.nextBeat+=60/M.bpm;
+    }
+  },25);
+}
+function mFlip(t){
+  M.flips++;
+  SND.flip(t+0.02);
+  atAudio(t,()=>{
+    M.dir*=-1;
+    const d=$('mDir'); d.textContent = M.dir>0?'↻ 右回り':'↺ 左回り';
+    d.classList.remove('flip'); void d.offsetWidth; d.classList.add('flip');
+    say('逆回し',true);
+  });
+}
+function mGoSec(r,t0){
+  const voice=M.cfg.count==='voice';
+  SND.go(t0);
+  $('mBig').textContent=0; $('mUnit').textContent=`/ ${r.dur}秒`;
+  for(let s=1;s<=r.dur;s++){
+    const t=t0+s;
+    if(s===r.dur) SND.end(t); else if(r.dur-s<=3) SND.tickHi(t); else SND.tick(t);
+    atAudio(t,()=>{
+      const p=$('mPulse'); $('mBig').textContent=s;
+      p.classList.remove('hit'); void p.offsetWidth; p.classList.add('hit');
+      if(voice) say(KANA_NUM[s]||String(s),true);
+    });
+  }
+}
+function mEndRound(early){
+  const r=M.r, done=early?Math.max(0,Math.min(r.dur,now()-M.t0)):r.dur;
+  mPhase('after');
+  M.active+=done;
+  M.log.push({exp:`${r.mv.n} ・ ${r.mode==='sec'?r.dur+'秒':'メトロノーム '+r.dur+'秒'}`, ok:!early, ans:early?fmtSecs(done)+'で終了':''});
+  if(early){ audioCut(true); SND.end(now()+0.02); }
+  else if(r.mode==='metro') SND.end(now()+0.02);
+  $('mClock').textContent=0; $('mPulse').style.setProperty('--p',1);
+  $('mSkip').style.display='none';
+  const last=M.i>=M.plan.length-1;
+  if(last){ mLater(()=>{ say('おつかれさまでした',true); mDone(); },1100); return; }
+  mLater(mRest,900);
+}
+function mRest(){
+  const secs=M.cfg.rest;
+  if(!secs){ mIntro(); return; }
+  mPhase('rest');
+  const nx=M.plan[M.i+1];
+  let left=secs;
+  veilShow($('mVeil'),`<div class="lab">休憩</div><div class="big tnum" id="mRestN">${left}</div>
+    <div class="lab">次は <b>${nx.mv.n}</b>${nx.mode==='sec'?'':'（メトロノーム）'}</div>`);
+  say('休憩',true);
+  $('mSkip').style.display='block'; $('mSkip').textContent='休憩をとばす';
+  mEvery(()=>{
+    left--; const e=$('mRestN'); if(e) e.textContent=Math.max(0,left);
+    if(left<=0) mIntro();
+  },1000);
+}
+$('mSkip').onclick=()=>{
+  if(!M) return;
+  if(M.phase==='active') mEndRound(true);
+  else if(M.phase==='rest') mIntro();
+};
+function mDone(){
+  const m=M, c=m.cfg; stopMove();
+  const stats=[['ラウンド',m.log.length+'本'],['回した時間',fmtSecs(m.active)]];
+  if(m.bpmMax>0){ stats.push(['テンポの変化',m.changes+'回']); stats.push(['テンポ',`${m.bpmMin}〜${m.bpmMax}`]); }
+  if(m.flips) stats.push(['逆回し',m.flips+'回']);
+  finish({ type:'move', cfg:c, autoType:c.auto?'move':undefined, title:'完了', note:'おつかれさまでした', stats, log:m.log });
+}
+
+/* ============================================================
    Results
    ============================================================ */
 let last=null;
-const TYPE_NAME={arrow:'方向トレーニング',num:'数字記憶',stroop:'ストループ',voice:'ストループ（音声）',grid:'ストループ 一覧'};
+const TYPE_NAME={arrow:'方向トレーニング',num:'数字記憶',stroop:'ストループ',voice:'ストループ（音声）',grid:'ストループ 一覧',move:'リズム運動'};
 function finish(r){
   last=r;
   if(r.celebrate){
@@ -1438,6 +1829,7 @@ function rerun(type,cfg){
   else if(type==='num') runNum(cfg);
   else if(type==='stroop') runStroop(cfg);
   else if(type==='grid') runGrid(cfg);
+  else if(type==='move') runMove(cfg);
   else runVoice(cfg);
 }
 
