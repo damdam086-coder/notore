@@ -396,6 +396,9 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 .hbox{width:100%;display:grid;place-items:center}
 .hbox.pop{animation:pop .2s cubic-bezier(.2,.8,.3,1)}
 .hand{width:100%;max-width:210px;display:block}
+.hbox{max-width:210px;aspect-ratio:210/256}
+.hnum{font-size:min(34vw,170px);font-weight:760;line-height:1;color:var(--text);letter-spacing:-.02em}
+.hnum.word{font-size:clamp(24px,8vw,40px);letter-spacing:.02em;text-align:center}
 .hand-img{width:100%;max-width:210px;display:block}
 .hand-img.mir{transform:scaleX(-1)}
 .hand .hs{fill:none;stroke:#c98f6c;stroke-width:6;stroke-linejoin:round}
@@ -961,6 +964,12 @@ function renderCustom(t){
           ? 'グー・1・2・3・4・5 の6種類。'
           : 'グー〜5 に加えて、キツネ・グッド・ピストル・電話・アイラブユー・OK も出ます。';
       })}
+      ${rowSeg('出し方','hShow',[{v:'art',l:'イラスト'},{v:'num',l:'数字'},{v:'mix',l:'まぜる'}],'art',v=>{
+        $('hShowHint').textContent = v==='art' ? '手の絵を見て、同じ形を作ります。'
+          : v==='num' ? '「左 5 ・ 右 1」のように数字が出ます。左手はパー、右手は人差し指、のように数の形を作ります（0 はグー）。'
+          : '毎回、絵で出るか数字で出るかがランダムです。左右で出し方がちがうこともあります。';
+      })}
+      <div class="hint" id="hShowHint" style="margin-top:0;padding-bottom:var(--s2)">手の絵を見て、同じ形を作ります。</div>
       ${rowSeg('切り替え','hSpd',[{v:'slow',l:'3〜5秒'},{v:'mid',l:'2〜4秒'},{v:'fast',l:'1.5〜3秒'}],'mid')}
       ${rowRange('1セットの時間','hDur',20,60,10,30,v=>v+'秒')}
       ${rowSeg('セット数','hSets',[{v:'1',l:'1'},{v:'2',l:'2'},{v:'3',l:'3'}],'1')}
@@ -1008,7 +1017,7 @@ $('customStart').onclick=()=>{
     total:+segVal('nQ')
   });
   if(curTrain==='hands') runHands({
-    set:segVal('hSetSel'), spd:segVal('hSpd'), dur:+$('hDur').value, sets:+segVal('hSets'),
+    set:segVal('hSetSel'), show:segVal('hShow'), spd:segVal('hSpd'), dur:+$('hDur').value, sets:+segVal('hSets'),
     names:$('hNames').classList.contains('on'), beep:$('hBeep').classList.contains('on')
   });
   if(curTrain==='move') runMove({
@@ -1894,12 +1903,12 @@ function mDone(){
 /* ---- hand illustrations (back of the hand, thumb toward the centre) ---- */
 // num:true = 数字のポーズ（設定「数字だけ」で使う）
 const HAND_POSES={
-  g    :{n:'グー',       f:[0,0,0,0], t:'fist', num:true},
-  p1   :{n:'1',          f:[1,0,0,0], t:'in',   num:true},
-  p2   :{n:'2',          f:[1,1,0,0], t:'in',   num:true},
-  p3   :{n:'3',          f:[1,1,1,0], t:'in',   num:true},
-  p4   :{n:'4',          f:[1,1,1,1], t:'in',   num:true},
-  p5   :{n:'5',          f:[1,1,1,1], t:'out',  num:true},
+  g    :{n:'グー',       f:[0,0,0,0], t:'fist', num:true, d:0},
+  p1   :{n:'1',          f:[1,0,0,0], t:'in',   num:true, d:1},
+  p2   :{n:'2',          f:[1,1,0,0], t:'in',   num:true, d:2},
+  p3   :{n:'3',          f:[1,1,1,0], t:'in',   num:true, d:3},
+  p4   :{n:'4',          f:[1,1,1,1], t:'in',   num:true, d:4},
+  p5   :{n:'5',          f:[1,1,1,1], t:'out',  num:true, d:5},
   fox  :{n:'キツネ',     f:[1,0,0,1], t:'fox'},
   good :{n:'グッド',     f:[0,0,0,0], t:'up'},
   gun  :{n:'ピストル',   f:[1,0,0,0], t:'out'},
@@ -1966,15 +1975,25 @@ function runHands(cfg){
   $('hCount').textContent='0';
   $('hField').classList.toggle('named',!!cfg.names);
   $('hL').innerHTML=''; $('hR').innerHTML=''; $('hLn').textContent=''; $('hRn').textContent='';
-  show('playHands','左右の手まね', `${cfg.set==='all'?'いろんなポーズ':'数字だけ'} ・ ${HAND_SPEED_JP[cfg.spd]}`);
+  show('playHands','左右の手まね', `${cfg.show==='num'?'数字で出す':cfg.show==='mix'?'絵と数字':'イラスト'} ・ ${cfg.set==='all'?'いろんなポーズ':'数字の形だけ'} ・ ${HAND_SPEED_JP[cfg.spd]}`);
   handsSet(true);
+}
+// 絵で出すか、数字で出すか（数字以外のポーズは名前を文字で出す）
+function handFace(key,side,show){
+  const asNum = show==='num' || (show==='mix' && Math.random()<0.5);
+  if(!asNum) return handArt(key,side);
+  const P=HAND_POSES[key];
+  return P.d!=null ? `<div class="hnum tnum">${P.d}</div>` : `<div class="hnum word">${P.n}</div>`;
 }
 function handsRuleInfo(cfg){
   const pool=handPool(cfg.set);
-  const ex=`<div class="prep-ex hands-ex"><div><div class="hl">左手</div>${handArt('p2','L')}</div><div><div class="hl">右手</div>${handArt('p4','R')}</div></div>`;
+  const num=cfg.show==='num';
+  const face=(k,sd)=>num?`<div class="hnum tnum" style="font-size:64px">${HAND_POSES[k].d}</div>`:handArt(k,sd);
+  const ex=`<div class="prep-ex hands-ex"><div><div class="hl">左手</div>${face(num?'p5':'p2','L')}</div><div><div class="hl">右手</div>${face(num?'p1':'p4','R')}</div></div>`
+    +(num?`<div class="prep-s">左 5 → パー、右 1 → 人差し指。0 はグーです。</div>`:'');
   return {
     title:'左右の手をまねする',
-    sub:`左手と右手の絵と同じ形を、すぐに自分の両手で作ります。形は ${HAND_SPEED_JP[cfg.spd]} ごとに変わります（${pool.length}種類）。`,
+    sub:`${num?'左右に出た数字の形':cfg.show==='mix'?'絵か数字で出た形':'左手と右手の絵と同じ形'}を、すぐに自分の両手で作ります。形は ${HAND_SPEED_JP[cfg.spd]} ごとに変わります（${pool.length}種類）。`,
     ex
   };
 }
@@ -2005,7 +2024,7 @@ function handsNext(){
   $('hCount').textContent=H.count;
   const put=(side,key,changed)=>{
     const box=$('h'+side), nm=$('h'+side+'n');
-    box.innerHTML=handArt(key,side); nm.textContent=HAND_POSES[key].n;
+    box.innerHTML=handFace(key,side,H.cfg.show); nm.textContent=HAND_POSES[key].n;
     if(changed){ box.classList.remove('pop'); void box.offsetWidth; box.classList.add('pop'); }
   };
   put('L',L,chL); put('R',R,chR);
@@ -2022,7 +2041,7 @@ function handsDone(){
   if(PROG && progAdvance({count:n})) return;
   finish({
     type:'hands', cfg:c, title:'完了', note:'おつかれさまでした',
-    stats:[['こなした回数',n+'回'],['セット',c.sets],['切り替え',HAND_SPEED_JP[c.spd]],['ポーズ',c.set==='all'?'いろいろ':'数字だけ']]
+    stats:[['こなした回数',n+'回'],['セット',c.sets],['切り替え',HAND_SPEED_JP[c.spd]],['ポーズ',c.set==='all'?'いろいろ':'数字だけ'],['出し方',c.show==='num'?'数字':c.show==='mix'?'まぜる':'イラスト']]
   });
 }
 // おまかせ：数字・ゆっくり → 数字・ふつう → いろいろ・ふつう → いろいろ・はやい
