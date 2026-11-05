@@ -410,6 +410,18 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 .hands-ex{gap:18px}
 .hands-ex>div{width:96px;text-align:center}
 .hands-ex .hl{font-size:12px;margin-bottom:2px}
+
+/* ============================================================
+   Breath
+   ============================================================ */
+.bwrap{position:relative;width:min(72vw,270px);aspect-ratio:1;display:grid;place-items:center}
+.bub{position:absolute;inset:0;border-radius:50%;background:var(--accent-soft);border:2px solid var(--accent);
+  transform:scale(1);will-change:transform}
+.bub.hold{border-style:dashed;border-color:var(--gold);background:rgba(200,147,27,.10)}
+.bub.in{border-color:var(--ok);background:rgba(26,157,90,.10)}
+.btext{position:relative;text-align:center}
+.bphase{font-size:32px;font-weight:760;letter-spacing:.04em}
+.bnum{font-size:60px;font-weight:750;line-height:1.05;color:var(--text-2);min-height:63px}
 </style>
 </head>
 <body>
@@ -558,6 +570,26 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
     </div>
   </section>
 
+  <!-- ============ PLAY: BREATH ============ -->
+  <section class="screen" id="playBreath">
+    <div class="stage">
+      <div class="hud">
+        <span>残り <b class="tnum" id="bLeft">5:00</b></span>
+        <span>リズム <b class="tnum" id="bPatLbl">8-8-8</b></span>
+        <span>呼吸 <b class="tnum" id="bCycles">0</b>回</span>
+      </div>
+      <div class="field" id="bField">
+        <div class="bwrap">
+          <div class="bub" id="bBub"></div>
+          <div class="btext"><div class="bphase" id="bPhase"></div><div class="bnum tnum" id="bNum"></div></div>
+        </div>
+        <div class="veil" id="bVeil" style="display:none"></div>
+      </div>
+      <div class="below"><div class="rem" id="bNext"></div></div>
+      <button class="btn quiet" id="bStop" style="margin-top:var(--s3)">終える</button>
+    </div>
+  </section>
+
   <!-- ============ PLAY: RHYTHM EXERCISE ============ -->
   <section class="screen" id="playMove">
     <div class="stage">
@@ -619,6 +651,7 @@ const ICON={
   mic   : svg('<rect x="9" y="2.75" width="6" height="11" rx="3"/><path d="M4.75 11.5a7.25 7.25 0 0 0 14.5 0"/><path d="M12 18.75V21.5"/>'),
   dash  : svg('<path d="M6 12h12"/>'),
   hand  : svg('<path d="M8 12.5V6.25a1.5 1.5 0 0 1 3 0V11"/><path d="M11 10.5V4.75a1.5 1.5 0 0 1 3 0V11"/><path d="M14 10.75V6.25a1.5 1.5 0 0 1 3 0v7.5a7 7 0 0 1-7 7h-.5a6 6 0 0 1-4.6-2.2L3.6 15.5a1.4 1.4 0 0 1 2.1-1.85L8 15.5"/>'),
+  wind  : svg('<path d="M3 8.5h10.5a3 3 0 1 0-3-3"/><path d="M3 12.5h15a3 3 0 1 1-3 3"/><path d="M3 16.5h6"/>'),
   metro : svg('<path d="M9.5 3h5l4 18h-13z"/><path d="M7 16.5h10"/><path d="M12 16.5l4.5-9.5"/>')
 };
 // big arrow used as the stimulus
@@ -666,7 +699,8 @@ const TRAININGS={
   num   :{icon:'timer',name:'数字記憶',       desc:'一瞬の数字を覚える'},
   stroop:{icon:'color',name:'ストループ',      desc:'文字と色の食い違い'},
   move  :{icon:'metro',name:'リズム運動',      desc:'読めないテンポや秒数に合わせて回す'},
-  hands :{icon:'hand', name:'左右の手まね',    desc:'左右ちがう手の形をすぐにまねる'}
+  hands :{icon:'hand', name:'左右の手まね',    desc:'左右ちがう手の形をすぐにまねる'},
+  breath:{icon:'wind', name:'呼吸調整',        desc:'吐く・止める・吸うを秒数どおりに'}
 };
 
 /* ============================================================
@@ -683,7 +717,7 @@ function show(id,title,sub){
 }
 $('back').innerHTML=ICON.back;
 $('back').onclick=()=>{ stopAll(); stopProg(); if(['hub','results'].includes(document.querySelector('.screen.on').id)) goHome(); else if(curTrain) openHub(curTrain); else goHome(); };
-function stopAll(){ stopArrow(); stopNum(); stopStroop(); stopVoice(); stopGrid(); stopMove(); stopHands(); }
+function stopAll(){ stopArrow(); stopNum(); stopStroop(); stopVoice(); stopGrid(); stopMove(); stopHands(); stopBreath(); }
 
 /* ============================================================
    Home
@@ -711,6 +745,7 @@ const QUICK_DESC={
   arrow :'「同じ方向」からはじめて、反対 → 色で判断へ。矢印は4方向から8方向、スピードも1.2秒から1.0秒へ上がります。1セット30秒。',
   num   :'8桁からスタートして10桁まで。後半は逆唱に切り替わります。表示は5秒。全10問クリアを目指します。',
   stroop:'かな → 漢字 → English。1文字ずつからはじめて、一覧・背景ラインやマスへと進みます。',
+  breath:'8-8-8（8秒で吐く・8秒止める・8秒で吸う）を5分。はじまりの声と、最後の3秒の「さん・に・いち」に合わせるだけです。',
   hands :'まずは数字（グー〜5）だけ、ゆっくり（3〜5秒）から。数字のテンポを上げてから、キツネやグッドなどのポーズも混ざり、最後は1.5〜3秒で切り替わります。1ステージ30秒×4本。',
   move  :'メトロノーム（4拍で1周・周の変わり目でテンポが変わる）と、秒数（5〜20秒がランダム）を交互に全6ラウンド。動きも毎回ランダム。後半は毎周テンポが変わり、最後は1周の拍数もランダムになります。'
 };
@@ -784,6 +819,7 @@ function startAuto(t){
   stopAll(); stopProg();
   if(t==='num'){ runNum({auto:true, total:10, plan:buildNumPlan()}); return; }
   if(t==='move'){ runMove(moveAutoCfg()); return; }
+  if(t==='breath'){ runBreath({min:5,out:8,hold:8,in:8,tick:true}); return; }
   PROG={type:t, stages:t==='arrow'?buildArrowProgram():t==='hands'?buildHandsProgram():buildStroopProgram(),
         i:0, count:0, secs:0, bkTick:null};
   progStage();
@@ -957,6 +993,23 @@ function renderCustom(t){
       <div class="hint" id="sHint2" style="display:none">マイクを使います。localhost 経由で開き、マイクを許可してください。認識には通信が必要です。</div>
     </div>`;
   }
+  if(t==='breath'){
+    box.innerHTML=`<div class="card pad">
+      ${rowRange('時間','bMin',3,10,1,5,v=>v+'分')}
+      ${rowSeg('リズム','bPat',[{v:'5',l:'5-5-5'},{v:'6',l:'6-6-6'},{v:'8',l:'8-8-8'},{v:'10',l:'10-10-10'},{v:'c',l:'自分で'}],'8',v=>{
+        $('bCustom').style.display=v==='c'?'block':'none';
+      })}
+      <div id="bCustom" style="display:none">
+        ${rowRange('吐く','bOut',3,20,1,8,v=>v+'秒')}
+        ${rowRange('止める','bHold',0,20,1,8,v=>v==0?'止めない':v+'秒')}
+        ${rowRange('吸う','bIn',3,20,1,8,v=>v+'秒')}
+      </div>
+      ${rowToggle('時計のカチカチ音','bTick',true)}
+      <div class="hint">吐く → 止める → 吸う の順にくり返します。10-10-10 なら、10秒で吐いて、10秒止めて、10秒で吸います。</div>
+      <div class="hint">はじまりに「吐きます・止めます・吸います」と声で知らせ、最後の3秒は「さん・に・いち」と数えます。時間が来ても、いまの1呼吸を終えてから終わります。</div>
+      <div class="hint">苦しくなったら無理をせず、ふつうの呼吸に戻してください。</div>
+    </div>`;
+  }
   if(t==='hands'){
     box.innerHTML=`<div class="card pad">
       ${rowSeg('ポーズ','hSetSel',[{v:'num',l:'数字だけ'},{v:'all',l:'いろんなポーズも'}],'num',v=>{
@@ -1016,6 +1069,11 @@ $('customStart').onclick=()=>{
     dig:+$('nDig').value, t:+$('nT').value, rev:$('nRev').classList.contains('on'),
     total:+segVal('nQ')
   });
+  if(curTrain==='breath'){
+    const pt=segVal('bPat');
+    const c = pt==='c' ? {out:+$('bOut').value, hold:+$('bHold').value, in:+$('bIn').value} : {out:+pt, hold:+pt, in:+pt};
+    runBreath({min:+$('bMin').value, ...c, tick:$('bTick').classList.contains('on')});
+  }
   if(curTrain==='hands') runHands({
     set:segVal('hSetSel'), show:segVal('hShow'), spd:segVal('hSpd'), dur:+$('hDur').value, sets:+segVal('hSets'),
     names:$('hNames').classList.contains('on'), beep:$('hBeep').classList.contains('on')
@@ -2055,10 +2113,146 @@ function buildHandsProgram(){
 }
 
 /* ============================================================
+   BREATH engine — 吐く → 止める → 吸う をくり返す呼吸タイマー
+   ============================================================ */
+const BREATH_STEPS=[
+  {k:'out', n:'吐く',   say:'吐きます'},
+  {k:'hold',n:'止める', say:'止めます'},
+  {k:'in',  n:'吸う',   say:'吸います'}
+];
+const breathPat=c=>`${c.out}-${c.hold}-${c.in}`;
+// 時計の針のような「カチ」（ノイズを細い帯域に絞った短い音）
+let NOISE=null;
+function clockTick(t,alt){
+  if(!AU.ctx||!AU.out) return;
+  const c=AU.ctx;
+  if(!NOISE){ NOISE=c.createBuffer(1,Math.round(c.sampleRate*0.05),c.sampleRate); const d=NOISE.getChannelData(0); for(let i=0;i<d.length;i++) d[i]=Math.random()*2-1; }
+  const s=c.createBufferSource(), f=c.createBiquadFilter(), g=c.createGain();
+  s.buffer=NOISE; f.type='bandpass'; f.frequency.value=alt?2600:3400; f.Q.value=6;
+  g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(0.9,t+0.002); g.gain.exponentialRampToValueAtTime(0.0001,t+0.035);
+  s.connect(f); f.connect(g); g.connect(AU.out); s.start(t); s.stop(t+0.05);
+}
+
+let B=null;
+function stopBreath(){
+  if(!B) return;
+  B.timers.forEach(clearTimeout); clearInterval(B.clock);
+  audioCut(false); sayStop(); wakeOff();
+  B=null;
+}
+function bLater(fn,ms){
+  const b=B; const id=setTimeout(()=>{ if(B===b && !b.over) fn(); },Math.max(0,ms));
+  b.timers.push(id); if(b.timers.length>300) b.timers.splice(0,150);
+}
+const bAt=(t,fn)=>bLater(fn,(t-now())*1000);
+const fmtClock=s=>{ s=Math.max(0,Math.ceil(s)); return `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`; };
+
+function runBreath(cfg){
+  stopAll();
+  const steps=BREATH_STEPS.map(s=>({...s,d:cfg[s.k]})).filter(s=>s.d>0);
+  B={cfg, steps, timers:[], clock:null, cycles:0, t0:0, total:cfg.min*60, over:false, started:false};
+  $('bLeft').textContent=fmtClock(B.total);
+  $('bPatLbl').textContent=breathPat(cfg);
+  $('bCycles').textContent='0';
+  $('bPhase').textContent=''; $('bNum').textContent=''; $('bNext').textContent='';
+  const bub=$('bBub'); bub.style.transition='none'; bub.style.transform='scale(1)'; bub.className='bub';
+  $('bStop').style.display='none';
+  show('playBreath','呼吸調整',`${breathPat(cfg)} ・ ${cfg.min}分`);
+  const rows=steps.map(s=>`<div class="prep-li"><span>${s.n}</span><span class="act">${s.d}秒</span></div>`).join('');
+  veilShow($('bVeil'),`<div class="prep">
+      <div class="prep-k">ルール</div>
+      <div class="prep-t">${breathPat(cfg)} の呼吸を ${cfg.min}分</div>
+      <div class="prep-s">はじまりに「吐きます・止めます・吸います」と声で知らせます。あいだは${cfg.tick?'時計のような音、':''}最後の3秒は「さん・に・いち」と数えます。</div>
+      <div class="prep-list">${rows}</div>
+      <div class="prep-s">苦しくなったら無理をせず、ふつうの呼吸に戻してください。</div>
+      <button class="btn prep-b" id="bGo">はじめる</button>
+    </div>`);
+  $('bGo').onclick=()=>{
+    if(!B) return;
+    audioOn(); say('はじめます',true); wakeOn();      // unlock sound & voice inside the tap
+    let n=3;
+    veilShow($('bVeil'),`<div class="lab">楽な姿勢で</div><div class="big tnum" id="bCd">${n}</div><div class="lab">最初は「吐く」から</div>`);
+    const step=()=>{
+      if(n<=0){ veilHide($('bVeil')); bStart(); return; }
+      const e=$('bCd'); if(e) e.textContent=n; SND.count(now()+0.01); n--;
+      bLater(step,1000);
+    };
+    bLater(step,900);
+  };
+}
+function bStart(){
+  const T=now()+0.15;
+  B.t0=T; B.started=true;
+  $('bStop').style.display='block';
+  B.clock=setInterval(()=>{
+    if(!B||B.over) return;
+    const left=B.total-(now()-B.t0);
+    $('bLeft').textContent=fmtClock(left);
+    if(left<=0) $('bNext').textContent='最後の1呼吸（終わったら終了）';
+  },250);
+  bStep(0,T);
+}
+function bStep(i,T){
+  const st=B.steps[i], D=st.d, cfg=B.cfg;
+  const cntFrom=Math.max(1,D-3);                      // 残り3秒は声で数える
+  for(let k=1;k<D;k++){
+    if(k<cntFrom){ if(cfg.tick) clockTick(T+k,k%2); }
+    else if(!SAY.ok) SND.tick(T+k);                   // 声が出ない端末は音で代わりに
+  }
+  bAt(T,()=>{
+    say(st.say,true);
+    $('bPhase').textContent=st.n; $('bNum').textContent=D;
+    const bub=$('bBub');
+    bub.className='bub '+st.k;
+    bub.style.transition=`transform ${D}s linear`;
+    if(st.k==='out') bub.style.transform='scale(.52)';
+    else if(st.k==='in') bub.style.transform='scale(1)';
+    const nx=B.steps[(i+1)%B.steps.length];
+    if(B.total-(now()-B.t0)>0) $('bNext').textContent=`次：${nx.n}（${nx.d}秒）`;
+  });
+  for(let k=1;k<D;k++){
+    const rem=D-k;
+    bAt(T+k,()=>{
+      $('bNum').textContent=rem;
+      if(k>=cntFrom) say(KANA_NUM[rem]||String(rem),true);
+    });
+  }
+  const Tn=T+D;
+  bAt(Tn-0.3,()=>{
+    let ni=i+1;
+    if(ni>=B.steps.length){
+      ni=0; B.cycles++; $('bCycles').textContent=B.cycles;
+      if(Tn-B.t0>=B.total-0.5) return bEnd(Tn,false);   // 時間が来たら、1呼吸を終えてから終了
+    }
+    bStep(ni,Tn);
+  });
+}
+function bEnd(T,early){
+  if(early){ audioCut(true); T=now()+0.02; }
+  const secs=Math.max(0,T-B.t0);
+  SND.end(T);
+  bAt(T,()=>{
+    B.over=true;
+    say('おわりです。ふつうの呼吸に戻しましょう',true);
+    $('bPhase').textContent='おわり'; $('bNum').textContent='';
+    const bub=$('bBub'); bub.style.transition='transform 1.2s ease'; bub.style.transform='scale(.8)'; bub.className='bub';
+    $('bNext').textContent=''; $('bStop').style.display='none';
+    const b=B;
+    setTimeout(()=>{ if(B===b) bDone(secs); },2600);
+  });
+}
+$('bStop').onclick=()=>{ if(B && B.started && !B.over) bEnd(0,true); };
+function bDone(secs){
+  const c=B.cfg, n=B.cycles; stopBreath();
+  finish({ type:'breath', cfg:c, title:'完了', note:'おつかれさまでした',
+    stats:[['呼吸した時間',fmtSecs(secs)],['呼吸',n+'回'],['リズム',breathPat(c)],['設定',c.min+'分']] });
+}
+
+/* ============================================================
    Results
    ============================================================ */
 let last=null;
-const TYPE_NAME={arrow:'方向トレーニング',num:'数字記憶',stroop:'ストループ',voice:'ストループ（音声）',grid:'ストループ 一覧',move:'リズム運動',hands:'左右の手まね'};
+const TYPE_NAME={arrow:'方向トレーニング',num:'数字記憶',stroop:'ストループ',voice:'ストループ（音声）',grid:'ストループ 一覧',move:'リズム運動',hands:'左右の手まね',breath:'呼吸調整'};
 function finish(r){
   last=r;
   if(r.celebrate){
@@ -2100,6 +2294,7 @@ function rerun(type,cfg){
   else if(type==='grid') runGrid(cfg);
   else if(type==='move') runMove(cfg);
   else if(type==='hands') runHands(cfg);
+  else if(type==='breath') runBreath(cfg);
   else runVoice(cfg);
 }
 
