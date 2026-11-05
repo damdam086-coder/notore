@@ -31,7 +31,7 @@
   --font:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Helvetica Neue",Arial,sans-serif;
 }
 @media (prefers-color-scheme: dark){
-  :root{
+  :root:not([data-theme="light"]){
     --bg:#0e1014;
     --surface:#171a20;
     --surface-2:#1e222a;
@@ -48,6 +48,23 @@
     --lock:#4a5261;
     --shadow:0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.25);
   }
+}
+:root[data-theme="dark"]{
+    --bg:#0e1014;
+    --surface:#171a20;
+    --surface-2:#1e222a;
+    --text:#e9edf3;
+    --text-2:#a3abb9;
+    --text-3:#78808e;
+    --line:#252a33;
+    --line-2:#333a45;
+    --accent:#5b8cff;
+    --accent-soft:rgba(91,140,255,.14);
+    --ok:#35c17c;
+    --ng:#ff6b6b;
+    --gold:#e8b93f;
+    --lock:#4a5261;
+    --shadow:0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.25);
 }
 
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -84,6 +101,9 @@ button{font-family:inherit;color:inherit}
 .iconbtn:active{background:var(--surface-2)}
 .iconbtn svg{width:22px;height:22px}
 .spacer{flex:1}
+.setbtn{display:flex;align-items:center;gap:6px;height:38px;padding:0 14px;border-radius:999px;border:1px solid var(--line-2);background:var(--surface);color:var(--text);font-size:15px;font-weight:650;cursor:pointer}
+.setbtn svg{width:20px;height:20px}
+.setbtn:active{background:var(--surface-2)}
 
 .screen{display:none; flex:1; flex-direction:column; min-height:0}
 .screen.on{display:flex; animation:in .22s cubic-bezier(.2,.7,.3,1)}
@@ -593,12 +613,18 @@ body.proj .hud{font-size:15px}
       <div class="sub" id="sub">脳のトレーニング</div>
     </div>
     <div class="spacer"></div>
+    <button class="setbtn" id="setBtn" aria-label="設定"></button>
   </div>
 
   <!-- ============ HOME ============ -->
   <section class="screen on" id="home">
     <div class="scroll stack" id="homeList"></div>
     <div class="ver" id="appVer"></div>
+  </section>
+
+  <!-- ============ APP SETTINGS ============ -->
+  <section class="screen" id="settings">
+    <div class="scroll stack" id="setList"></div>
   </section>
 
   <!-- ============ TRAINING SETTINGS ============ -->
@@ -885,6 +911,7 @@ const ICON={
   color : svg('<circle cx="9.25" cy="12" r="6.25"/><circle cx="14.75" cy="12" r="6.25"/>'),
   chev  : svg('<path d="M9 5l7 7-7 7"/>'),
   back  : svg('<path d="M15 5l-7 7 7 7"/>'),
+  gear  : svg('<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>'),
   check : svg('<path d="M20 6.5L9.5 17 4 11.5"/>'),
   cross : svg('<path d="M6 6l12 12M18 6L6 18"/>'),
   mic   : svg('<rect x="9" y="2.75" width="6" height="11" rx="3"/><path d="M4.75 11.5a7.25 7.25 0 0 0 14.5 0"/><path d="M12 18.75V21.5"/>'),
@@ -959,6 +986,7 @@ let curTrain=null;
 function show(id,title,sub){
   scr.forEach(s=>s.classList.toggle('on',s.id===id));
   $('back').style.display = id==='home'?'none':'grid';
+  $('setBtn').style.display = id==='home'?'flex':'none';
   if(title!==undefined) $('ttl').textContent=title;
   if(sub!==undefined) $('sub').textContent=sub;
 }
@@ -969,6 +997,41 @@ function stopAll(){ stopArrow(); stopNum(); stopStroop(); stopVoice(); stopGrid(
 /* ============================================================
    Home
    ============================================================ */
+function openSettings(){
+  stopAll(); curTrain=null;
+  const box=$('setList');
+  const segH=(id,opts,cur)=>`<div class="seg" id="${id}">${opts.map(o=>`<button data-v="${o.v}" class="${o.v===cur?'on':''}">${o.l}</button>`).join('')}</div>`;
+  const vol=Object.keys(VOL_STEPS).map(k=>({v:k,l:VOL_STEPS[k].n}));
+  box.innerHTML=`
+    <div class="card pad vsel">
+      <div class="seclbl" style="margin:0 0 var(--s2) 2px">声（押すと試しに鳴ります）</div>
+      <div class="seg vseg" id="vSel"></div>
+      <div class="hint" style="margin-top:8px">呼吸調整・リズム運動・丸タッチ・リズムステップの声が、ぜんぶこの声になります。</div>
+    </div>
+    <div class="card pad">
+      <div class="row"><span class="lbl">声の大きさ</span>${segH('sVolVoice',vol,setPref('vol-voice','mid'))}</div>
+      <div class="row"><span class="lbl">効果音の大きさ</span>${segH('sVolSfx',vol,setPref('vol-sfx','mid'))}</div>
+      <div class="hint" style="margin-top:4px">効果音＝メトロノーム・カチカチ・ピッ・合図の音。押すと試しに鳴ります。</div>
+    </div>
+    <div class="card pad">
+      <div class="row"><span class="lbl">画面の明るさ</span>${segH('sTheme',[{v:'auto',l:'端末に合わせる'},{v:'light',l:'明るい'},{v:'dark',l:'暗い'}],setPref('theme','auto'))}</div>
+    </div>
+    <div class="card pad">
+      <div class="row"><span class="lbl">プロジェクターに映す</span><button class="toggle${projPref()?' on':''}" id="projToggle"></button></div>
+      <div class="hint" style="margin-top:4px">黒い背景で大きく表示します（Mac では全画面に）。壁や床に映すときにオンにします。「丸タッチ」はいつも黒い全画面で映ります。</div>
+    </div>`;
+  const pickSeg=(id,fn)=>$(id).querySelectorAll('button').forEach(b=>b.onclick=()=>{
+    $(id).querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b)); fn(b.dataset.v);
+  });
+  pickSeg('sVolVoice',v=>{ setSave('vol-voice',v); audioOn(); say('はじめます',true); });
+  pickSeg('sVolSfx',v=>{ setSave('vol-sfx',v); audioOn(); const t=now()+0.03; SND.accent(t); SND.click(t+0.45); SND.click(t+0.9); });
+  pickSeg('sTheme',v=>{ setSave('theme',v); themeApply(v); });
+  $('projToggle').onclick=()=>projSet(!document.body.classList.contains('proj'),true);
+  voiceRowRender(); voxManifest();
+  show('settings','設定','声・音の大きさ・画面');
+}
+$('setBtn').innerHTML=ICON.gear+'<span>設定</span>';
+$('setBtn').onclick=openSettings;
 function goHome(){
   const box=$('homeList'); box.innerHTML='';
   Object.keys(TRAININGS).forEach(t=>{
@@ -981,11 +1044,6 @@ function goHome(){
     b.onclick=()=>openHub(t);
     box.appendChild(b);
   });
-  const pj=document.createElement('div'); pj.className='card pad projcard';
-  pj.innerHTML=`<div class="row"><span class="lbl">プロジェクターに映す</span><button class="toggle${projPref()?' on':''}" id="projToggle"></button></div>
-    <div class="hint" style="margin-top:4px">黒い背景で大きく表示します（Mac では全画面に）。壁や床に映すときにオンにします。「丸タッチ」はいつも黒い全画面で映ります。</div>`;
-  box.appendChild(pj);
-  $('projToggle').onclick=()=>projSet(!document.body.classList.contains('proj'),true);
   show('home','NoTore','脳のトレーニング');
   curTrain=null;
 }
@@ -1010,7 +1068,6 @@ function openHub(t){
   renderCustom(t);
   $('quickDesc').textContent=QUICK_DESC[t];
   if(t==='card') flashKindUI(flashKindPref());
-  if(VOICE_TRAININGS.includes(t)){ $('hubTop').innerHTML=voiceRowHTML(); voiceRowRender(); voxManifest(); }
   show('hub',T.name,T.desc);
 }
 $('quickStart').onclick=()=>{ if(curTrain) startAuto(curTrain); };
@@ -2181,7 +2238,11 @@ function audioOn(){
   try{
     if(!AU.ctx){ const C=window.AudioContext||window.webkitAudioContext; if(!C) return null; AU.ctx=new C(); }
     if(AU.ctx.state!=='running') AU.ctx.resume();
-    if(!AU.out){ AU.out=AU.ctx.createGain(); AU.out.connect(AU.ctx.destination); }
+    if(!AU.master){                                   // 大きめにしても音が割れないように軽く抑える
+      const k=AU.ctx.createDynamicsCompressor(); k.threshold.value=-8; k.knee.value=6; k.ratio.value=12; k.attack.value=0.003; k.release.value=0.15;
+      k.connect(AU.ctx.destination); AU.master=k;
+    }
+    if(!AU.out){ AU.out=AU.ctx.createGain(); AU.out.connect(AU.master); }
     voxDecode();
     // iOS: a silent blip inside the tap unlocks output
     const b=AU.ctx.createBuffer(1,1,22050), s=AU.ctx.createBufferSource(); s.buffer=b; s.connect(AU.out); s.start(0);
@@ -2191,15 +2252,23 @@ function audioOn(){
 // drop everything already queued (used when stopping / skipping)
 function audioCut(keep){
   if(AU.out){ try{ AU.out.disconnect(); }catch(e){} AU.out=null; }
-  if(keep && AU.ctx){ AU.out=AU.ctx.createGain(); AU.out.connect(AU.ctx.destination); }
+  if(keep && AU.ctx){ AU.out=AU.ctx.createGain(); AU.out.connect(AU.master||AU.ctx.destination); }
 }
 const now=()=>AU.ctx?AU.ctx.currentTime:0;
+/* ---- 全体の設定（ホームの「設定」から）：声・声の大きさ・効果音の大きさ・画面の明るさ・プロジェクター ---- */
+const VOL_STEPS={low:{n:'小さめ',g:0.5}, mid:{n:'ふつう',g:1}, high:{n:'大きめ',g:1.7}};
+function setPref(k,d){ try{ const v=localStorage.getItem('notore-'+k); return v==null?d:v; }catch(e){ return d; } }
+function setSave(k,v){ try{ localStorage.setItem('notore-'+k,v); }catch(e){} }
+const voiceGain=()=>(VOL_STEPS[setPref('vol-voice','mid')]||VOL_STEPS.mid).g;
+const sfxGain =()=>(VOL_STEPS[setPref('vol-sfx','mid')]||VOL_STEPS.mid).g;
+function themeApply(v){ v=v||setPref('theme','auto'); if(v==='auto') document.documentElement.removeAttribute('data-theme'); else document.documentElement.setAttribute('data-theme',v); }
+themeApply();
 function tone(t,f,dur,vol,type){
   if(!AU.ctx||!AU.out) return;
   const c=AU.ctx, o=c.createOscillator(), g=c.createGain();
   o.type=type||'sine'; o.frequency.setValueAtTime(f,t);
   g.gain.setValueAtTime(0.0001,t);
-  g.gain.exponentialRampToValueAtTime(vol,t+0.004);
+  g.gain.exponentialRampToValueAtTime(vol*sfxGain(),t+0.004);
   g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
   o.connect(g); g.connect(AU.out); o.start(t); o.stop(t+dur+0.03);
 }
@@ -2260,15 +2329,15 @@ function voiceSelect(id){
 }
 function voiceRowRender(){
   const el=$('vSel'); if(!el) return;
+  const eff=voiceReady(VOX.cur)?VOX.cur:'kokoro';     // 選んだ声がまだ準備中なら、今の声で話している
   el.innerHTML=VOICE_SETS.map(v=>{
     const ok=voiceReady(v.id), m=VOX.man&&VOX.man.voices&&VOX.man.voices[v.id];
     const sub=ok?(v.g||'Kokoro'):(m&&m.count?`準備中 ${m.count}/${m.total}`:'準備中');
-    return `<button data-v="${v.id}" class="${v.id===VOX.cur?'on':''}"${ok?'':' disabled'}>${v.n}<small>${sub}</small></button>`;
+    return `<button data-v="${v.id}" class="${v.id===eff?'on':''}"${ok?'':' disabled'}>${v.n}<small>${sub}</small></button>`;
   }).join('');
   el.querySelectorAll('button').forEach(b=>b.onclick=()=>voiceSelect(b.dataset.v));
 }
-const VOICE_TRAININGS=['breath','move','spot','step'];
-function voiceRowHTML(){ return `<div class="card pad vsel"><div class="seclbl" style="margin:0 0 var(--s2) 2px">声（押すと試しに鳴ります）</div><div class="seg vseg" id="vSel"></div></div>`; }
+
 // 音を出す前（タップ前）でも読み込めるよう、音を出さない OfflineAudioContext で変換しておく
 let VOX_DEC=null;
 function voxDecoder(){
@@ -2297,7 +2366,7 @@ function voxSay(text,cut){
   let t=AU.ctx.currentTime+0.01;
   bufs.forEach(b=>{
     const s=AU.ctx.createBufferSource(), g=AU.ctx.createGain();
-    s.buffer=b; g.gain.value=1; s.connect(g); g.connect(AU.out); s.start(t);
+    s.buffer=b; g.gain.value=voiceGain(); s.connect(g); g.connect(AU.out); s.start(t);
     VOX.src.push(s); if(VOX.src.length>12) VOX.src.shift();
     t+=b.duration+0.12;
   });
@@ -2314,7 +2383,7 @@ function say(text,cut){
   if(!SAY.ok) return 0;
   try{
     if(cut) speechSynthesis.cancel();
-    const u=new SpeechSynthesisUtterance(text); u.lang='ja-JP'; if(SAY.voice) u.voice=SAY.voice; u.rate=1.1;
+    const u=new SpeechSynthesisUtterance(text); u.lang='ja-JP'; if(SAY.voice) u.voice=SAY.voice; u.rate=1.1; u.volume=Math.min(1,voiceGain());
     speechSynthesis.speak(u);
   }catch(e){}
   return text.length*0.14;                         // 読み上げ機能のときはおおよその長さ
@@ -2802,7 +2871,7 @@ function clockTick(t,alt){
   if(!NOISE){ NOISE=c.createBuffer(1,Math.round(c.sampleRate*0.05),c.sampleRate); const d=NOISE.getChannelData(0); for(let i=0;i<d.length;i++) d[i]=Math.random()*2-1; }
   const s=c.createBufferSource(), f=c.createBiquadFilter(), g=c.createGain();
   s.buffer=NOISE; f.type='bandpass'; f.frequency.value=alt?2600:3400; f.Q.value=6;
-  g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(0.9,t+0.002); g.gain.exponentialRampToValueAtTime(0.0001,t+0.035);
+  g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(0.9*sfxGain(),t+0.002); g.gain.exponentialRampToValueAtTime(0.0001,t+0.035);
   s.connect(f); f.connect(g); g.connect(AU.out); s.start(t); s.stop(t+0.05);
 }
 
@@ -3995,7 +4064,7 @@ goHome();
    Version check — 古い保存済みの画面が出ていたら、新しい版に切り替える
    （GitHub Pages は更新後しばらく古い版を返すことがあるため）
    ============================================================ */
-const APP_VER='2026-11-06 01:40';   // 更新のたびにこの日時を書き換える
+const APP_VER='2026-11-06 02:20';   // 更新のたびにこの日時を書き換える
 $('appVer').textContent='更新 '+APP_VER;
 (function checkVer(){
   if(location.protocol==='file:') return;
