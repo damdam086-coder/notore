@@ -970,7 +970,7 @@ const MEM_AFTER_OPTS=[{v:'square',l:'白い四角あり'},{v:'blank',l:'枠だ�
 function memAfterPref(){ try{ return localStorage.getItem('notore-mem-after')==='blank'?'blank':'square'; }catch(e){ return 'square'; } }
 function memAfterSet(v){
   try{ localStorage.setItem('notore-mem-after',v); }catch(e){}
-  ['wAfterQ','wAfter'].forEach(n=>{
+  ['wAfterQ'].forEach(n=>{
     cfgUI[n]=v; const c=$('sg_'+n);
     if(c) c.querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));
   });
@@ -1054,10 +1054,10 @@ function renderCustom(t){
     box.innerHTML=`<div class="card pad">
       ${rowRange('数字の数','wCount',3,12,1,6,v=>'1〜'+v)}
       ${rowSeg('マス目','wGridSel',[{v:'s',l:'小 4×5'},{v:'m',l:'中 5×7'},{v:'l',l:'大 6×9'}],'m')}
-      ${rowSeg('2回目の表示','wAfter',MEM_AFTER_OPTS,memAfterPref(),memAfterSet)}
       ${rowSeg('問題数','wQ',[{v:'5',l:'5問'},{v:'10',l:'10問'},{v:'20',l:'20問'}],'10')}
       <div class="hint">1回目は、見えている数字を 1 から順に押して覚えます。全部押すと数字が隠れ、2回目は覚えた場所を 1 から順に押します。</div>
       <div class="hint" id="wHint2"></div>
+      <div class="hint">「2回目の表示（白い四角あり／枠だけ）」は、上のおまかせのところで選んだものが、この設定にも使われます。</div>
       <div class="hint">ちがう場所を押すと、その問題は終わりです。正しい場所が表示されます。</div>
     </div>`;
   }
@@ -1147,7 +1147,7 @@ $('customStart').onclick=()=>{
     total:+segVal('nQ')
   });
   if(curTrain==='mem') runMem({
-    count:+$('wCount').value, grid:segVal('wGridSel'), after:segVal('wAfter'), total:+segVal('wQ')
+    count:+$('wCount').value, grid:segVal('wGridSel'), after:segVal('wAfterQ')||memAfterPref(), total:+segVal('wQ')
   });
   if(curTrain==='breath'){
     const pt=segVal('bPat');
@@ -2593,7 +2593,7 @@ goHome();
    Version check — 古い保存済みの画面が出ていたら、新しい版に切り替える
    （GitHub Pages は更新後しばらく古い版を返すことがあるため）
    ============================================================ */
-const APP_VER='2026-11-05 10:15';   // 更新のたびにこの日時を書き換える
+const APP_VER='2026-11-05 10:50';   // 更新のたびにこの日時を書き換える
 $('appVer').textContent='更新 '+APP_VER;
 (function checkVer(){
   if(location.protocol==='file:') return;
