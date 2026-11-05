@@ -914,7 +914,7 @@ const QUICK_DESC={
   mem   :'1回目は見ながら 1 から順に押し、2回目は場所を思い出して 1 から順に押します（白い四角を出すか、枠だけにするかを下で選べます）。4個からスタートし、正解で1個増え、まちがえで1個減ります（3〜10個）。全10問。',
   breath:'8-8-8（8秒で吐く・8秒止める・8秒で吸う）を5分。はじまりの声と「いち・に・さん…はち」の数に合わせるだけです。1分ごとに残り時間をお知らせします。',
   hands :'まずは数字（グー〜5）だけ、ゆっくり（3〜5秒）から。数字のテンポを上げてから、キツネやグッドなどのポーズも混ざり、最後は1.5〜3秒で切り替わります。1ステージ30秒×4本。',
-  move  :'メトロノーム（4拍で1周・周の変わり目でテンポが変わる）と、秒数（5〜20秒がランダム）を交互に全6ラウンド。動きも毎回ランダム。同じテンポは1〜3周続いてから変わり、最後は1周の拍数もランダムになります。'
+  move  :'メトロノーム（4拍で1周・周の変わり目でテンポが変わる）と、秒数（4〜12秒のランダムを3セット連続）を交互に全6ラウンド。動きも毎回ランダム。同じテンポは1〜3周続いてから変わり、最後は1周の拍数もランダムになります。'
 };
 function openHub(t){
   curTrain=t; const T=TRAININGS[t];
@@ -1330,6 +1330,8 @@ function renderCustom(t){
           <label class="numcell"><span>いちばん長く</span><input class="numbox" id="mSecMax" type="number" inputmode="numeric" min="1" max="30" value="${moveSecPref().max}"></label>
           <span class="lbl" style="opacity:.6">秒</span>
         </div>
+        ${rowSeg('連続するセット数','mSecSets',[1,3,5,8,10,15].map(v=>({v,l:String(v)})),String(moveSecPref().sets),v=>moveSecSave({sets:+v}))}
+        <div class="hint" style="margin-top:0;padding-bottom:var(--s2)">1ラウンドの中で、このセット数を休みなしで続けます。セットごとに秒数が変わり、次の秒数を声で知らせます。休みはラウンドが終わってから。</div>
         ${rowSeg('数え方','mCount',[{v:'beep',l:'ピッという音'},{v:'voice',l:'声で数える'}],'beep')}
       </div>
       ${rowSeg('ラウンド数','mRounds',[3,5,8,10].map(v=>({v,l:String(v)})),'5')}
@@ -1391,7 +1393,7 @@ $('customStart').onclick=()=>{
     range:segVal('mRange'), ...(()=>{ const w=moveWideRead(); return {bpmMin:w.min,bpmMax:w.max}; })(), gap:segVal('mGap'), dur:+$('mDur').value, flip:$('mFlip').classList.contains('on'),
     beats:+$('mBeats').value, beatsRand:$('mBeatsRand').classList.contains('on'), snd:segVal('mSnd'),
     secs:cfgUI.mSecs.map(Number), count:segVal('mCount'),
-    secMode:segVal('mSecMode'), ...(()=>{ const w=moveSecRead(); return {secMin:w.min,secMax:w.max}; })()
+    secMode:segVal('mSecMode'), secSets:+segVal('mSecSets'), ...(()=>{ const w=moveSecRead(); return {secMin:w.min,secMax:w.max}; })()
   });
   if(curTrain==='stroop'){
     if(segVal('sForm')==='grid')
@@ -1969,7 +1971,7 @@ const TEMPO_RANGE={slow:[40,80], mid:[50,110], fast:[70,140], wide:[40,140]};   
 // 「ばらばら」の いちばん遅く／いちばん速く。最初は 20 と 150、変えたら覚えておく
 // 秒数ランダムの いちばん短く／いちばん長く（最初は 4 と 12）と、決め方を覚えておく
 function moveSecPref(){
-  const d={mode:'list',min:4,max:12};
+  const d={mode:'list',min:4,max:12,sets:10};
   try{ return {...d,...(JSON.parse(localStorage.getItem('notore-move-sec')||'{}'))}; }catch(e){ return d; }
 }
 function moveSecSave(o){ try{ localStorage.setItem('notore-move-sec',JSON.stringify({...moveSecPref(),...o})); }catch(e){} }
@@ -2120,8 +2122,10 @@ document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==
 /* ---- plan ---- */
 function moveAutoCfg(){
   return {auto:true, mode:'mix', moves:['ankle','shoulder','wrist','arm','hip'], rounds:6, rest:5,
-          range:'mid', gap:'mid', dur:30, flip:false, beats:4, beatsRand:false, secs:[5,10,15,20], count:'beep'};
+          range:'mid', gap:'mid', dur:30, flip:false, beats:4, beatsRand:false, secs:[5,10,15,20], count:'beep', secMode:'rand', secMin:4, secMax:12, secSets:3};
 }
+const SEC_GAP=1.8;   // 秒数のセットとセットのあいだ（次の秒数を声で言う時間）
+const secSetsTxt=r=>r.sets&&r.sets.length>1?`${r.sets.length}セット（${Math.min(...r.sets)}〜${Math.max(...r.sets)}秒）`:`${r.dur}秒`;
 function buildMovePlan(cfg){
   let pool=MOVES.filter(m=>cfg.moves.includes(m.k)); if(!pool.length) pool=MOVES.slice(0,2);
   const plan=[]; let lastM=null, lastS=null, metroN=0;
@@ -2131,13 +2135,17 @@ function buildMovePlan(cfg){
     if(mode==='mix') mode = cfg.auto ? (i%2?'sec':'metro') : (Math.random()<0.5?'metro':'sec');
     const r={mv,mode};
     if(mode==='sec'){
-      let s;
-      if(cfg.secMode==='rand'){                      // ランダム：いちばん短く〜いちばん長く のあいだで毎回ちがう秒数
-        const a=cfg.secMin||4, b=cfg.secMax||12;
-        do{ s=a+rnd(b-a+1); }while(b>a && s===lastS);
-      }else{ do{ s=cfg.secs[rnd(cfg.secs.length)]; }while(cfg.secs.length>1 && s===lastS); }
-      lastS=s;
-      r.dur=s;
+      // 1ラウンド＝休みなしで続く何セットか。セットごとに秒数が変わる
+      const nSets=Math.max(1,cfg.secSets||1); r.sets=[];
+      for(let j=0;j<nSets;j++){
+        let s;
+        if(cfg.secMode==='rand'){                    // ランダム：いちばん短く〜いちばん長く のあいだで毎回ちがう秒数
+          const a=cfg.secMin||4, b=cfg.secMax||12;
+          do{ s=a+rnd(b-a+1); }while(b>a && s===lastS);
+        }else{ do{ s=cfg.secs[rnd(cfg.secs.length)]; }while(cfg.secs.length>1 && s===lastS); }
+        lastS=s; r.sets.push(s);
+      }
+      r.dur=r.sets.reduce((a,b)=>a+b,0)+SEC_GAP*(nSets-1);
     }else{
       r.dur=cfg.dur; r.range=cfg.range; r.gap=cfg.gap||'mid'; r.beats=cfg.beats||4; r.beatsRand=!!cfg.beatsRand;
       if(cfg.auto){ r.range=metroN===0?'mid':'wide'; r.gap='mid'; r.beatsRand=metroN>=2; }
@@ -2217,23 +2225,23 @@ function mIntro(){
   $('mModeLbl').textContent=r.mode==='sec'?'秒数':'メトロノーム';
   $('mEx').textContent=r.mv.n; $('mDesc').textContent=r.mv.d;
   $('mPulse').style.setProperty('--p',0);
-  $('mBig').textContent = r.mode==='sec'?r.dur:'—';
+  $('mBig').textContent = r.mode==='sec'?(r.sets?r.sets[0]:r.dur):'—';
   $('mUnit').textContent= r.mode==='sec'?'秒':'テンポ';
   M.dir=1;
   const dirEl=$('mDir');
   if(r.mode==='metro' && M.cfg.flip){ dirEl.className='mv-dir on'; dirEl.textContent='↻ 右回り'; }
   else { dirEl.className='mv-dir'; dirEl.textContent = r.mode==='sec'?'鳴っているあいだ回し続ける':'高い音から1周'; }
   $('mDots').innerHTML=''; $('mBeatTxt').className='mv-beat';
-  $('mBeatTxt').textContent = r.mode==='sec'?'':beatsLabel(r);
+  $('mBeatTxt').textContent = r.mode==='sec'?(r.sets&&r.sets.length>1?`セット 1/${r.sets.length}`:''):beatsLabel(r);
   const nx=M.plan[M.i+1];
   $('mNext').textContent = nx?`次：${nx.mv.n}`:'最後のラウンド';
   $('mSkip').style.display='none';
   veilShow($('mVeil'),`<div class="lab">ラウンド ${M.i+1} / ${N}</div>
     <div class="mv-intro">${r.mv.n}</div>
-    <div class="mv-mode">${r.mode==='sec'?`${r.dur}秒`:`${beatsLabel(r)} ・ ${r.dur}秒`}</div>
-    <div class="lab">${r.mode==='sec'?'鳴っているあいだ回し続けます':'1周のあいだは同じテンポ。周の変わり目でテンポが変わります'}</div>
+    <div class="mv-mode">${r.mode==='sec'?(r.sets&&r.sets.length>1?`${r.sets.length}セット連続 ・ 1セット目 ${r.sets[0]}秒`:`${r.dur}秒`):`${beatsLabel(r)} ・ ${r.dur}秒`}</div>
+    <div class="lab">${r.mode==='sec'?(r.sets&&r.sets.length>1?'休みなしで続けます。セットごとに秒数が変わり、次の秒数を声で知らせます':'鳴っているあいだ回し続けます'):'1周のあいだは同じテンポ。周の変わり目でテンポが変わります'}</div>
     <div class="big tnum" id="mCd" style="margin-top:8px;min-height:76px"></div>`);
-  say(r.mode==='sec'||r.beatsRand?`${r.mv.n}、${r.dur}秒`:`${r.mv.n}、${r.beats}拍で1周`,true);
+  say(r.mode==='sec'?`${r.mv.n}、${r.sets?r.sets[0]:r.dur}秒`:r.beatsRand?`${r.mv.n}、${r.dur}秒`:`${r.mv.n}、${r.beats}拍で1周`,true);
   [3,2,1].forEach((n,k)=>mLater(()=>{ const e=$('mCd'); if(e) e.textContent=n; SND.count(now()+0.01); },1600+k*1000));
   mLater(()=>{ veilHide($('mVeil')); mGo(r); },1600+3000);
 }
@@ -2307,24 +2315,33 @@ function mFlip(t){
   });
 }
 function mGoSec(r,t0){
-  const voice=M.cfg.count==='voice';
-  SND.go(t0);
-  $('mBig').textContent=0; $('mUnit').textContent=`/ ${r.dur}秒`;
-  for(let s=1;s<=r.dur;s++){
-    const t=t0+s;
-    if(s===r.dur) SND.end(t); else if(r.dur-s<=3) SND.tickHi(t); else SND.tick(t);
-    atAudio(t,()=>{
-      const p=$('mPulse'); $('mBig').textContent=s;
-      p.classList.remove('hit'); void p.offsetWidth; p.classList.add('hit');
-      if(voice) say(KANA_NUM[s]||String(s),true);
-    });
-  }
+  const voice=M.cfg.count==='voice', sets=r.sets||[r.dur], n=sets.length;
+  let t=t0;
+  sets.forEach((d,j)=>{
+    const ts=t;
+    SND.go(ts);
+    atAudio(ts,()=>{ $('mBig').textContent=0; $('mUnit').textContent=`/ ${d}秒`; if(n>1) $('mBeatTxt').textContent=`セット ${j+1}/${n}`; });
+    for(let s=1;s<=d;s++){
+      const tt=ts+s;
+      if(s===d) SND.end(tt); else if(d-s<=3) SND.tickHi(tt); else SND.tick(tt);
+      atAudio(tt,()=>{
+        const p=$('mPulse'); $('mBig').textContent=s;
+        p.classList.remove('hit'); void p.offsetWidth; p.classList.add('hit');
+        if(voice) say(numTxt(s),true);
+      });
+    }
+    if(j<n-1){                                       // 休みなしで次のセットへ。次の秒数を声で知らせる
+      const nd=sets[j+1], te=ts+d;
+      atAudio(te+0.55,()=>{ say(`${nd}秒`,true); $('mBig').textContent=nd; $('mUnit').textContent='秒'; $('mBeatTxt').textContent=`次はセット ${j+2}/${n}`; });
+      t=te+SEC_GAP;
+    }
+  });
 }
 function mEndRound(early){
   const r=M.r, full=Math.max(r.dur,M.tEnd-M.t0), done=early?Math.max(0,Math.min(full,now()-M.t0)):full;
   mPhase('after');
   M.active+=done;
-  M.log.push({exp:`${r.mv.n} ・ ${r.mode==='sec'?r.dur+'秒':'メトロノーム '+r.dur+'秒'}`, ok:!early, ans:early?fmtSecs(done)+'で終了':''});
+  M.log.push({exp:`${r.mv.n} ・ ${r.mode==='sec'?secSetsTxt(r):'メトロノーム '+r.dur+'秒'}`, ok:!early, ans:early?fmtSecs(done)+'で終了':''});
   if(early){ audioCut(true); SND.end(now()+0.02); }
   else if(r.mode==='metro') SND.end(now()+0.02);
   $('mClock').textContent=0; $('mPulse').style.setProperty('--p',1);
@@ -3408,7 +3425,7 @@ goHome();
    Version check — 古い保存済みの画面が出ていたら、新しい版に切り替える
    （GitHub Pages は更新後しばらく古い版を返すことがあるため）
    ============================================================ */
-const APP_VER='2026-11-05 20:00';   // 更新のたびにこの日時を書き換える
+const APP_VER='2026-11-05 20:30';   // 更新のたびにこの日時を書き換える
 $('appVer').textContent='更新 '+APP_VER;
 (function checkVer(){
   if(location.protocol==='file:') return;
