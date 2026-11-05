@@ -396,10 +396,10 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 .hbox{width:100%;display:grid;place-items:center}
 .hbox.pop{animation:pop .2s cubic-bezier(.2,.8,.3,1)}
 .hand{width:100%;max-width:210px;display:block}
-.hbox{max-width:210px;aspect-ratio:210/256}
+.hbox{max-width:280px;aspect-ratio:210/256}
 .hnum{font-size:min(34vw,170px);font-weight:760;line-height:1;color:var(--text);letter-spacing:-.02em}
 .hnum.word{font-size:clamp(24px,8vw,40px);letter-spacing:.02em;text-align:center}
-.hand-img{width:100%;max-width:210px;display:block}
+.hand-img{width:100%;max-width:280px;display:block}
 .hand-img.mir{transform:scaleX(-1)}
 .hand .hs{fill:none;stroke:#c98f6c;stroke-width:6;stroke-linejoin:round}
 .hand .hf{fill:#f6d3b5;fill-rule:evenodd}
@@ -2563,7 +2563,12 @@ const HAND_POSES={
 };
 // 外で作った絵（Codex など）に差し替えるときは「ポーズ記号: 画像の場所」を書く。
 // 右手の絵を用意すれば、左手は左右反転して使う。 例: g:'hands/g.png'
-const HAND_IMAGES={};
+// 2026-11-06：12ポーズとも Codex（ChatGPT の画像生成）で描いた右手の甲の絵に差し替え（img/hands/）
+const HAND_IMG_VER='1';
+const HAND_IMAGES=Object.fromEntries(Object.keys(HAND_POSES).map(k=>[k,`img/hands/${k}.png?v=${HAND_IMG_VER}`]));
+// 絵は手まねを始めたときに先に読んでおく（出た瞬間に白くならないように）
+let HAND_PRELOADED=false;
+function handPreload(){ if(HAND_PRELOADED) return; HAND_PRELOADED=true; Object.values(HAND_IMAGES).forEach(u=>{ const im=new Image(); im.src=u; }); }
 const FINGERS=[
   {cx:73, w:25,len:84,a:-9},   // 人差し指
   {cx:99, w:26,len:95,a:-2},   // 中指
@@ -2614,6 +2619,7 @@ function stopHands(){ if(H){ H.stops.forEach(f=>f&&f()); clearTimeout(H.next); c
 function runHands(cfg){
   stopAll();
   if(cfg.beep) audioOn();
+  handPreload();
   H={cfg, pool:handPool(cfg.set), set:1, count:0, L:null, R:null, stops:[]};
   $('hSetLbl').textContent='セット';
   $('hSet').textContent=`1/${cfg.sets}`;
@@ -3941,7 +3947,7 @@ goHome();
    Version check — 古い保存済みの画面が出ていたら、新しい版に切り替える
    （GitHub Pages は更新後しばらく古い版を返すことがあるため）
    ============================================================ */
-const APP_VER='2026-11-06 00:10';   // 更新のたびにこの日時を書き換える
+const APP_VER='2026-11-06 00:40';   // 更新のたびにこの日時を書き換える
 $('appVer').textContent='更新 '+APP_VER;
 (function checkVer(){
   if(location.protocol==='file:') return;
