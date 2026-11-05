@@ -819,7 +819,7 @@ function startAuto(t){
   stopAll(); stopProg();
   if(t==='num'){ runNum({auto:true, total:10, plan:buildNumPlan()}); return; }
   if(t==='move'){ runMove(moveAutoCfg()); return; }
-  if(t==='breath'){ runBreath({min:5,out:8,hold:8,in:8,tick:true}); return; }
+  if(t==='breath'){ runBreath({min:5,out:8,hold:8,in:8,count:'tick',snd:'clock'}); return; }
   PROG={type:t, stages:t==='arrow'?buildArrowProgram():t==='hands'?buildHandsProgram():buildStroopProgram(),
         i:0, count:0, secs:0, bkTick:null};
   progStage();
@@ -1004,7 +1004,14 @@ function renderCustom(t){
         ${rowRange('止める','bHold',0,20,1,8,v=>v==0?'止めない':v+'秒')}
         ${rowRange('吸う','bIn',3,20,1,8,v=>v+'秒')}
       </div>
-      ${rowToggle('時計のカチカチ音','bTick',true)}
+      ${rowSeg('あいだの数え方','bCount',[{v:'tick',l:'音だけ'},{v:'voice',l:'声で数える'},{v:'none',l:'なし'}],'tick',v=>{
+        $('bSndRow').style.display=v==='tick'?'flex':'none';
+        $('bCountHint').textContent = v==='tick' ? '最後の3秒の前は、1秒ごとに音が鳴ります。'
+          : v==='voice' ? '最後の3秒の前は「いち・に・さん…」と声で数えます。最後の3秒は「さん・に・いち」。'
+          : '最後の3秒の前は静かです。';
+      })}
+      <div class="row" id="bSndRow"><span class="lbl">音の種類</span>${seg('bSnd',[{v:'clock',l:'時計'},{v:'wood',l:'木の音'},{v:'beep',l:'電子音'},{v:'soft',l:'やさしい'},{v:'click',l:'クリック'}],'clock',beatPreview)}</div>
+      <div class="hint" id="bCountHint" style="margin-top:0;padding-bottom:var(--s2)">最後の3秒の前は、1秒ごとに音が鳴ります。</div>
       <div class="hint">吐く → 止める → 吸う の順にくり返します。10-10-10 なら、10秒で吐いて、10秒止めて、10秒で吸います。</div>
       <div class="hint">はじまりに「吐きます・止めます・吸います」と声で知らせ、最後の3秒は「さん・に・いち」と数えます。時間が来ても、いまの1呼吸を終えてから終わります。</div>
       <div class="hint">苦しくなったら無理をせず、ふつうの呼吸に戻してください。</div>
@@ -1037,6 +1044,7 @@ function renderCustom(t){
       ${rowSeg('やり方','mMode',[{v:'metro',l:'メトロノーム'},{v:'sec',l:'秒数'},{v:'mix',l:'まぜる'}],'metro',moveModeUI)}
       <div class="row"><span class="lbl">動き</span>${chips('mMoves',MOVES.map(m=>({v:m.k,l:m.n})),['ankle','shoulder','wrist','arm'])}</div>
       <div id="mMetroBox">
+        <div class="row"><span class="lbl">メトロノームの音</span>${seg('mSnd',[{v:'clock',l:'時計'},{v:'wood',l:'木の音'},{v:'beep',l:'電子音'},{v:'soft',l:'やさしい'},{v:'click',l:'クリック'}],'click',beatPreview)}</div>
         ${rowSeg('テンポの幅','mRange',[{v:'slow',l:'ゆっくり'},{v:'mid',l:'ふつう'},{v:'fast',l:'速め'},{v:'wide',l:'ばらばら'}],'mid',v=>{
           const r=TEMPO_RANGE[v]; $('mRangeHint').textContent=`テンポは 1分間に ${r[0]}〜${r[1]} 回 のあいだで変わります。`;
         })}
@@ -1072,7 +1080,7 @@ $('customStart').onclick=()=>{
   if(curTrain==='breath'){
     const pt=segVal('bPat');
     const c = pt==='c' ? {out:+$('bOut').value, hold:+$('bHold').value, in:+$('bIn').value} : {out:+pt, hold:+pt, in:+pt};
-    runBreath({min:+$('bMin').value, ...c, tick:$('bTick').classList.contains('on')});
+    runBreath({min:+$('bMin').value, ...c, count:segVal('bCount'), snd:segVal('bSnd')});
   }
   if(curTrain==='hands') runHands({
     set:segVal('hSetSel'), show:segVal('hShow'), spd:segVal('hSpd'), dur:+$('hDur').value, sets:+segVal('hSets'),
@@ -1081,7 +1089,7 @@ $('customStart').onclick=()=>{
   if(curTrain==='move') runMove({
     mode:segVal('mMode'), moves:cfgUI.mMoves.slice(), rounds:+segVal('mRounds'), rest:+segVal('mRest'),
     range:segVal('mRange'), gap:segVal('mGap'), dur:+$('mDur').value, flip:$('mFlip').classList.contains('on'),
-    beats:+$('mBeats').value, beatsRand:$('mBeatsRand').classList.contains('on'),
+    beats:+$('mBeats').value, beatsRand:$('mBeatsRand').classList.contains('on'), snd:segVal('mSnd'),
     secs:cfgUI.mSecs.map(Number), count:segVal('mCount')
   });
   if(curTrain==='stroop'){
@@ -1925,7 +1933,7 @@ function mGoMetro(r,t0){
         if(rotEnd>M.tEnd) M.tEnd=rotEnd;                   // 最後の周は最後まで回す
       }
       const idx=M.beatIdx, beats=M.beats, bpm=M.bpm, rotN=M.rotN;
-      (idx===0?SND.accent:SND.click)(bt);
+      beatSound(M.cfg.snd||'click',bt,idx%2===1,idx===0);
       atAudio(bt,()=>{
         const p=$('mPulse'), b=$('mBig'), dots=$('mDots');
         p.classList.remove('hit'); void p.offsetWidth; p.classList.add('hit');
@@ -2172,6 +2180,8 @@ const BREATH_STEPS=[
   {k:'in',  n:'吸う',   say:'吸います'}
 ];
 const breathPat=c=>`${c.out}-${c.hold}-${c.in}`;
+const breathCount=c=>c.count||(c.tick===false?'none':'tick');   // 古い設定（tick:true/false）も読む
+const breathCountTxt=c=>({tick:`${BEAT_KINDS[c.snd||'clock']}の音で1秒ずつ、`,voice:'「いち・に・さん…」と声で数え、',none:''})[breathCount(c)];
 // 時計の針のような「カチ」（ノイズを細い帯域に絞った短い音）
 let NOISE=null;
 function clockTick(t,alt){
@@ -2183,6 +2193,20 @@ function clockTick(t,alt){
   g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(0.9,t+0.002); g.gain.exponentialRampToValueAtTime(0.0001,t+0.035);
   s.connect(f); f.connect(g); g.connect(AU.out); s.start(t); s.stop(t+0.05);
 }
+
+// カウント／メトロノームの音の種類（設定で選ぶ）。accent=1周の頭など強い拍
+const BEAT_KINDS={clock:'時計',wood:'木の音',beep:'電子音',soft:'やさしい',click:'クリック'};
+function beatSound(kind,t,alt,accent){
+  switch(kind){
+    case 'clock': clockTick(t,alt&&!accent); if(accent) tone(t,2400,0.04,0.3,'triangle'); break;
+    case 'wood' : tone(t,accent?1250:880,0.07,0.55,'triangle'); tone(t,(accent?1250:880)*2.7,0.025,0.18); break;
+    case 'beep' : tone(t,accent?1500:1000,0.07,0.45); break;
+    case 'soft' : tone(t,accent?660:500,0.18,0.4); break;
+    default     : (accent?SND.accent:SND.click)(t);
+  }
+}
+// 設定で音を選んだときに、その場で試しに鳴らす
+function beatPreview(kind){ audioOn(); const t=now()+0.03; beatSound(kind,t,false,true); beatSound(kind,t+0.45,false,false); beatSound(kind,t+0.9,true,false); }
 
 let B=null;
 function stopBreath(){
@@ -2213,7 +2237,7 @@ function runBreath(cfg){
   veilShow($('bVeil'),`<div class="prep">
       <div class="prep-k">ルール</div>
       <div class="prep-t">${breathPat(cfg)} の呼吸を ${cfg.min}分</div>
-      <div class="prep-s">はじまりに「吐きます・止めます・吸います」と声で知らせます。あいだは${cfg.tick?'時計のような音、':''}最後の3秒は「さん・に・いち」と数えます。</div>
+      <div class="prep-s">はじまりに「吐きます・止めます・吸います」と声で知らせます。あいだは${breathCountTxt(cfg)}最後の3秒は「さん・に・いち」と数えます。</div>
       <div class="prep-list">${rows}</div>
       <div class="prep-s">苦しくなったら無理をせず、ふつうの呼吸に戻してください。</div>
       <button class="btn prep-b" id="bGo">はじめる</button>
@@ -2246,8 +2270,12 @@ function bStart(){
 function bStep(i,T){
   const st=B.steps[i], D=st.d, cfg=B.cfg;
   const cntFrom=Math.max(1,D-3);                      // 残り3秒は声で数える
+  const mode=breathCount(cfg);
   for(let k=1;k<D;k++){
-    if(k<cntFrom){ if(cfg.tick) clockTick(T+k,k%2); }
+    if(k<cntFrom){
+      if(mode==='tick') beatSound(cfg.snd||'clock',T+k,k%2,false);
+      else if(mode==='voice' && !canSpeak()) SND.tick(T+k);
+    }
     else if(!canSpeak()) SND.tick(T+k);               // 声が出ない端末は音で代わりに
   }
   bAt(T,()=>{
@@ -2265,7 +2293,11 @@ function bStep(i,T){
     const rem=D-k;
     bAt(T+k,()=>{
       $('bNum').textContent=rem;
-      if(k>=cntFrom) say(KANA_NUM[rem]||String(rem),true);
+      if(k>=cntFrom) say(KANA_NUM[rem]||String(rem),true);        // 残り3秒：さん・に・いち
+      else if(mode==='voice'){                                     // それまで：いち・に・さん…
+        if(k===3 && rem===4) beatSound(cfg.snd||'clock',now()+0.01,false,false);   // 「さん、さん」と続かないように
+        else say(KANA_NUM[k]||String(k),true);
+      }
     });
   }
   const Tn=T+D;
