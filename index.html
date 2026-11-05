@@ -2564,7 +2564,7 @@ const HAND_POSES={
 // 外で作った絵（Codex など）に差し替えるときは「ポーズ記号: 画像の場所」を書く。
 // 右手の絵を用意すれば、左手は左右反転して使う。 例: g:'hands/g.png'
 // 2026-11-06：12ポーズとも Codex（ChatGPT の画像生成）で描いた右手の甲の絵に差し替え（img/hands/）
-const HAND_IMG_VER='1';
+const HAND_IMG_VER='2';
 const HAND_IMAGES=Object.fromEntries(Object.keys(HAND_POSES).map(k=>[k,`img/hands/${k}.png?v=${HAND_IMG_VER}`]));
 // 絵は手まねを始めたときに先に読んでおく（出た瞬間に白くならないように）
 let HAND_PRELOADED=false;
@@ -3947,7 +3947,7 @@ goHome();
    Version check — 古い保存済みの画面が出ていたら、新しい版に切り替える
    （GitHub Pages は更新後しばらく古い版を返すことがあるため）
    ============================================================ */
-const APP_VER='2026-11-06 00:40';   // 更新のたびにこの日時を書き換える
+const APP_VER='2026-11-06 01:00';   // 更新のたびにこの日時を書き換える
 $('appVer').textContent='更新 '+APP_VER;
 (function checkVer(){
   if(location.protocol==='file:') return;
