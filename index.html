@@ -1229,7 +1229,9 @@ function renderCustom(t){
         ${rowToggle('暗算モード','fnMath',false,v=>flashMathUI(v))}
         <div id="fnMathBox" style="display:none">
           ${rowSeg('ルール','fnRule',Object.keys(MATH_RULES).map(k=>({v:k,l:MATH_RULES[k]})),'auto')}
+          ${rowSeg('無視する数字','fnIgnore',[{v:'yes',l:'あり'},{v:'no',l:'なし（全部計算）'}],'yes')}
           ${rowSeg('数字の数','fnQ',[5,10,15,20].map(v=>({v,l:v+'個'})),'10')}
+          <div class="hint">「無視する数字：なし」にすると、ルールの色（または偶数・奇数）以外の数字は<b>引く</b>になり、出てくる数字を全部使います（例：緑は足す、ほかの色は引く）。「足す色・引く色」は、その2色だけが出ます。</div>
           <div class="hint">ルールを決めておき、出てくる数字を頭の中で計算します。全部出たら答えを入れて答え合わせ。どの数字を足した・引いたかも見られます。「1色だけ」「足す色・引く色」は数字の色を2色以上、「2色だけ」は3色以上選んでください（足りないときは「ぜんぶ足す」になります）。</div>
         </div>
         <div class="row" id="fnChangeRow"><span class="lbl">変わるもの</span>${chips('fnChange',[{v:'num',l:'数字'},{v:'col',l:'色'}],['num','col'])}</div>
@@ -1356,7 +1358,7 @@ $('customStart').onclick=()=>{
   if(curTrain==='card') runCard({
     kind:segVal('fKind')||flashKindPref(), wallColors:cfgUI.fwColors.slice(), nrange:segVal('fnRange'),
     nchange:cfgUI.fnChange.slice(), ncolors:cfgUI.fnColors.slice(),
-    math:$('fnMath').classList.contains('on'), rule:segVal('fnRule'), mathQ:+segVal('fnQ'),
+    math:$('fnMath').classList.contains('on'), rule:segVal('fnRule'), mathQ:+segVal('fnQ'), ignore:segVal('fnIgnore')!=='no',
     timing:segVal('cTiming'), iv:+segVal('cIv'), rand:segVal('cRand'), change:cfgUI.cChange.slice(),
     num:$('cNum').classList.contains('on'), range:segVal('cRange'), colorMode:segVal('cColorMode'),
     colors:cfgUI.cColors.slice(), numCol:segVal('cNumCol'), dur:+$('cDur').value, beep:$('cBeep').classList.contains('on')
@@ -2884,7 +2886,7 @@ function runCard(cfg){
   $('cLeftBox').innerHTML = math ? `問 <b class="tnum" id="cLeft">0/${cfg.mathQ}</b>` : `残り <b class="tnum" id="cLeft">${cfg.dur}</b>s`;
   $('cTag').innerHTML = math ? C.math.tag : '';
   if(math){
-    show('playCard','フラッシュ', `暗算 ・ ${MATH_RULES[C.math.rule]} ・ ${cfg.mathQ}個`);
+    show('playCard','フラッシュ', `暗算 ・ ${mathRuleName(C.math)} ・ ${cfg.mathQ}個`);
     info.title='暗算のルール';
     info.sub=`<span style="font-size:16px;color:var(--text)">${C.math.html}</span><br>数字が${cfg.mathQ}個、${cardIvTxt(cfg)}に出ます。全部出たら答えを入れます。`;
     info.ex='';
@@ -2901,48 +2903,64 @@ const MATH_RULES={
   add_two:'2色だけ足す', add_sub:'足す色・引く色', even:'偶数だけ足す', odd:'奇数だけ足す'
 };
 const colN=k=>CARD_COLORS[k].n;
+// 「無視する数字：なし」のときのルール名
+const MATH_RULES_ALL={add_one:'1色は足す・ほかは引く',add_two:'2色は足す・ほかは引く',add_sub:'足す色・引く色（2色だけ）',even:'偶数は足す・奇数は引く',odd:'奇数は足す・偶数は引く'};
+const mathRuleName=m=>(!m.ign && MATH_RULES_ALL[m.rule]) || MATH_RULES[m.rule];
 const colB=k=>`<b style="color:${CARD_COLORS[k].c}">${CARD_COLORS[k].n}</b>`;
-function mathSign(rule,it,tg){
+// ign=false（無視しない）のときは、対象でない数字は「引く」になる
+function mathSign(rule,it,tg,ign){
+  const other = ign===false ? -1 : 0;
   switch(rule){
     case 'add_all': return 1;
     case 'sub_all': return -1;
-    case 'add_one': return it.col===tg[0]?1:0;
-    case 'add_two': return (it.col===tg[0]||it.col===tg[1])?1:0;
+    case 'add_one': return it.col===tg[0]?1:other;
+    case 'add_two': return (it.col===tg[0]||it.col===tg[1])?1:other;
     case 'add_sub': return it.col===tg[0]?1:it.col===tg[1]?-1:0;
-    case 'even': return it.n%2===0?1:0;
-    case 'odd': return it.n%2===1?1:0;
+    case 'even': return it.n%2===0?1:other;
+    case 'odd': return it.n%2===1?1:other;
   }
   return 0;
 }
 // 計算に使う数字が少なすぎ・多すぎにならないようにする
-function mathBalanced(rule,w,N){
+function mathBalanced(rule,w,N,ign){
   if(rule==='add_all'||rule==='sub_all') return true;
+  if(ign===false){ const p=w.filter(x=>x>0).length, m=w.filter(x=>x<0).length; return p>=Math.max(2,Math.round(N*.3)) && m>=Math.max(2,Math.round(N*.25)); }
   const cnt=w.filter(x=>x!==0).length;
   if(rule==='add_sub'){ const p=w.filter(x=>x>0).length, m=w.filter(x=>x<0).length; return p>=Math.max(2,Math.round(N*.2)) && m>=Math.max(1,Math.round(N*.15)) && cnt<=Math.round(N*.8); }
   return cnt>=Math.max(2,Math.round(N*.3)) && cnt<=Math.round(N*.7);
 }
 function mathBuild(cfg){
-  const pal=cfg.ncolors.slice(), N=cfg.mathQ, vals=numOnlyValues(cfg.nrange).map(Number);
+  const pal=cfg.ncolors.slice(), N=cfg.mathQ, vals=numOnlyValues(cfg.nrange).map(Number), ign=cfg.ignore!==false;
   const ok=r=> r==='add_one'||r==='add_sub' ? pal.length>=2 : r==='add_two' ? pal.length>=3 : true;
   let rule=cfg.rule;
   if(rule==='auto') rule=pick(Object.keys(MATH_RULES).filter(r=>r!=='auto'&&ok(r)));
   else if(!ok(rule)) rule='add_all';
   const tg=shuffle(pal);
+  const usePal = (!ign && rule==='add_sub') ? tg.slice(0,2) : pal;   // 無視しないなら、足す色と引く色だけ出す
   let seq,w,tries=0;
   do{
     seq=[]; let prev=null;
     const single=(rule==='add_all'||rule==='sub_all') ? pick(pal) : null;   // 1色だけのときは、ぜんぶ同じ色
     for(let i=0;i<N;i++){
-      let it; do{ it={n:pick(vals), col:single||pick(pal)}; }while(prev && it.n===prev.n && it.col===prev.col);
+      let it; do{ it={n:pick(vals), col:single||pick(usePal)}; }while(prev && it.n===prev.n && it.col===prev.col);
       seq.push(it); prev=it;
     }
-    w=seq.map(it=>mathSign(rule,it,tg)); tries++;
-  }while(tries<300 && !mathBalanced(rule,w,N));
+    w=seq.map(it=>mathSign(rule,it,tg,ign)); tries++;
+  }while(tries<300 && !mathBalanced(rule,w,N,ign));
   let start=0;
   if(rule==='sub_all'){ const sum=seq.reduce((a,it)=>a+it.n,0); start=Math.ceil((sum+1)/10)*10+10*rnd(2); }
-  if(rule==='add_sub'){ let run=0,minRun=0; seq.forEach((it,i)=>{ run+=w[i]*it.n; minRun=Math.min(minRun,run); }); if(minRun<0) start=Math.ceil(-minRun/10)*10; }
+  if(rule!=='sub_all'){ let run=0,minRun=0; seq.forEach((it,i)=>{ run+=w[i]*it.n; minRun=Math.min(minRun,run); }); if(minRun<0) start=Math.ceil(-minRun/10)*10; }
   const answer=start+seq.reduce((a,it,i)=>a+w[i]*it.n,0);
-  const html={
+  const st = start ? `<b>${start}</b> からスタート。` : '';
+  const html = !ign ? {
+    add_all:'出てくる数字を、<b>ぜんぶ足して</b>ください',
+    sub_all:`<b>${start}</b> から、出てくる数字を<b>ぜんぶ引いて</b>ください`,
+    add_one:`${st}${colB(tg[0])}は<b>足す</b>、ほかの色は<b>引く</b>`,
+    add_two:`${st}${colB(tg[0])}と${colB(tg[1])}は<b>足す</b>、ほかの色は<b>引く</b>`,
+    add_sub:`${st}${colB(tg[0])}は<b>足す</b>、${colB(tg[1])}は<b>引く</b>`,
+    even:`${st}<b>偶数は足す</b>、<b>奇数は引く</b>`,
+    odd:`${st}<b>奇数は足す</b>、<b>偶数は引く</b>`
+  }[rule] : {
     add_all:'出てくる数字を、<b>ぜんぶ足して</b>ください',
     sub_all:`<b>${start}</b> から、出てくる数字を<b>ぜんぶ引いて</b>ください`,
     add_one:`${colB(tg[0])}の数字<b>だけ足して</b>ください（ほかの色は無視）`,
@@ -2951,12 +2969,16 @@ function mathBuild(cfg){
     even:'<b>偶数</b>（0・2・4・6…）<b>だけ足して</b>ください（奇数は無視）',
     odd:'<b>奇数</b>（1・3・5…）<b>だけ足して</b>ください（偶数は無視）'
   }[rule];
-  const tag={
+  const tag = !ign ? {
+    add_all:'ぜんぶ足す', sub_all:`${start} からぜんぶ引く`, add_one:`${start?start+'から ':''}${colB(tg[0])}は＋ ほかは−`,
+    add_two:`${start?start+'から ':''}${colB(tg[0])}${colB(tg[1])}は＋ ほかは−`, add_sub:`${start?start+'から ':''}${colB(tg[0])}は＋ ${colB(tg[1])}は−`,
+    even:`${start?start+'から ':''}偶数は＋ 奇数は−`, odd:`${start?start+'から ':''}奇数は＋ 偶数は−`
+  }[rule] : {
     add_all:'ぜんぶ足す', sub_all:`${start} からぜんぶ引く`, add_one:`${colB(tg[0])}だけ足す`,
     add_two:`${colB(tg[0])}と${colB(tg[1])}を足す`, add_sub:`${start?start+'から ':''}${colB(tg[0])}は＋ ${colB(tg[1])}は−`,
     even:'偶数だけ足す', odd:'奇数だけ足す'
   }[rule];
-  return {rule, seq, w, start, answer, html, tag, i:0, user:null};
+  return {rule, ign, seq, w, start, answer, html, tag, i:0, user:null};
 }
 function mathNext(){
   const m=C.math, el=$('cNumOnly');
@@ -2996,8 +3018,7 @@ function mathReveal(user){
     return `<span class="mchip${s?'':' off'}" style="color:${CARD_COLORS[it.col].c}">${sign}${it.n}</span>`;
   }).join('');
   const parts=m.seq.map((it,i)=>m.w[i]?(m.w[i]>0?'+':'−')+it.n:'').filter(Boolean);
-  let formula=(m.start?String(m.start):'')+parts.join(' ');
-  formula=formula.replace(/^\+/,'').replace(/ /g,' ')+' = '+m.answer;
+  const formula=(m.start?[String(m.start),...parts]:parts).join(' ').replace(/^\+/,'')+' = '+m.answer;
   tone(now()+0.01,ok?1320:330,ok?0.25:0.3,0.35,ok?'sine':'triangle');
   veilShow($('cVeil'),`<div class="prep">
       <div class="prep-k">答え合わせ</div>
@@ -3012,7 +3033,7 @@ function mathReveal(user){
   $('mathEnd').onclick=()=>{
     const c=C.cfg, mm=C.math; stopCard();
     finish({ type:'card', cfg:c, title: mm.user===null?'答えを確認しました':ok?'正解！':'ざんねん', note:'おつかれさまでした',
-      stats:[['答え',String(mm.answer)],['あなたの答え',mm.user===null?'—':String(mm.user)],['ルール',MATH_RULES[mm.rule]],['数字',mm.seq.length+'個']] });
+      stats:[['答え',String(mm.answer)],['あなたの答え',mm.user===null?'—':String(mm.user)],['ルール',mathRuleName(mm)],['数字',mm.seq.length+'個']] });
   };
 }
 
@@ -3353,7 +3374,7 @@ goHome();
    Version check — 古い保存済みの画面が出ていたら、新しい版に切り替える
    （GitHub Pages は更新後しばらく古い版を返すことがあるため）
    ============================================================ */
-const APP_VER='2026-11-05 19:00';   // 更新のたびにこの日時を書き換える
+const APP_VER='2026-11-05 19:30';   // 更新のたびにこの日時を書き換える
 $('appVer').textContent='更新 '+APP_VER;
 (function checkVer(){
   if(location.protocol==='file:') return;
