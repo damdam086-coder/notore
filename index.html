@@ -526,6 +526,38 @@ body.proj .hud{font-size:15px}
 .spot-cal .calsub{margin-top:2px}
 .calrow{display:grid;grid-template-columns:86px 1fr 46px;align-items:center;gap:8px;font-size:13.5px;margin:2px 0}
 .calrow b{text-align:right;font-variant-numeric:tabular-nums;color:#8fb0ff}
+
+/* ============================================================
+   Rhythm step
+   ============================================================ */
+#jField{display:flex;flex-direction:column;align-items:stretch;justify-content:flex-start;padding:14px 14px 12px;gap:10px}
+.jhead{text-align:center}
+.jdrill{font-size:24px;font-weight:780;letter-spacing:.02em;min-height:30px}
+.jdesc{font-size:13px;color:var(--text-3);min-height:18px}
+.jfloor{flex:1;min-height:180px;display:flex}
+.floor{flex:1;display:grid;gap:0;border-radius:18px;overflow:hidden;border:1px solid var(--line-2)}
+.floor.lr{grid-template-columns:1fr 12px 1fr}
+.floor.fb{grid-template-rows:1fr 12px 1fr}
+.floor.box{grid-template-columns:1fr 1.3fr 1fr}
+.floor .zone{display:grid;place-items:center;background:var(--surface-2);transition:background .08s;text-align:center}
+.floor .zone i{font-style:normal;color:var(--text-3);font-size:15px;font-weight:600;opacity:.6}
+.floor .zone.on{background:var(--accent);color:#fff}
+.floor .zone b,.fmid b{display:block;font-size:clamp(34px,11vmin,96px);font-weight:800;line-height:1.05;white-space:nowrap}
+.floor.box .zone b{font-size:clamp(30px,9vmin,84px)}
+.floor .zone small,.fmid small{display:block;font-size:clamp(14px,3.6vmin,26px);font-weight:700;opacity:.9;margin-top:4px}
+.floor.box .frame{border-left:4px dashed var(--text-3);border-right:4px dashed var(--text-3)}
+.floor .fline{background:var(--text);position:relative}
+.floor .fline.on{background:var(--accent);box-shadow:0 0 0 6px var(--accent-soft)}
+.fmid{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);background:var(--accent);color:#fff;padding:12px 18px;border-radius:16px;white-space:nowrap;z-index:2;text-align:center}
+.jcount{position:absolute;left:0;right:0;top:46%;text-align:center;font-size:min(32vmin,200px);font-weight:800;color:var(--accent);pointer-events:none;line-height:1}
+.jcount.pop{animation:pop .2s cubic-bezier(.2,.8,.3,1)}
+.jtime{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:4px;min-height:40px}
+.tslot{display:grid;place-items:center;border-radius:9px;background:var(--surface-2);font-size:14px;font-weight:750;color:var(--text-3);min-height:40px}
+.tslot.off{background:transparent}
+.tslot.has{color:var(--text);background:var(--surface-2)}
+.tslot.off.has{background:var(--surface-2)}
+.tslot.now{background:var(--accent);color:#fff}
+.jnext{text-align:center;font-size:14px;color:var(--text-3);min-height:20px}
 </style>
 </head>
 <body>
@@ -656,6 +688,26 @@ body.proj .hud{font-size:15px}
         <div class="veil" id="gVeil" style="display:none"></div>
       </div>
       <button class="btn" id="gDone" style="margin-top:var(--s3)">読み終わった</button>
+    </div>
+  </section>
+
+  <!-- ============ PLAY: RHYTHM STEP ============ -->
+  <section class="screen" id="playStep">
+    <div class="stage">
+      <div class="hud">
+        <span>種目 <b class="tnum" id="jIdx">0/0</b></span>
+        <span>BPM <b class="tnum" id="jBpm">80</b></span>
+        <span>残り <b class="tnum" id="jLeft">0:00</b></span>
+      </div>
+      <div class="field" id="jField">
+        <div class="jhead"><div class="jdrill" id="jDrill"></div><div class="jdesc" id="jDesc"></div></div>
+        <div class="jfloor" id="jFloor"></div>
+        <div class="jcount tnum" id="jCount"></div>
+        <div class="jtime" id="jTime"></div>
+        <div class="jnext" id="jNext"></div>
+        <div class="veil" id="jVeil" style="display:none"></div>
+      </div>
+      <button class="btn quiet" id="jStop" style="margin-top:var(--s3)">やめる</button>
     </div>
   </section>
 
@@ -812,6 +864,7 @@ const ICON={
   mic   : svg('<rect x="9" y="2.75" width="6" height="11" rx="3"/><path d="M4.75 11.5a7.25 7.25 0 0 0 14.5 0"/><path d="M12 18.75V21.5"/>'),
   dash  : svg('<path d="M6 12h12"/>'),
   hand  : svg('<path d="M8 12.5V6.25a1.5 1.5 0 0 1 3 0V11"/><path d="M11 10.5V4.75a1.5 1.5 0 0 1 3 0V11"/><path d="M14 10.75V6.25a1.5 1.5 0 0 1 3 0v7.5a7 7 0 0 1-7 7h-.5a6 6 0 0 1-4.6-2.2L3.6 15.5a1.4 1.4 0 0 1 2.1-1.85L8 15.5"/>'),
+  steps : svg('<path d="M7 20.5c-1.7 0-2.6-1.4-2.4-3.2l.5-4.3c.2-1.6 1.3-2.5 2.5-2.5s2.2.9 2.3 2.5l.2 4.3c.1 1.8-1.4 3.2-3.1 3.2z"/><path d="M16.5 13.5c-1.7 0-2.6-1.4-2.4-3.2l.5-4.3c.2-1.6 1.3-2.5 2.5-2.5s2.2.9 2.3 2.5l.2 4.3c.1 1.8-1.4 3.2-3.1 3.2z"/>'),
   target: svg('<circle cx="6.5" cy="7" r="3.25"/><circle cx="17.5" cy="7" r="3.25"/><circle cx="12" cy="17" r="3.25"/>'),
   spade : svg('<path d="M12 3.5c1.6 3 6.5 5.6 6.5 9.4a3.2 3.2 0 0 1-5.6 2.1c.2 1.9.9 3.2 2.4 4.5H8.7c1.5-1.3 2.2-2.6 2.4-4.5a3.2 3.2 0 0 1-5.6-2.1c0-3.8 4.9-6.4 6.5-9.4z"/>'),
   grid  : svg('<rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.5"/><path d="M15.6 5.2l1.4-1v6.3"/><path d="M5.2 15.2a1.9 1.9 0 0 1 3.6.8c0 1.3-3.7 3.3-3.7 4.5h3.9"/>'),
@@ -867,6 +920,7 @@ const TRAININGS={
   breath:{icon:'wind', name:'呼吸調整',        desc:'吐く・止める・吸うを秒数どおりに'},
   mem   :{icon:'grid', name:'数字の位置記憶',  desc:'数字の場所を覚えて、1から順に押す'},
   card  :{icon:'spade',name:'フラッシュ',      desc:'トランプ・色・数字がパッと切り替わる'},
+  step  :{icon:'steps', name:'リズムステップ', desc:'床の線や枠で、リズムに合わせて足でステップ'},
   spot  :{icon:'target',name:'丸タッチ',       desc:'壁や床に映した丸を、言われたとおりに触る・飛び移る'}
 };
 
@@ -884,7 +938,7 @@ function show(id,title,sub){
 }
 $('back').innerHTML=ICON.back;
 $('back').onclick=()=>{ stopAll(); stopProg(); if(['hub','results'].includes(document.querySelector('.screen.on').id)) goHome(); else if(curTrain) openHub(curTrain); else goHome(); };
-function stopAll(){ stopArrow(); stopNum(); stopStroop(); stopVoice(); stopGrid(); stopMove(); stopHands(); stopBreath(); stopMem(); stopCard(); stopSpot(); }
+function stopAll(){ stopArrow(); stopNum(); stopStroop(); stopVoice(); stopGrid(); stopMove(); stopHands(); stopBreath(); stopMem(); stopCard(); stopSpot(); stopStep(); }
 
 /* ============================================================
    Home
@@ -917,6 +971,7 @@ const QUICK_DESC={
   arrow :'「同じ方向」からはじめて、反対 → 色で判断へ。矢印は4方向から8方向、スピードも1.2秒から1.0秒へ上がります。1セット30秒。',
   num   :'8桁からスタートして10桁まで。後半は逆唱に切り替わります。表示は5秒。全10問クリアを目指します。',
   stroop:'かな → 漢字 → English。1文字ずつからはじめて、一覧・背景ラインやマスへと進みます。',
+  step  :'左右ジャンプ・ケンケン・グーパー・イン＆アウト・シンコペーションなどから6種目をランダムに。BPM 80 から始めて、種目ごとに 5 ずつ速くなります。1種目8小節。床に線を1本置いて使います。',
   spot  :'3×3の丸（番号と色つき）が映ります。「あか」「さん」などの声と光の合図で、その丸に触る・飛び移る。合図は2〜4秒のランダムな間隔で60秒。プロジェクターで壁や床に映して使います（ふつうの画面でもできます）。',
   card  :'記号（スペード・ハート・ダイヤ・クラブ）、数字（1〜10）、記号と数字の色（黒・赤・緑・青・黄）が、1.5〜3秒のランダムな間隔でパッと切り替わります。60秒。',
   mem   :'1回目は見ながら 1 から順に押し、2回目は場所を思い出して 1 から順に押します（白い四角を出すか、枠だけにするかを下で選べます）。4個からスタートし、正解で1個増え、まちがえで1個減ります（3〜10個）。全10問。',
@@ -996,6 +1051,7 @@ function startAuto(t){
   if(t==='num'){ runNum({auto:true, total:10, plan:buildNumPlan()}); return; }
   if(t==='move'){ runMove(moveAutoCfg()); return; }
   if(t==='spot'){ runSpot(spotAutoCfg()); return; }
+  if(t==='step'){ runStep(stepAutoCfg()); return; }
   if(t==='card'){ runCard(flashAutoCfg(flashKindPref())); return; }
   if(t==='mem'){ runMem({auto:true,count:4,grid:'m',after:segVal('wAfterQ')||memAfterPref(),total:10}); return; }
   if(t==='breath'){ runBreath({min:5,out:8,hold:8,in:8,count:'up',snd:'clock',minute:true}); return; }
@@ -1196,6 +1252,19 @@ function renderCustom(t){
       <div class="hint" id="sHint2" style="display:none">マイクを使います。localhost 経由で開き、マイクを許可してください。認識には通信が必要です。</div>
     </div>`;
   }
+  if(t==='step'){
+    box.innerHTML=`<div class="card pad">
+      <div class="row"><span class="lbl">種目</span>${chips('jDrills',Object.keys(STEP_DRILLS).map(k=>({v:k,l:STEP_DRILLS[k].n})),['lr','hopR','hopL','gupa','inout','sync'])}</div>
+      ${rowSeg('順番','jOrder',[{v:'seq',l:'並んだ順'},{v:'rand',l:'ランダム'}],'seq')}
+      ${rowRange('テンポ（BPM）','jBpmIn',50,160,5,80,v=>v)}
+      ${rowSeg('1種目の長さ','jBars',[{v:'4',l:'4小節'},{v:'8',l:'8小節'},{v:'16',l:'16小節'}],'8')}
+      ${rowToggle('種目ごとにだんだん速く（+5）','jSpeed',false)}
+      ${rowToggle('種目の名前を声で知らせる','jVoice',true)}
+      ${rowToggle('足の音（左は低く・右は高く）','jStepSnd',true)}
+      <div class="hint">床にテープやロープで線を1本（「イン・アウト」「2歩」は枠）を置きます。画面の青い場所に、音に合わせて足を着きます。下の帯は1小節の流れで、いまの1歩が光ります。</div>
+      <div class="hint">「シンコペーション」は「タン・タン・タタ（休み）」、「3拍子ステップ」は3拍子、「ランダム」は毎小節その場で決まり、ときどき速い2歩や開く・閉じるが入ります。</div>
+    </div>`;
+  }
   if(t==='spot'){
     box.innerHTML=`<div class="card pad">
       <button class="btn sub" id="spCalBtn" style="margin-bottom:var(--s2)">映す範囲を合わせる（壁・床）</button>
@@ -1389,6 +1458,10 @@ $('customStart').onclick=()=>{
     total:+segVal('nQ')
   });
   if(curTrain==='spot') runSpot(spotReadCfg());
+  if(curTrain==='step') runStep({
+    drills:cfgUI.jDrills.slice(), order:segVal('jOrder'), count:0, bpm:+$('jBpmIn').value, bars:+segVal('jBars'),
+    speedup:$('jSpeed').classList.contains('on'), voice:$('jVoice').classList.contains('on'), stepSound:$('jStepSnd').classList.contains('on')
+  });
   if(curTrain==='card') runCard({
     kind:segVal('fKind')||flashKindPref(), wallColors:cfgUI.fwColors.slice(), nrange:segVal('fnRange'),
     nchange:cfgUI.fnChange.slice(), ncolors:cfgUI.fnColors.slice(),
@@ -2107,9 +2180,9 @@ const SND={
 /* ---- voice ----
    まずは録音した声（voice/*.mp3）を Web Audio で鳴らす。ブラウザの読み上げ機能は
    ブラウザによって鳴らない（Brave など）ので、録音が読めないときだけ代わりに使う。 */
-const VOX_MAP={'はじめます':'hajime','吐きます':'haku','止めます':'tomeru','吸います':'suu','おわりです。ふつうの呼吸に戻しましょう':'owari','休憩':'kyukei','逆回し':'gyaku','おつかれさまでした':'otsukare','足首回し':'ankle','肩回し':'shoulder','手首回し':'wrist','腕回し':'arm','股関節回し':'hip','腰回し':'waist','ひざ回し':'knee','いち':'n1','に':'n2','さん':'n3','よん':'n4','ご':'n5','ろく':'n6','なな':'n7','はち':'n8','きゅう':'n9','じゅう':'n10','11':'n11','12':'n12','13':'n13','14':'n14','15':'n15','16':'n16','17':'n17','18':'n18','19':'n19','20':'n20','21':'n21','22':'n22','23':'n23','24':'n24','25':'n25','26':'n26','27':'n27','28':'n28','29':'n29','30':'n30','5秒':'s5','10秒':'s10','15秒':'s15','20秒':'s20','30秒':'s30','40秒':'s40','50秒':'s50','60秒':'s60','70秒':'s70','80秒':'s80','90秒':'s90','1拍で1周':'b1','2拍で1周':'b2','3拍で1周':'b3','4拍で1周':'b4','5拍で1周':'b5','6拍で1周':'b6','7拍で1周':'b7','8拍で1周':'b8','9拍で1周':'b9','10拍で1周':'b10','11拍で1周':'b11','12拍で1周':'b12','この呼吸で終わりです':'konokokyu','1分経過':'m1','2分経過':'m2','3分経過':'m3','4分経過':'m4','5分経過':'m5','6分経過':'m6','7分経過':'m7','8分経過':'m8','9分経過':'m9','10分経過':'m10','残り1分です':'r1','残り2分です':'r2','残り3分です':'r3','残り4分です':'r4','残り5分です':'r5','残り6分です':'r6','残り7分です':'r7','残り8分です':'r8','残り9分です':'r9','あか':'c_red','きいろ':'c_yellow','みどり':'c_green','あお':'c_blue','しろ':'c_white','オレンジ':'c_orange','むらさき':'c_purple','ピンク':'c_pink','みずいろ':'c_sky','おわりです':'owari2','1秒':'s1','2秒':'s2','3秒':'s3','4秒':'s4','6秒':'s6','7秒':'s7','8秒':'s8','9秒':'s9','11秒':'s11','12秒':'s12','13秒':'s13','14秒':'s14','16秒':'s16','17秒':'s17','18秒':'s18','19秒':'s19','21秒':'s21','22秒':'s22','23秒':'s23','24秒':'s24','25秒':'s25','26秒':'s26','27秒':'s27','28秒':'s28','29秒':'s29'};
+const VOX_MAP={'はじめます':'hajime','吐きます':'haku','止めます':'tomeru','吸います':'suu','おわりです。ふつうの呼吸に戻しましょう':'owari','休憩':'kyukei','逆回し':'gyaku','おつかれさまでした':'otsukare','足首回し':'ankle','肩回し':'shoulder','手首回し':'wrist','腕回し':'arm','股関節回し':'hip','腰回し':'waist','ひざ回し':'knee','いち':'n1','に':'n2','さん':'n3','よん':'n4','ご':'n5','ろく':'n6','なな':'n7','はち':'n8','きゅう':'n9','じゅう':'n10','11':'n11','12':'n12','13':'n13','14':'n14','15':'n15','16':'n16','17':'n17','18':'n18','19':'n19','20':'n20','21':'n21','22':'n22','23':'n23','24':'n24','25':'n25','26':'n26','27':'n27','28':'n28','29':'n29','30':'n30','5秒':'s5','10秒':'s10','15秒':'s15','20秒':'s20','30秒':'s30','40秒':'s40','50秒':'s50','60秒':'s60','70秒':'s70','80秒':'s80','90秒':'s90','1拍で1周':'b1','2拍で1周':'b2','3拍で1周':'b3','4拍で1周':'b4','5拍で1周':'b5','6拍で1周':'b6','7拍で1周':'b7','8拍で1周':'b8','9拍で1周':'b9','10拍で1周':'b10','11拍で1周':'b11','12拍で1周':'b12','この呼吸で終わりです':'konokokyu','1分経過':'m1','2分経過':'m2','3分経過':'m3','4分経過':'m4','5分経過':'m5','6分経過':'m6','7分経過':'m7','8分経過':'m8','9分経過':'m9','10分経過':'m10','残り1分です':'r1','残り2分です':'r2','残り3分です':'r3','残り4分です':'r4','残り5分です':'r5','残り6分です':'r6','残り7分です':'r7','残り8分です':'r8','残り9分です':'r9','あか':'c_red','きいろ':'c_yellow','みどり':'c_green','あお':'c_blue','しろ':'c_white','オレンジ':'c_orange','むらさき':'c_purple','ピンク':'c_pink','みずいろ':'c_sky','おわりです':'owari2','1秒':'s1','2秒':'s2','3秒':'s3','4秒':'s4','6秒':'s6','7秒':'s7','8秒':'s8','9秒':'s9','11秒':'s11','12秒':'s12','13秒':'s13','14秒':'s14','16秒':'s16','17秒':'s17','18秒':'s18','19秒':'s19','21秒':'s21','22秒':'s22','23秒':'s23','24秒':'s24','25秒':'s25','26秒':'s26','27秒':'s27','28秒':'s28','29秒':'s29','左右ジャンプ':'st_lr','前後ジャンプ':'st_fb','右足ケンケン':'st_hopR','左足ケンケン':'st_hopL','グーパー':'st_gupa','開く・クロス':'st_cross','イン・イン・アウト・アウト':'st_inout','右足2歩・戻る':'st_walk2','シンコペーション':'st_sync','3拍子ステップ':'st_waltz','ランダム':'st_rand'};
 const VOX={raw:{}, buf:{}, src:[], fetching:false};
-const VOICE_VER='kokoro3';   // 声を作り直したら変える（古い声が残らないように）
+const VOICE_VER='kokoro4';   // 声を作り直したら変える（古い声が残らないように）
 function voxFetch(){
   if(VOX.fetching || location.protocol==='file:') return;
   VOX.fetching=true;
@@ -3472,10 +3545,170 @@ function spotReadCfg(){
 }
 
 /* ============================================================
+   RHYTHM STEP engine — 床の線や枠を使って、リズムに合わせて足でステップ
+   ============================================================ */
+// 位置：L/R＝線の左・右、F/B＝線の前・後、OPEN＝線をまたいで開く、CLOSE＝閉じる、CROSS＝足を交差、
+//       IN_R/IN_L＝枠の中へ右足・左足、OUT_R/OUT_L＝枠の外へ右足・左足
+const ST=(at,pos,lab,sub)=>({at,pos,lab,sub});
+const STEP_DRILLS={
+  lr   :{n:'左右ジャンプ',  d:'両足で、線の左右を跳ぶ',          lay:'lr',  foot:'両足', bar:4,len:4, steps:[ST(0,'L','左'),ST(1,'R','右'),ST(2,'L','左'),ST(3,'R','右')]},
+  fb   :{n:'前後ジャンプ',  d:'両足で、線の前後を跳ぶ',          lay:'fb',  foot:'両足', bar:4,len:4, steps:[ST(0,'F','前'),ST(1,'B','後'),ST(2,'F','前'),ST(3,'B','後')]},
+  hopR :{n:'右足ケンケン',  d:'右足だけで、線の左右を跳ぶ',      lay:'lr',  foot:'右足', bar:4,len:4, steps:[ST(0,'L','左'),ST(1,'R','右'),ST(2,'L','左'),ST(3,'R','右')]},
+  hopL :{n:'左足ケンケン',  d:'左足だけで、線の左右を跳ぶ',      lay:'lr',  foot:'左足', bar:4,len:4, steps:[ST(0,'L','左'),ST(1,'R','右'),ST(2,'L','左'),ST(3,'R','右')]},
+  gupa :{n:'グーパー',      d:'線をまたいで開く・閉じる',        lay:'lr',  foot:'両足', bar:4,len:4, steps:[ST(0,'OPEN','開く'),ST(1,'CLOSE','閉じる'),ST(2,'OPEN','開く'),ST(3,'CLOSE','閉じる')]},
+  cross:{n:'開く・クロス',  d:'開いて、足を交差して着地',        lay:'lr',  foot:'両足', bar:4,len:4, steps:[ST(0,'OPEN','開く'),ST(1,'CROSS','クロス'),ST(2,'OPEN','開く'),ST(3,'CROSS','クロス')]},
+  inout:{n:'イン・イン・アウト・アウト', d:'枠の中へ右・左、外へ右・左', lay:'box', foot:'', bar:4,len:4, steps:[ST(0,'IN_R','右','イン'),ST(1,'IN_L','左','イン'),ST(2,'OUT_R','右','アウト'),ST(3,'OUT_L','左','アウト')]},
+  walk2:{n:'右足2歩・戻る', d:'右足で枠の中を2歩進んで、2歩で戻る', lay:'fb', foot:'右足', bar:4,len:4, steps:[ST(0,'F','前'),ST(1,'F','前'),ST(2,'B','戻る'),ST(3,'B','戻る')]},
+  sync :{n:'シンコペーション', d:'タン・タン・タタ（休み）のリズムで左右', lay:'lr', foot:'両足', bar:4,len:4, steps:[ST(0,'L','左'),ST(1,'R','右'),ST(2,'L','左'),ST(2.5,'R','右')]},
+  waltz:{n:'3拍子ステップ', d:'3拍子で 右・左・右｜左・右・左', lay:'lr', foot:'', bar:3,len:6, steps:[ST(0,'R','右足'),ST(1,'L','左足'),ST(2,'R','右足'),ST(3,'L','左足'),ST(4,'R','右足'),ST(5,'L','左足')]},
+  rand :{n:'ランダム',      d:'左右・開く閉じるが、その場で決まる', lay:'lr', foot:'両足', bar:4,len:4, gen:true}
+};
+const STEP_SHORT={L:'左',R:'右',F:'前',B:'後',OPEN:'開',CLOSE:'閉',CROSS:'✕',IN_R:'右イ',IN_L:'左イ',OUT_R:'右ア',OUT_L:'左ア'};
+const STEP_SIDE={L:-1,R:1,IN_L:-1,OUT_L:-1,IN_R:1,OUT_R:1};     // 足の音：左は低め、右は高め
+// ランダム：1小節ぶんを作る（ときどき8分の速い2歩、ときどき開く・閉じる）
+function stepGenBar(prevPos){
+  const out=[]; let side=prevPos==='L'?'R':'L';
+  for(let b=0;b<4;b++){
+    const r=Math.random();
+    if(r<0.18 && b<3){ out.push(ST(b,'OPEN','開く')); out.push(ST(b+1,'CLOSE','閉じる')); b++; continue; }
+    out.push(ST(b,side,side==='L'?'左':'右')); side=side==='L'?'R':'L';
+    if(r>0.8){ out.push(ST(b+0.5,side,side==='L'?'左':'右')); side=side==='L'?'R':'L'; }   // 8分の速い2歩目
+  }
+  return out;
+}
+let J=null;
+function stopStep(){
+  if(!J) return;
+  J.timers.forEach(clearTimeout); audioCut(false); sayStop(); wakeOff();
+  J=null;
+}
+function stepLater(t,fn){ const j=J; const id=setTimeout(()=>{ if(J===j) fn(); },Math.max(0,(t-now())*1000)); j.timers.push(id); }
+function stepStepSound(t,pos){
+  const s=STEP_SIDE[pos];
+  if(s<0) tone(t,330,0.09,0.5,'triangle');
+  else if(s>0) tone(t,620,0.09,0.5,'triangle');
+  else { tone(t,440,0.09,0.45,'triangle'); tone(t,660,0.06,0.25); }
+}
+// 全体の流れ（種目ごとに：1小節の数え → 指定の小節数）を最初に作っておく
+function stepPlan(cfg){
+  let order=cfg.drills.filter(k=>STEP_DRILLS[k]);
+  if(!order.length) order=['lr'];
+  if(cfg.order==='rand') order=shuffle(order);
+  if(cfg.count && cfg.count<order.length) order=order.slice(0,cfg.count);
+  if(cfg.count && cfg.count>order.length){ const more=[]; while(order.length+more.length<cfg.count) more.push(pick(order)); order=order.concat(more); }
+  const ev=[]; let t=0, totalBars=0;
+  order.forEach((k,di)=>{
+    const D=STEP_DRILLS[k], bpm=Math.min(200,cfg.bpm+(cfg.speedup?5*di:0)), spb=60/bpm;
+    ev.push({t,kind:'name',di,k,bpm});
+    for(let i=0;i<D.bar;i++) ev.push({t:t+i*spb,kind:'count',n:i+1,of:D.bar,di});
+    t+=D.bar*spb;
+    const beatsTotal=cfg.bars*D.bar, reps=Math.max(1,Math.round(beatsTotal/D.len));
+    let prevPos=null;
+    for(let r=0;r<reps;r++){
+      const t0=t+r*D.len*spb;
+      const steps=D.gen?stepGenBar(prevPos):D.steps;
+      if(D.gen) prevPos=steps.filter(s=>s.pos==='L'||s.pos==='R').slice(-1)[0]?.pos||prevPos;
+      ev.push({t:t0,kind:'pat',di,steps,len:D.len});
+      for(let b=0;b<D.len;b++) ev.push({t:t0+b*spb,kind:'beat',accent:b%D.bar===0,di});
+      steps.forEach((s,si)=>ev.push({t:t0+s.at*spb,kind:'step',di,s,si,steps}));
+    }
+    t+=reps*D.len*spb; totalBars+=cfg.bars;
+  });
+  ev.push({t,kind:'end'});
+  return {order,ev,total:t,totalBars};
+}
+function stepFloor(lay,pos,foot,lab,sub){
+  const on=k=>pos===k?' on':'';
+  const txt=`<span class="zt"><b>${lab}</b>${(sub||foot)?`<small>${sub||foot}</small>`:''}</span>`;
+  if(lay==='fb') return `<div class="floor fb">
+      <div class="zone${on('F')}">${pos==='F'?txt:'<i>前</i>'}</div><div class="fline"></div><div class="zone${on('B')}">${pos==='B'?txt:'<i>後</i>'}</div></div>`;
+  if(lay==='box') return `<div class="floor box">
+      <div class="zone${on('OUT_L')}">${pos==='OUT_L'?txt:'<i>外</i>'}</div>
+      <div class="zone frame${pos==='IN_R'||pos==='IN_L'?' on':''}">${pos==='IN_R'||pos==='IN_L'?txt:'<i>枠</i>'}</div>
+      <div class="zone${on('OUT_R')}">${pos==='OUT_R'?txt:'<i>外</i>'}</div></div>`;
+  const mid = pos==='CLOSE'||pos==='CROSS';
+  return `<div class="floor lr">
+      <div class="zone${pos==='L'||pos==='OPEN'?' on':''}">${pos==='L'?txt:pos==='OPEN'?'<b>開く</b>':'<i>左</i>'}</div>
+      <div class="fline${mid?' on':''}">${mid?`<span class="fmid">${txt}</span>`:''}</div>
+      <div class="zone${pos==='R'||pos==='OPEN'?' on':''}">${pos==='R'?txt:pos==='OPEN'?`<b>開く</b>`:'<i>右</i>'}</div></div>`;
+}
+function stepTimeline(steps,len,cur){
+  const slots=[];
+  for(let i=0;i<len*2;i++){
+    const s=steps.find(x=>Math.round(x.at*2)===i);
+    slots.push(`<div class="tslot${i%2?' off':''}${s?' has':''}${s&&s===cur?' now':''}">${s?STEP_SHORT[s.pos]:(i%2?'':'・')}</div>`);
+  }
+  return slots.join('');
+}
+function runStep(cfg){
+  stopAll();
+  const plan=stepPlan(cfg);
+  J={cfg, plan, timers:[], di:-1, steps:0, started:false};
+  $('jDrill').textContent=''; $('jDesc').textContent=''; $('jFloor').innerHTML=''; $('jTime').innerHTML=''; $('jNext').textContent='';
+  $('jIdx').textContent=`0/${plan.order.length}`; $('jBpm').textContent=cfg.bpm; $('jLeft').textContent=fmtClock(plan.total);
+  show('playStep','リズムステップ',`${plan.order.length}種目 ・ BPM ${cfg.bpm}${cfg.speedup?'から':''}`);
+  const rows=plan.order.slice(0,8).map(k=>`<div class="prep-li"><span>${STEP_DRILLS[k].n}</span><span class="act" style="font-weight:500;font-size:12.5px">${STEP_DRILLS[k].d}</span></div>`).join('');
+  veilShow($('jVeil'),`<div class="prep">
+      <div class="prep-k">準備</div>
+      <div class="prep-t">床に線を1本（または枠）</div>
+      <div class="prep-s">テープやロープで線を置きます。音に合わせて、画面の場所に足を着きます。左の足音は低め、右は高めの音です。各種目は「1・2・3・4」の数えのあとに始まります。</div>
+      <div class="prep-list">${rows}</div>
+      <div class="prep-s">すべらない場所で、無理のない高さで跳びましょう。</div>
+      <button class="btn prep-b" id="jGo">はじめる</button>
+    </div>`);
+  $('jGo').onclick=()=>{ if(!J) return; audioOn(); say(' ',true); wakeOn(); veilHide($('jVeil')); stepStart(); };
+}
+function stepStart(){
+  const T0=now()+0.4, j=J, c=j.cfg; j.T0=T0; j.started=true;
+  j.plan.ev.forEach(e=>{
+    const t=T0+e.t;
+    if(e.kind==='beat') (e.accent?SND.accent:SND.click)(t);
+    else if(e.kind==='count') SND.count(t);
+    else if(e.kind==='step' && c.stepSound) stepStepSound(t,e.s.pos);
+    else if(e.kind==='end') SND.end(t);
+    stepLater(t,()=>stepShow(e));
+  });
+  const tick=()=>{ if(J!==j) return; $('jLeft').textContent=fmtClock(j.T0+j.plan.total-now()); j.timers.push(setTimeout(tick,500)); };
+  tick();
+}
+function stepShow(e){
+  const j=J;
+  if(e.kind==='name'){
+    const D=STEP_DRILLS[e.k]; j.di=e.di; j.D=D;
+    $('jDrill').textContent=D.n; $('jDesc').textContent=D.d+(D.foot?`（${D.foot}）`:'');
+    $('jIdx').textContent=`${e.di+1}/${j.plan.order.length}`; $('jBpm').textContent=e.bpm;
+    $('jFloor').innerHTML=stepFloor(D.lay,'',D.foot,''); $('jTime').innerHTML=''; $('jNext').textContent='';
+    if(j.cfg.voice) say(D.n,true);
+  }else if(e.kind==='count'){
+    $('jCount').textContent=e.n; $('jCount').classList.remove('pop'); void $('jCount').offsetWidth; $('jCount').classList.add('pop');
+  }else if(e.kind==='pat'){
+    $('jCount').textContent='';
+    $('jTime').innerHTML=stepTimeline(e.steps,e.len,null);
+  }else if(e.kind==='step'){
+    const D=j.D, s=e.s; j.steps++;
+    $('jFloor').innerHTML=stepFloor(D.lay,s.pos,D.foot,s.lab,s.sub);
+    $('jTime').innerHTML=stepTimeline(e.steps,D.len,s);
+    const nx=e.steps[e.si+1];
+    $('jNext').textContent = nx ? `次：${nx.lab}${nx.sub||''}` : '';
+  }else if(e.kind==='end'){
+    say('おつかれさまでした',true);
+    const c=j.cfg, n=j.plan.order.length, steps=j.steps, secs=j.plan.total;
+    setTimeout(()=>{ if(J!==j) return; stopStep();
+      finish({type:'step', cfg:c, title:'完了', note:'おつかれさまでした',
+        stats:[['種目',n+'つ'],['ステップ',steps+'回'],['時間',fmtSecs(secs)],['テンポ',`BPM ${c.bpm}${c.speedup?'〜'+Math.min(200,c.bpm+5*(n-1)):''}`]],
+        log:j.plan.order.map(k=>({exp:STEP_DRILLS[k].n, ok:true})) });
+    },1500);
+  }
+}
+$('jStop').onclick=()=>{ if(J&&J.started){ const j=J, done=j.di+1, steps=j.steps, c=j.cfg; stopStep();
+  finish({type:'step', cfg:c, title:'途中で終了', note:'おつかれさまでした', stats:[['種目',done+'つ'],['ステップ',steps+'回'],['テンポ','BPM '+c.bpm]]}); } };
+const stepAutoCfg=()=>({drills:['lr','fb','hopR','hopL','gupa','cross','inout','sync','rand'], order:'rand', count:6, bpm:80, bars:8, speedup:true, voice:true, stepSound:true});
+
+/* ============================================================
    Results
    ============================================================ */
 let last=null;
-const TYPE_NAME={spot:'丸タッチ',arrow:'方向トレーニング',num:'数字記憶',stroop:'ストループ',voice:'ストループ（音声）',grid:'ストループ 一覧',move:'リズム運動',hands:'左右の手まね',breath:'呼吸調整',mem:'数字の位置記憶',card:'フラッシュ'};
+const TYPE_NAME={step:'リズムステップ',spot:'丸タッチ',arrow:'方向トレーニング',num:'数字記憶',stroop:'ストループ',voice:'ストループ（音声）',grid:'ストループ 一覧',move:'リズム運動',hands:'左右の手まね',breath:'呼吸調整',mem:'数字の位置記憶',card:'フラッシュ'};
 function finish(r){
   last=r;
   if(r.celebrate){
@@ -3521,6 +3754,7 @@ function rerun(type,cfg){
   else if(type==='mem') runMem(cfg);
   else if(type==='card') runCard(cfg);
   else if(type==='spot') runSpot(cfg);
+  else if(type==='step') runStep(cfg);
   else runVoice(cfg);
 }
 
@@ -3534,7 +3768,7 @@ goHome();
    Version check — 古い保存済みの画面が出ていたら、新しい版に切り替える
    （GitHub Pages は更新後しばらく古い版を返すことがあるため）
    ============================================================ */
-const APP_VER='2026-11-05 21:45';   // 更新のたびにこの日時を書き換える
+const APP_VER='2026-11-05 22:30';   // 更新のたびにこの日時を書き換える
 $('appVer').textContent='更新 '+APP_VER;
 (function checkVer(){
   if(location.protocol==='file:') return;
