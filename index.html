@@ -1401,6 +1401,7 @@ function renderCustom(t){
           <label class="numcell"><span>いちばん速く</span><input class="numbox" id="mBpmMax" type="number" inputmode="numeric" min="10" max="300" value="${moveWidePref().max}"></label>
           <span class="lbl" style="opacity:.6">（1分間の回数）</span>
         </div>
+        ${rowSeg('1回で変わる幅','mStep',[{v:'10',l:'10まで'},{v:'20',l:'20まで'},{v:'30',l:'30まで'},{v:'0',l:'制限なし'}],String(moveStepPref()),v=>{ moveStepSave(+v); moveRangeUI(segVal('mRange')); })}
         ${rowRange('1周の拍数','mBeats',1,12,1,4,v=>v+'拍で1周')}
         ${rowToggle('拍数もランダム','mBeatsRand',false,v=>{ $('mBeatsHint').style.display=v?'block':'none'; })}
         <div class="hint" id="mBeatsHint" style="display:none;margin-top:0;padding-bottom:var(--s2)">テンポが変わるたびに、1周の拍数も 2〜8拍 からランダムに変わります。</div>
@@ -1484,7 +1485,7 @@ $('customStart').onclick=()=>{
   });
   if(curTrain==='move') runMove({
     mode:segVal('mMode'), moves:cfgUI.mMoves.slice(), rounds:+segVal('mRounds'), rest:+segVal('mRest'),
-    range:segVal('mRange'), ...(()=>{ const w=moveWideRead(); return {bpmMin:w.min,bpmMax:w.max}; })(), gap:segVal('mGap'), dur:+$('mDur').value, flip:$('mFlip').classList.contains('on'),
+    range:segVal('mRange'), bpmStep:+segVal('mStep'), ...(()=>{ const w=moveWideRead(); return {bpmMin:w.min,bpmMax:w.max}; })(), gap:segVal('mGap'), dur:+$('mDur').value, flip:$('mFlip').classList.contains('on'),
     beats:+$('mBeats').value, beatsRand:$('mBeatsRand').classList.contains('on'), snd:segVal('mSnd'),
     secs:cfgUI.mSecs.map(Number), count:segVal('mCount'),
     secMode:segVal('mSecMode'), secSets:+segVal('mSecSets'), ...(()=>{ const w=moveSecRead(); return {secMin:w.min,secMax:w.max}; })()
@@ -2127,11 +2128,19 @@ function moveWideRead(){
   if(b-a<10) b=Math.min(300,a+10), a=Math.min(a,b-10);
   return {min:a,max:b};
 }
+// テンポが1回に変わる幅の上限（上げも下げも）。0＝制限なし。最初は 20、変えたら覚えておく
+function moveStepPref(){
+  try{ const v=JSON.parse(localStorage.getItem('notore-move-step')); if(v===0||v>0) return v; }catch(e){}
+  return 20;
+}
+function moveStepSave(v){ try{ localStorage.setItem('notore-move-step',JSON.stringify(v)); }catch(e){} }
 function moveRangeUI(v){
   const wide=v==='wide';
   $('mWideRow').style.display=wide?'flex':'none';
   const r= wide ? (()=>{ const w=moveWideRead(); return [w.min,w.max]; })() : TEMPO_RANGE[v];
-  $('mRangeHint').textContent=`テンポは 1分間に ${r[0]}〜${r[1]} 回 のあいだで変わります。`;
+  const st=+segVal('mStep');
+  $('mRangeHint').textContent=`テンポは 1分間に ${r[0]}〜${r[1]} 回 のあいだで変わります。`
+    + (st ? `1回に変わるのは ${st} まで（上げも下げも）。` : '');
 }
 const tempoRangeOf=(rg,cfg)=> rg==='wide' && cfg && cfg.bpmMin ? [cfg.bpmMin,cfg.bpmMax] : TEMPO_RANGE[rg];
 const CHANGE_GAP ={every:[1,1], mid:[1,3], rare:[2,5]};                           // テンポが変わるまでの周の数
@@ -2252,7 +2261,7 @@ document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==
 /* ---- plan ---- */
 function moveAutoCfg(){
   return {auto:true, mode:'mix', moves:['ankle','shoulder','wrist','arm','hip'], rounds:6, rest:5,
-          range:'mid', gap:'mid', dur:30, flip:false, beats:4, beatsRand:false, secs:[5,10,15,20], count:'beep', secMode:'rand', secMin:4, secMax:12, secSets:3};
+          range:'mid', bpmStep:20, gap:'mid', dur:30, flip:false, beats:4, beatsRand:false, secs:[5,10,15,20], count:'beep', secMode:'rand', secMin:4, secMax:12, secSets:3};
 }
 const SEC_GAP=1.8;   // 秒数のセットとセットのあいだ（次の秒数を声で言う時間）
 const secSetsTxt=r=>r.sets&&r.sets.length>1?`${r.sets.length}セット（${Math.min(...r.sets)}〜${Math.max(...r.sets)}秒）`:`${r.dur}秒`;
@@ -2285,10 +2294,16 @@ function buildMovePlan(cfg){
   }
   return plan;
 }
+// 前のテンポ（old）から「1回で変わる幅」（cfg.bpmStep）を超えて跳ばない。変わったと分かるよう最低限は離す
 function pickBpm(rg,old,cfg){
-  const [lo,hi]=tempoRangeOf(rg,cfg), minDiff=Math.max(10,Math.round((hi-lo)*0.25));
-  let b,n=0; do{ b=lo+rnd(hi-lo+1); n++; }while(old!=null && Math.abs(b-old)<minDiff && n<60);
-  return b;
+  const [lo,hi]=tempoRangeOf(rg,cfg), step=(cfg&&cfg.bpmStep)||0;
+  let a=lo, b=hi, minDiff=Math.max(10,Math.round((hi-lo)*0.25));
+  if(old!=null){
+    old=Math.min(hi,Math.max(lo,old));                       // 幅の違うラウンドから来たときは幅の中へ寄せる
+    if(step){ a=Math.max(lo,old-step); b=Math.min(hi,old+step); minDiff=Math.min(minDiff,Math.max(3,Math.round(step*0.4))); }
+  }
+  let v,n=0; do{ v=a+rnd(b-a+1); n++; }while(old!=null && Math.abs(v-old)<minDiff && n<60);
+  return v;
 }
 const gapRand=g=>{ const [a,b]=CHANGE_GAP[g]||CHANGE_GAP.every; return a+rnd(b-a+1); };   // 周の数
 function pickBeats(old){ let b,n=0; do{ b=BEAT_CHOICES[rnd(BEAT_CHOICES.length)]; n++; }while(b===old && n<20); return b; }
@@ -2392,7 +2407,7 @@ function mGo(r){
 }
 function mGoMetro(r,t0){
   // テンポは「周」の頭でだけ変わる。1周のあいだは同じテンポ・同じ拍数。
-  M.bpm=pickBpm(r.range,null,M.cfg); M.nextBeat=t0;
+  M.bpm=pickBpm(r.range,M.bpm!=null?M.bpm:null,M.cfg); M.nextBeat=t0;   // 前のラウンドの続きから
   M.beats=r.beatsRand?pickBeats(null):r.beats; M.beatIdx=0; M.rotN=0; M.rotLeft=gapRand(r.gap); M.metroOver=false;
   M.bpmMin=Math.min(M.bpmMin,M.bpm); M.bpmMax=Math.max(M.bpmMax,M.bpm);
   $('mBig').textContent=M.bpm;
@@ -3768,7 +3783,7 @@ goHome();
    Version check — 古い保存済みの画面が出ていたら、新しい版に切り替える
    （GitHub Pages は更新後しばらく古い版を返すことがあるため）
    ============================================================ */
-const APP_VER='2026-11-05 22:30';   // 更新のたびにこの日時を書き換える
+const APP_VER='2026-11-05 23:00';   // 更新のたびにこの日時を書き換える
 $('appVer').textContent='更新 '+APP_VER;
 (function checkVer(){
   if(location.protocol==='file:') return;
