@@ -1090,7 +1090,7 @@ function moveModeUI(v){
   $('mSecBox').style.display   = v==='metro'?'none':'block';
   $('mHint').textContent =
     v==='metro' ? '決めた拍数で1周します（例：4拍で1周）。1周のあいだテンポは同じで、周の変わり目でテンポが変わります。1拍目は高い音です。'
-  : v==='sec'   ? '「足首回し、10秒」のように秒数がランダムに出ます。1秒ごとに音が鳴り、最後の3秒は高い音、終わりはチャイムです。'
+  : v==='sec'   ? '「足首回し、10秒」のように秒数がランダムに出ます（候補から選ぶ／4〜12秒などの範囲でランダム）。1秒ごとに音が鳴り、最後の3秒は高い音、終わりはチャイムです。'
   :               'ラウンドごとに、メトロノームか秒数かがランダムに決まります。';
 }
 
@@ -1322,7 +1322,14 @@ function renderCustom(t){
         <div class="hint" id="mRangeHint">テンポは 1分間に 50〜110 回 のあいだで変わります。</div>
       </div>
       <div id="mSecBox" style="display:none">
-        <div class="row"><span class="lbl">秒数の候補</span>${chips('mSecs',[5,10,15,20,30].map(v=>({v,l:v+'秒'})),['5','10','15'])}</div>
+        ${rowSeg('秒数の決め方','mSecMode',[{v:'list',l:'候補から選ぶ'},{v:'rand',l:'ランダム'}],moveSecPref().mode,moveSecModeUI)}
+        <div class="row" id="mSecListRow"><span class="lbl">秒数の候補</span>${chips('mSecs',[5,10,15,20,30].map(v=>({v,l:v+'秒'})),['5','10','15'])}</div>
+        <div class="row" id="mSecRandRow" style="display:none;justify-content:flex-start;flex-wrap:nowrap;gap:10px">
+          <label class="numcell"><span>いちばん短く</span><input class="numbox" id="mSecMin" type="number" inputmode="numeric" min="1" max="30" value="${moveSecPref().min}"></label>
+          <span class="numsep">〜</span>
+          <label class="numcell"><span>いちばん長く</span><input class="numbox" id="mSecMax" type="number" inputmode="numeric" min="1" max="30" value="${moveSecPref().max}"></label>
+          <span class="lbl" style="opacity:.6">秒</span>
+        </div>
         ${rowSeg('数え方','mCount',[{v:'beep',l:'ピッという音'},{v:'voice',l:'声で数える'}],'beep')}
       </div>
       ${rowSeg('ラウンド数','mRounds',[3,5,8,10].map(v=>({v,l:String(v)})),'5')}
@@ -1340,6 +1347,10 @@ function renderCustom(t){
       moveRangeUI(segVal('mRange'));
     }));
     moveRangeUI(segVal('mRange'));
+    ['mSecMin','mSecMax'].forEach(id=>$(id).addEventListener('change',()=>{
+      const w=moveSecRead(); $('mSecMin').value=w.min; $('mSecMax').value=w.max; moveSecSave(w);
+    }));
+    moveSecModeUI(segVal('mSecMode'));
   }
   if(t==='spot') $('spCalBtn').onclick=()=>spotCalOpen(spotReadCfg());
   if(t==='card') flashKindUI(flashKindPref());
@@ -1379,7 +1390,8 @@ $('customStart').onclick=()=>{
     mode:segVal('mMode'), moves:cfgUI.mMoves.slice(), rounds:+segVal('mRounds'), rest:+segVal('mRest'),
     range:segVal('mRange'), ...(()=>{ const w=moveWideRead(); return {bpmMin:w.min,bpmMax:w.max}; })(), gap:segVal('mGap'), dur:+$('mDur').value, flip:$('mFlip').classList.contains('on'),
     beats:+$('mBeats').value, beatsRand:$('mBeatsRand').classList.contains('on'), snd:segVal('mSnd'),
-    secs:cfgUI.mSecs.map(Number), count:segVal('mCount')
+    secs:cfgUI.mSecs.map(Number), count:segVal('mCount'),
+    secMode:segVal('mSecMode'), ...(()=>{ const w=moveSecRead(); return {secMin:w.min,secMax:w.max}; })()
   });
   if(curTrain==='stroop'){
     if(segVal('sForm')==='grid')
@@ -1955,6 +1967,23 @@ const MOVES=[
 ];
 const TEMPO_RANGE={slow:[40,80], mid:[50,110], fast:[70,140], wide:[40,140]};   // 1分間に鳴る回数（wide は下で自分で決める）
 // 「ばらばら」の いちばん遅く／いちばん速く。最初は 20 と 150、変えたら覚えておく
+// 秒数ランダムの いちばん短く／いちばん長く（最初は 4 と 12）と、決め方を覚えておく
+function moveSecPref(){
+  const d={mode:'list',min:4,max:12};
+  try{ return {...d,...(JSON.parse(localStorage.getItem('notore-move-sec')||'{}'))}; }catch(e){ return d; }
+}
+function moveSecSave(o){ try{ localStorage.setItem('notore-move-sec',JSON.stringify({...moveSecPref(),...o})); }catch(e){} }
+function moveSecRead(){
+  let a=Math.round(+$('mSecMin').value||4), b=Math.round(+$('mSecMax').value||12);
+  a=Math.max(1,Math.min(30,a)); b=Math.max(1,Math.min(30,b));
+  if(a>b) [a,b]=[b,a];
+  return {min:a,max:b};
+}
+function moveSecModeUI(v){
+  $('mSecListRow').style.display=v==='list'?'flex':'none';
+  $('mSecRandRow').style.display=v==='rand'?'flex':'none';
+  moveSecSave({mode:v});
+}
 function moveWidePref(){
   try{ const v=JSON.parse(localStorage.getItem('notore-move-wide')||'null'); if(v&&v.min&&v.max) return v; }catch(e){}
   return {min:20,max:150};
@@ -2019,9 +2048,9 @@ const SND={
 /* ---- voice ----
    まずは録音した声（voice/*.mp3）を Web Audio で鳴らす。ブラウザの読み上げ機能は
    ブラウザによって鳴らない（Brave など）ので、録音が読めないときだけ代わりに使う。 */
-const VOX_MAP={'はじめます':'hajime','吐きます':'haku','止めます':'tomeru','吸います':'suu','おわりです。ふつうの呼吸に戻しましょう':'owari','休憩':'kyukei','逆回し':'gyaku','おつかれさまでした':'otsukare','足首回し':'ankle','肩回し':'shoulder','手首回し':'wrist','腕回し':'arm','股関節回し':'hip','腰回し':'waist','ひざ回し':'knee','いち':'n1','に':'n2','さん':'n3','よん':'n4','ご':'n5','ろく':'n6','なな':'n7','はち':'n8','きゅう':'n9','じゅう':'n10','11':'n11','12':'n12','13':'n13','14':'n14','15':'n15','16':'n16','17':'n17','18':'n18','19':'n19','20':'n20','21':'n21','22':'n22','23':'n23','24':'n24','25':'n25','26':'n26','27':'n27','28':'n28','29':'n29','30':'n30','5秒':'s5','10秒':'s10','15秒':'s15','20秒':'s20','30秒':'s30','40秒':'s40','50秒':'s50','60秒':'s60','70秒':'s70','80秒':'s80','90秒':'s90','1拍で1周':'b1','2拍で1周':'b2','3拍で1周':'b3','4拍で1周':'b4','5拍で1周':'b5','6拍で1周':'b6','7拍で1周':'b7','8拍で1周':'b8','9拍で1周':'b9','10拍で1周':'b10','11拍で1周':'b11','12拍で1周':'b12','この呼吸で終わりです':'konokokyu','1分経過':'m1','2分経過':'m2','3分経過':'m3','4分経過':'m4','5分経過':'m5','6分経過':'m6','7分経過':'m7','8分経過':'m8','9分経過':'m9','10分経過':'m10','残り1分です':'r1','残り2分です':'r2','残り3分です':'r3','残り4分です':'r4','残り5分です':'r5','残り6分です':'r6','残り7分です':'r7','残り8分です':'r8','残り9分です':'r9','あか':'c_red','きいろ':'c_yellow','みどり':'c_green','あお':'c_blue','しろ':'c_white','オレンジ':'c_orange','むらさき':'c_purple','ピンク':'c_pink','みずいろ':'c_sky','おわりです':'owari2'};
+const VOX_MAP={'はじめます':'hajime','吐きます':'haku','止めます':'tomeru','吸います':'suu','おわりです。ふつうの呼吸に戻しましょう':'owari','休憩':'kyukei','逆回し':'gyaku','おつかれさまでした':'otsukare','足首回し':'ankle','肩回し':'shoulder','手首回し':'wrist','腕回し':'arm','股関節回し':'hip','腰回し':'waist','ひざ回し':'knee','いち':'n1','に':'n2','さん':'n3','よん':'n4','ご':'n5','ろく':'n6','なな':'n7','はち':'n8','きゅう':'n9','じゅう':'n10','11':'n11','12':'n12','13':'n13','14':'n14','15':'n15','16':'n16','17':'n17','18':'n18','19':'n19','20':'n20','21':'n21','22':'n22','23':'n23','24':'n24','25':'n25','26':'n26','27':'n27','28':'n28','29':'n29','30':'n30','5秒':'s5','10秒':'s10','15秒':'s15','20秒':'s20','30秒':'s30','40秒':'s40','50秒':'s50','60秒':'s60','70秒':'s70','80秒':'s80','90秒':'s90','1拍で1周':'b1','2拍で1周':'b2','3拍で1周':'b3','4拍で1周':'b4','5拍で1周':'b5','6拍で1周':'b6','7拍で1周':'b7','8拍で1周':'b8','9拍で1周':'b9','10拍で1周':'b10','11拍で1周':'b11','12拍で1周':'b12','この呼吸で終わりです':'konokokyu','1分経過':'m1','2分経過':'m2','3分経過':'m3','4分経過':'m4','5分経過':'m5','6分経過':'m6','7分経過':'m7','8分経過':'m8','9分経過':'m9','10分経過':'m10','残り1分です':'r1','残り2分です':'r2','残り3分です':'r3','残り4分です':'r4','残り5分です':'r5','残り6分です':'r6','残り7分です':'r7','残り8分です':'r8','残り9分です':'r9','あか':'c_red','きいろ':'c_yellow','みどり':'c_green','あお':'c_blue','しろ':'c_white','オレンジ':'c_orange','むらさき':'c_purple','ピンク':'c_pink','みずいろ':'c_sky','おわりです':'owari2','1秒':'s1','2秒':'s2','3秒':'s3','4秒':'s4','6秒':'s6','7秒':'s7','8秒':'s8','9秒':'s9','11秒':'s11','12秒':'s12','13秒':'s13','14秒':'s14','16秒':'s16','17秒':'s17','18秒':'s18','19秒':'s19','21秒':'s21','22秒':'s22','23秒':'s23','24秒':'s24','25秒':'s25','26秒':'s26','27秒':'s27','28秒':'s28','29秒':'s29'};
 const VOX={raw:{}, buf:{}, src:[], fetching:false};
-const VOICE_VER='kokoro2';   // 声を作り直したら変える（古い声が残らないように）
+const VOICE_VER='kokoro3';   // 声を作り直したら変える（古い声が残らないように）
 function voxFetch(){
   if(VOX.fetching || location.protocol==='file:') return;
   VOX.fetching=true;
@@ -2102,7 +2131,12 @@ function buildMovePlan(cfg){
     if(mode==='mix') mode = cfg.auto ? (i%2?'sec':'metro') : (Math.random()<0.5?'metro':'sec');
     const r={mv,mode};
     if(mode==='sec'){
-      let s; do{ s=cfg.secs[rnd(cfg.secs.length)]; }while(cfg.secs.length>1 && s===lastS); lastS=s;
+      let s;
+      if(cfg.secMode==='rand'){                      // ランダム：いちばん短く〜いちばん長く のあいだで毎回ちがう秒数
+        const a=cfg.secMin||4, b=cfg.secMax||12;
+        do{ s=a+rnd(b-a+1); }while(b>a && s===lastS);
+      }else{ do{ s=cfg.secs[rnd(cfg.secs.length)]; }while(cfg.secs.length>1 && s===lastS); }
+      lastS=s;
       r.dur=s;
     }else{
       r.dur=cfg.dur; r.range=cfg.range; r.gap=cfg.gap||'mid'; r.beats=cfg.beats||4; r.beatsRand=!!cfg.beatsRand;
@@ -3374,7 +3408,7 @@ goHome();
    Version check — 古い保存済みの画面が出ていたら、新しい版に切り替える
    （GitHub Pages は更新後しばらく古い版を返すことがあるため）
    ============================================================ */
-const APP_VER='2026-11-05 19:30';   // 更新のたびにこの日時を書き換える
+const APP_VER='2026-11-05 20:00';   // 更新のたびにこの日時を書き換える
 $('appVer').textContent='更新 '+APP_VER;
 (function checkVer(){
   if(location.protocol==='file:') return;
