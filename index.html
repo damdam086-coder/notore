@@ -502,6 +502,18 @@ body.proj .hud{font-size:15px}
 .mchip.off{opacity:.35;text-decoration:line-through}
 .mform{margin-top:10px;font-size:13px;color:var(--text-3);word-break:break-all}
 #cTag b{font-weight:800}
+.qsuit{width:1.05em;height:1.05em;vertical-align:-.16em;margin:0 .08em}
+.qtext{font-size:22px;font-weight:760;line-height:1.5;color:var(--text)}
+.qopts{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:16px}
+.qopts .btn{flex:1 1 40%;margin:0;font-size:18px}
+.qlab{display:flex;align-items:center;gap:10px;justify-content:center;margin-top:12px;font-weight:700;font-size:17px}
+.qlab .numin{max-width:140px;margin:0}
+.qans2{display:flex;gap:28px;justify-content:center;margin-top:6px}
+.qlab2{font-weight:700;font-size:15px}
+.qchips{display:flex;flex-wrap:wrap;gap:4px;justify-content:center;margin-top:12px;max-height:30vh;overflow:auto}
+.qchip{display:inline-flex;align-items:center;gap:1px;padding:3px 5px;border-radius:8px;background:#fff;font-size:20px;font-weight:800;font-style:normal}
+.qchip i{font-style:normal;font-size:14px}
+.qchip.off{opacity:.28}
 .anum{font-size:clamp(110px,min(42vw,30vh),380px);font-weight:800;line-height:1;min-height:1em;margin-top:1vmin;letter-spacing:-.02em;
   font-family:-apple-system,"Helvetica Neue",Arial,sans-serif}
 .anum.flip{animation:flip .14s ease-out}
@@ -982,7 +994,7 @@ const QUICK_DESC={
   stroop:'かな → 漢字 → English。1文字ずつからはじめて、一覧・背景ラインやマスへと進みます。',
   step  :'左右ジャンプ・ケンケン・グーパー・イン＆アウト・シンコペーションなどから6種目をランダムに。BPM 80 から始めて、種目ごとに 5 ずつ速くなります。1種目8小節。床に線を1本置いて使います。',
   spot  :'3×3の丸（番号と色つき）が映ります。「あか」「さん」などの声と光の合図で、その丸に触る・飛び移る。合図は2〜4秒のランダムな間隔で60秒。プロジェクターで壁や床に映して使います（ふつうの画面でもできます）。',
-  card  :'記号（スペード・ハート・ダイヤ・クラブ）、数字（1〜10）、記号と数字の色（黒・赤・緑・青・黄）が、1.5〜3秒のランダムな間隔でパッと切り替わります。60秒。',
+  card  :'記号（スペード・ハート・ダイヤ・クラブ）と色（赤・黒）が、1.5〜3秒のランダムな間隔でパッと切り替わります。はじめに「赤いスペードは何回？」のような数えるお題が出るので、数えながら見て、最後に答えます。60秒。',
   mem   :'1回目は見ながら 1 から順に押し、2回目は場所を思い出して 1 から順に押します（白い四角を出すか、枠だけにするかを下で選べます）。4個からスタートし、正解で1個増え、まちがえで1個減ります（3〜10個）。全10問。',
   breath:'8-8-8（8秒で吐く・8秒止める・8秒で吸う）を5分。はじまりの声と「いち・に・さん…はち」の数に合わせるだけです。1分ごとに残り時間をお知らせします。',
   hands :'お題が出たら、カチッという音ごとに左右の形を入れ替えます。数字（グー〜5）・1.5秒ごとの入れ替えから始めて、1秒ごと、キツネやグッドなどのポーズも混ざり、最後はお題が3〜5秒で変わります。1ステージ30秒×4本。',
@@ -1304,19 +1316,20 @@ function renderCustom(t){
       <div class="row" id="cFixRow"><span class="lbl">間隔</span>${seg('cIv',[1,1.5,2,2.5,3,4].map(v=>({v,l:v+'秒'})),'2.5')}</div>
       <div class="row" id="cRandRow" style="display:none"><span class="lbl">間隔の幅</span>${seg('cRand',[{v:'r1',l:'1〜2秒'},{v:'r15',l:'1.5〜3秒'},{v:'r2',l:'2〜4秒'}],'r15')}</div>
       <div id="fCardBox">
-      <div class="row"><span class="lbl">変わるもの</span>${chips('cChange',[{v:'suit',l:'記号'},{v:'num',l:'数字'},{v:'scol',l:'記号の色'},{v:'ncol',l:'数字の色'}],['suit','num','scol','ncol'])}</div>
-      ${rowToggle('数字を付ける','cNum',true,v=>{ $('cNumBox').style.display=v?'block':'none'; })}
-      <div id="cNumBox">
+      <div class="row"><span class="lbl">変わるもの</span>${chips('cChange',[{v:'suit',l:'記号'},{v:'num',l:'数字'},{v:'scol',l:'記号の色'},{v:'ncol',l:'数字の色'}],['suit','scol'])}</div>
+      ${rowToggle('数字を付ける','cNum',false,v=>{ $('cNumBox').style.display=v?'block':'none'; })}
+      <div id="cNumBox" style="display:none">
         ${rowSeg('数字','cRange',[{v:'n10',l:'1〜10'},{v:'n13',l:'1〜13'},{v:'ak',l:'A〜K'}],'n10')}
         ${rowSeg('数字の色','cNumCol',[{v:'own',l:'記号とは別の色'},{v:'same',l:'記号と同じ色'}],'own')}
       </div>
       ${rowSeg('色の付け方','cColorMode',[{v:'random',l:'いろいろな色'},{v:'real',l:'本物どおり（赤・黒）'}],'random',v=>{
         $('cColRow').style.display=v==='random'?'flex':'none';
       })}
-      <div class="row" id="cColRow"><span class="lbl">使う色</span>${chips('cColors',Object.keys(CARD_COLORS).map(k=>({v:k,l:`<span class="cdot" style="background:${CARD_COLORS[k].c}"></span>${CARD_COLORS[k].n}`})),['black','red','green','blue','yellow'])}</div>
+      <div class="row" id="cColRow"><span class="lbl">使う色</span>${chips('cColors',Object.keys(CARD_COLORS).map(k=>({v:k,l:`<span class="cdot" style="background:${CARD_COLORS[k].c}"></span>${CARD_COLORS[k].n}`})),['black','red'])}</div>
+      ${rowToggle('数えるお題','cQuiz',true)}
       </div>
       <div id="fColorBox">
-        <div class="row"><span class="lbl">使う色</span>${chips('fwColors',WALL_COLOR_CHIPS(),Object.keys(WALL_COLORS))}</div>
+        <div class="row"><span class="lbl">使う色</span>${chips('fwColors',WALL_COLOR_CHIPS(),['red','yellow','green','blue'])}</div>
         <div class="hint">画面いっぱいが、選んだ色の中からランダムに切り替わります（同じ色は続けて出ません）。左上の × でやめられます。</div>
       </div>
       <div id="fNumBox">
@@ -1334,7 +1347,7 @@ function renderCustom(t){
       </div>
       <div id="cDurBox">${rowRange('1セットの時間','cDur',20,120,10,60,v=>v+'秒')}</div>
       ${rowToggle('切り替わりの音','cBeep',false)}
-      <div class="hint" id="fCardHint">「変わるもの」で選んだものだけが、カードごとに変わります（選ばなかったものは最初のまま）。前とまったく同じものは続けて出ません。「本物どおり」は、ハート・ダイヤが赤、スペード・クラブが黒になります。</div>
+      <div class="hint" id="fCardHint">「変わるもの」で選んだものだけが、カードごとに変わります（選ばなかったものは最初のまま）。前とまったく同じものは続けて出ません。「本物どおり」は、ハート・ダイヤが赤、スペード・クラブが黒になります。「数えるお題」をオンにすると、はじめに「ハートは何回？」のようなお題が出て、最後に答え合わせをします（お題は毎回変わります）。</div>
     </div>`;
   }
   if(t==='mem'){
@@ -1478,7 +1491,7 @@ $('customStart').onclick=()=>{
     math:$('fnMath').classList.contains('on'), rule:segVal('fnRule'), mathQ:+segVal('fnQ'), ignore:segVal('fnIgnore')!=='no',
     timing:segVal('cTiming'), iv:+segVal('cIv'), rand:segVal('cRand'), change:cfgUI.cChange.slice(),
     num:$('cNum').classList.contains('on'), range:segVal('cRange'), colorMode:segVal('cColorMode'),
-    colors:cfgUI.cColors.slice(), numCol:segVal('cNumCol'), dur:+$('cDur').value, beep:$('cBeep').classList.contains('on')
+    colors:cfgUI.cColors.slice(), numCol:segVal('cNumCol'), dur:+$('cDur').value, beep:$('cBeep').classList.contains('on'), quiz:$('cQuiz').classList.contains('on')
   });
   if(curTrain==='mem') runMem({
     count:+$('wCount').value, grid:segVal('wGridSel'), after:segVal('wAfterQ')||memAfterPref(), total:+segVal('wQ')
@@ -3049,8 +3062,8 @@ const FLASH_KINDS={card:'トランプ', color:'カラー', num:'数字だけ'};
 const flashKindOf=c=>c.kind||'card';
 function flashKindPref(){ try{ const k=localStorage.getItem('notore-flash-kind'); return FLASH_KINDS[k]?k:'card'; }catch(e){ return 'card'; } }
 const FLASH_QUICK={
-  card :'記号（スペード・ハート・ダイヤ・クラブ）、数字（1〜10）、記号と数字の色（黒・赤・緑・青・黄）が、1.5〜3秒のランダムな間隔でパッと切り替わります。60秒。',
-  color:'画面いっぱいの色（赤・黄・緑・青・白・黒・橙・紫・桃・水色の10色）が、1.5〜3秒のランダムな間隔でパッと切り替わります。60秒。',
+  card :'記号（スペード・ハート・ダイヤ・クラブ）と色（赤・黒）が、1.5〜3秒のランダムな間隔でパッと切り替わります。はじめに「赤いスペードは何回？」のような数えるお題が出るので、数えながら見て、最後に答えます。60秒。',
+  color:'画面いっぱいの色（赤・黄・緑・青の4色）が、1.5〜3秒のランダムな間隔でパッと切り替わります。60秒。',
   num  :'大きな数字（1〜10）と、その色（黒・赤・緑・青・黄）が、1.5〜3秒のランダムな間隔でパッと切り替わります。60秒。'
 };
 function flashMathUI(on){
@@ -3082,19 +3095,19 @@ function numOnlyValues(r){
 }
 function flashAutoCfg(k){
   const base={kind:k,timing:'rand',iv:2.5,rand:'r15',dur:60,beep:false};
-  if(k==='color') return {...base, wallColors:Object.keys(WALL_COLORS)};
+  if(k==='color') return {...base, wallColors:['red','yellow','green','blue']};
   if(k==='num') return {...base, nrange:'n10', nchange:['num','col'], ncolors:['black','red','green','blue','yellow']};
   return {...cardAutoCfg(), kind:'card'};
 }
-const cardAutoCfg=()=>({timing:'rand',iv:2.5,rand:'r15',change:['suit','num','scol','ncol'],num:true,range:'n10',
-  colorMode:'random',colors:['black','red','green','blue','yellow'],numCol:'own',dur:60,beep:false});
+const cardAutoCfg=()=>({timing:'rand',iv:2.5,rand:'r15',change:['suit','scol'],num:false,range:'n10',
+  colorMode:'random',colors:['black','red'],numCol:'own',dur:60,beep:false,quiz:true});
 
 let C=null;
 function stopCard(){ $('cWall').style.display='none'; if(C){ C.stops.forEach(f=>f&&f()); clearTimeout(C.to); clearTimeout(C.to2); clearInterval(C.clock); C=null; } }
 $('cWallX').onclick=()=>{ if(C) cardDone(true); };
 function runCard(cfg){
   stopAll(); if(cfg.beep) audioOn();
-  C={cfg, count:0, cur:null, stops:[], to:null, clock:null};
+  C={cfg, count:0, cur:null, stops:[], to:null, clock:null, seen:[], quiz:null};
   $('cLeft').textContent=cfg.dur; $('cCount').textContent='0'; $('cIvLbl').textContent=cardIvTxt(cfg);
   $('cCard').innerHTML=''; $('cCard').style.visibility='hidden'; $('cNumOnly').textContent='';
   const kind=flashKindOf(cfg);
@@ -3117,10 +3130,15 @@ function runCard(cfg){
       sub:`${cardIvTxt(cfg)}に、${cardChangeTxt(cfg)}が変わります。カードをよく見ていてください。`,
       ex:`<div class="prep-ex">${sample}</div>`
     };
+  C.quiz = kind==='card' && cfg.quiz ? quizMake(cfg) : null;
+  if(C.quiz){
+    info.title='数えるお題';
+    info.sub=`<span class="qtext" style="display:block;margin:6px 0 10px">${C.quiz.q}</span>${cardIvTxt(cfg)}に、${cardChangeTxt(cfg)}が変わります。数えながら見て、${cfg.dur}秒たったら答えを入れます。`;
+  }
   const math = kind==='num' && cfg.math;
   C.math = math ? mathBuild(cfg) : null;
   $('cLeftBox').innerHTML = math ? `問 <b class="tnum" id="cLeft">0/${cfg.mathQ}</b>` : `残り <b class="tnum" id="cLeft">${cfg.dur}</b>s`;
-  $('cTag').innerHTML = math ? C.math.tag : '';
+  $('cTag').innerHTML = math ? C.math.tag : C.quiz ? `お題：${C.quiz.q.replace(/<br>.*$/,'')}` : '';
   if(math){
     show('playCard','フラッシュ', `暗算 ・ ${mathRuleName(C.math)} ・ ${cfg.mathQ}個`);
     info.title='暗算のルール';
@@ -3358,7 +3376,7 @@ function cardNext(){
   const prev=C.cur; let st,n=0;
   do{ st=cardRoll(prev); n++; }                     // 前のカードと見た目が同じにならないように
   while(prev && n<50 && st.suit===prev.suit && (!C.cfg.num||st.num===prev.num) && st.scol===prev.scol && (!C.cfg.num||st.ncol===prev.ncol));
-  C.cur=st; C.count++;
+  C.cur=st; C.count++; C.seen.push({...st});
   $('cCount').textContent=C.count;
   const card=$('cCard');
   card.innerHTML=(C.cfg.num?`<div class="cnum tnum" style="color:${CARD_COLORS[st.ncol].c}">${st.num}</div>`:'')
@@ -3368,7 +3386,128 @@ function cardNext(){
   const c=C.cfg, iv=c.timing==='fixed'?c.iv:(()=>{ const [a,b]=CARD_RAND[c.rand]; return a+Math.random()*(b-a); })();
   C.to=setTimeout(cardNext,Math.round(iv*1000));
 }
+/* ---- トランプ：数えるお題 ----
+   はじめにお題（「赤いスペードは何回？」など）を見せ、見ながら数えてもらい、最後に答え合わせ。
+   お題は「何を数えるか」の型と、記号・色・数字の組み合わせから毎回えらぶ。出せないお題（変わらない記号・1色だけ など）は除く */
+const qIcon=(s,col)=>suitSvg(s,col||'currentColor','qsuit');
+const qSuit=s=>`${qIcon(s)}${SUITS[s].n}`;
+const COL_ADJ={black:'黒い',red:'赤い',blue:'青い',yellow:'黄色い',green:'緑の',purple:'紫の',orange:'橙の'};
+const qCol=k=>`<b style="color:${CARD_COLORS[k].c}">${CARD_COLORS[k].n}</b>`;
+const qColSuit=(k,s)=>`<b style="color:${CARD_COLORS[k].c}">${COL_ADJ[k]||CARD_COLORS[k].n+'の'}</b>${qIcon(s,CARD_COLORS[k].c)}${SUITS[s].n}`;
+const realCol=s=>SUITS[s].red?'red':'black';
+const cardNumVal=n=>({A:1,J:11,Q:12,K:13})[n]||+n;
+function quizMake(c){
+  const ch=k=>c.change.includes(k);
+  const suits=ch('suit')?Object.keys(SUITS):[];
+  const real=c.colorMode==='real';
+  const cols=real?['red','black']:(ch('scol')?c.colors.filter(k=>CARD_COLORS[k]):[]);
+  const colVary=real?suits.length>0:cols.length>=2;
+  const nums=c.num&&ch('num')?CARD_RANGE[c.range].v:[];
+  const T=[];   // [重み, 作る関数]
+  const two=a=>{ const x=pick(a); let y; do{ y=pick(a); }while(y===x); return [x,y]; };
+  if(suits.length){
+    T.push([4,()=>{ const s=pick(suits); return {type:'count',q:`${qSuit(s)}は何回出る？`,t:x=>x.suit===s}; }]);
+    T.push([2,()=>{ const [a,b]=two(suits); return {type:'count',q:`${qSuit(a)}と${qSuit(b)}、あわせて何回？`,t:x=>x.suit===a||x.suit===b}; }]);
+    T.push([1,()=>{ const s=pick(suits); return {type:'count',q:`${qSuit(s)}<b>以外</b>は何回出る？`,t:x=>x.suit!==s}; }]);
+    T.push([2,()=>{ const [a,b]=two(suits); return {type:'count2',q:`${qSuit(a)}と${qSuit(b)}を、<b>別々に</b>数える`,labels:[qSuit(a),qSuit(b)],ts:[x=>x.suit===a,x=>x.suit===b]}; }]);
+    T.push([1,()=>({type:'count',q:'<b>同じ記号</b>が2回続いたのは何回？',t:(x,i,a)=>i>0&&a[i-1].suit===x.suit,streak:true})]);
+    T.push([1,()=>({type:'most',q:'いちばん多く出た<b>記号</b>はどれ？',key:'suit',opts:suits})]);
+  }
+  if(colVary){
+    T.push([2,()=>{ const k=pick(cols); return {type:'count',q:`<b style="color:${CARD_COLORS[k].c}">${COL_ADJ[k]||CARD_COLORS[k].n+'の'}</b>記号は何回出る？`,t:x=>x.scol===k}; }]);
+    T.push([1,()=>({type:'count',q:'<b>同じ色</b>が2回続いたのは何回？',t:(x,i,a)=>i>0&&a[i-1].scol===x.scol,streak:true})]);
+    if(cols.length<=4) T.push([1,()=>({type:'most',q:'いちばん多く出た<b>色</b>はどれ？',key:'scol',opts:cols})]);
+  }
+  if(suits.length && colVary && !real){
+    T.push([4,()=>{ const k=pick(cols), s=pick(suits); return {type:'count',q:`${qColSuit(k,s)}は何回出る？`,t:x=>x.scol===k&&x.suit===s}; }]);
+    T.push([2,()=>{ const k=pick(cols); const [a,b]=two(suits); return {type:'count2',q:`${qColSuit(k,a)}と${qColSuit(k,b)}を、<b>別々に</b>数える`,labels:[qColSuit(k,a),qColSuit(k,b)],ts:[x=>x.scol===k&&x.suit===a,x=>x.scol===k&&x.suit===b]}; }]);
+    if(cols.includes('red')||cols.includes('black'))
+      T.push([2,()=>({type:'count',q:'<b>本物のトランプと違う色</b>の記号は何回？<br><span style="font-size:.8em;opacity:.75">（本物はハート・ダイヤが赤、スペード・クラブが黒）</span>',t:x=>x.scol!==realCol(x.suit)})]);
+  }
+  if(nums.length){
+    const numeric=c.range!=='ak';
+    T.push([2,()=>({type:'count',q:'<b>偶数</b>のカードは何回出る？',t:x=>cardNumVal(x.num)%2===0})]);
+    T.push([1,()=>{ const v=pick(nums.slice(2,-2)); return {type:'count',q:`<b>${v}</b> より大きい数字は何回出る？`,t:x=>cardNumVal(x.num)>cardNumVal(v)}; }]);
+    if(!numeric) T.push([2,()=>({type:'count',q:'<b>絵札（J・Q・K）</b>は何回出る？',t:x=>['J','Q','K'].includes(x.num)})]);
+    if(suits.length) T.push([1,()=>{ const s=pick(suits); return {type:'count',q:`${qSuit(s)}の<b>偶数</b>は何回出る？`,t:x=>x.suit===s&&cardNumVal(x.num)%2===0}; }]);
+  }
+  if(!T.length) return null;
+  let r=Math.random()*T.reduce((a,x)=>a+x[0],0);
+  for(const [w,f] of T){ if((r-=w)<0) return f(); }
+  return T[T.length-1][1]();
+}
+const quizPlain=q=>q.q.replace(/<br>.*$/,'').replace(/<[^>]+>/g,'');
+function quizAnswer(q,seen){
+  if(q.type==='count') return seen.filter((x,i,a)=>q.t(x,i,a)).length;
+  if(q.type==='count2') return q.ts.map(t=>seen.filter(t).length);
+  const n={}; q.opts.forEach(k=>n[k]=0); seen.forEach(x=>{ if(x[q.key] in n) n[x[q.key]]++; });
+  const mx=Math.max(...Object.values(n)); return {counts:n, best:q.opts.filter(k=>n[k]===mx)};
+}
+const quizOptLabel=(q,k)=>q.key==='suit'?qSuit(k):qCol(k);
+function quizAsk(){
+  const q=C.quiz;
+  $('cCard').style.visibility='hidden'; $('cTag').innerHTML='';
+  let body;
+  if(q.type==='count') body=`<input class="numin" id="qIn0" type="number" inputmode="numeric" placeholder="数えた回数" style="margin-top:16px">`;
+  else if(q.type==='count2') body=q.labels.map((l,i)=>`<label class="qlab">${l}<input class="numin" id="qIn${i}" type="number" inputmode="numeric" placeholder="回数"></label>`).join('');
+  else body=`<div class="qopts">${q.opts.map(k=>`<button class="btn sub" data-k="${k}">${quizOptLabel(q,k)}</button>`).join('')}</div>`;
+  veilShow($('cVeil'),`<div class="prep">
+      <div class="prep-k">答え</div>
+      <div class="qtext">${q.q}</div>
+      ${body}
+      ${q.type==='most'?'':'<button class="btn prep-b" id="qCheck">答え合わせ</button>'}
+      <button class="btn quiet" id="qSkip" style="margin-top:8px">入力せずに答えを見る</button>
+    </div>`);
+  const val=i=>{ const e=$('qIn'+i); const v=e&&e.value.trim(); return v===''||v==null?null:Math.round(+v); };
+  if(q.type==='most') $('cVeil').querySelectorAll('.qopts button').forEach(b=>b.onclick=()=>quizReveal(b.dataset.k));
+  else{
+    const go=()=>quizReveal(q.type==='count'?val(0):[val(0),val(1)]);
+    $('qCheck').onclick=go;
+    [0,1].forEach(i=>{ const e=$('qIn'+i); if(e) e.onkeydown=ev=>{ if(ev.key==='Enter') go(); }; });
+    setTimeout(()=>{ try{ $('qIn0').focus(); }catch(e){} },50);
+  }
+  $('qSkip').onclick=()=>quizReveal(null);
+}
+function quizReveal(user){
+  const q=C.quiz, seen=C.seen, ans=quizAnswer(q,seen);
+  const given = user!==null && !(Array.isArray(user)&&user.every(v=>v===null));
+  let ok=false, ansH, userTxt='';
+  if(q.type==='count'){ ok=given&&user===ans; ansH=`<div class="mans tnum">${ans}<span style="font-size:.4em">回</span></div>`; userTxt=given?user+'回':''; }
+  else if(q.type==='count2'){
+    ok=given&&user[0]===ans[0]&&user[1]===ans[1];
+    ansH=`<div class="qans2">${q.labels.map((l,i)=>`<div><div class="qlab2">${l}</div><div class="mans tnum">${ans[i]}<span style="font-size:.4em">回</span></div></div>`).join('')}</div>`;
+    userTxt=given?user.map(v=>v===null?'—':v+'回').join('・'):'';
+  }else{
+    ok=given&&ans.best.includes(user);
+    ansH=`<div class="qtext" style="margin-top:8px">${ans.best.map(k=>quizOptLabel(q,k)).join('・')}</div>
+      <div class="prep-s">${q.opts.map(k=>`${quizOptLabel(q,k)} ${ans.counts[k]}回`).join('　')}</div>`;
+    userTxt=given?quizOptLabel(q,user):'';
+  }
+  // 出たカードを順に並べ、数えるものだけ濃く
+  const hit=(x,i,a)=> q.type==='count'?q.t(x,i,a) : q.type==='count2'?q.ts.some(t=>t(x)) : ans.best.includes(x[q.key]);
+  const chipsH=seen.map((x,i,a)=>`<span class="qchip${hit(x,i,a)?'':' off'}">${suitSvg(x.suit,CARD_COLORS[x.scol].c,'qsuit')}${C.cfg.num?`<i style="color:${CARD_COLORS[x.ncol].c}">${x.num}</i>`:''}</span>`).join('');
+  tone(now()+0.01,ok?1320:330,ok?0.25:0.3,0.35,ok?'sine':'triangle');
+  C.quizRes={ok,user:userTxt,ans:q.type==='count'?ans+'回':q.type==='count2'?ans.map(v=>v+'回').join('・'):ans.best.map(k=>quizOptLabel(q,k).replace(/<[^>]+>/g,'')).join('・')};
+  veilShow($('cVeil'),`<div class="prep">
+      <div class="prep-k">答え合わせ</div>
+      <div class="qtext" style="font-size:16px">${q.q}</div>
+      ${ansH}
+      ${given?`<div class="mres ${ok?'ok':'ng'}">${ok?'正解！':'ざんねん（あなたの答え：'+userTxt+'）'}</div>`:''}
+      <div class="qchips">${chipsH}</div>
+      <div class="btnrow"><button class="btn sub" id="qAgain">別のお題で</button><button class="btn" id="qEnd">結果へ</button></div>
+    </div>`);
+  $('qAgain').onclick=()=>runCard(C.cfg);
+  $('qEnd').onclick=()=>{
+    const c=C.cfg, n=C.count, r=C.quizRes, qq=C.quiz; stopCard();
+    finish({ type:'card', cfg:c, title: r.user===''?'答えを確認しました':r.ok?'正解！':'ざんねん', note:'おつかれさまでした',
+      stats:[['お題',quizPlain(qq)],['答え',r.ans],['あなたの答え',r.user?r.user.replace(/<[^>]+>/g,''):'—'],['見たカード',n+'枚']] });
+  };
+}
 function cardDone(early){
+  if(C && C.quiz && !early){                      // お題があるときは、止めて答えを聞く
+    clearTimeout(C.to); clearTimeout(C.to2); clearInterval(C.clock); C.to=C.to2=C.clock=null;
+    quizAsk(); return;
+  }
   const c=C.cfg, n=C.count, kind=flashKindOf(c); stopCard();
   const what = kind==='color' ? ['色',c.wallColors.length+'色'] : kind==='num' ? ['変わったもの',c.nchange.map(x=>x==='num'?'数字':'色').join('・')] : ['変わったもの',cardChangeTxt(c)];
   finish({ type:'card', cfg:c, title:early?'途中で終了':'完了', note:'おつかれさまでした',
@@ -3802,7 +3941,7 @@ goHome();
    Version check — 古い保存済みの画面が出ていたら、新しい版に切り替える
    （GitHub Pages は更新後しばらく古い版を返すことがあるため）
    ============================================================ */
-const APP_VER='2026-11-05 23:40';   // 更新のたびにこの日時を書き換える
+const APP_VER='2026-11-06 00:10';   // 更新のたびにこの日時を書き換える
 $('appVer').textContent='更新 '+APP_VER;
 (function checkVer(){
   if(location.protocol==='file:') return;
