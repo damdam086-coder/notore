@@ -495,6 +495,11 @@ body.proj .hud{font-size:15px}
 .mchip.off{opacity:.35;text-decoration:line-through}
 .mform{margin-top:10px;font-size:13px;color:var(--text-3);word-break:break-all}
 #cTag b{font-weight:800}
+.anum{font-size:clamp(46px,13vmin,150px);font-weight:800;line-height:1;min-height:1em;margin-top:2vmin;
+  font-family:-apple-system,"Helvetica Neue",Arial,sans-serif}
+.anum.flip{animation:flip .14s ease-out}
+#aField.math{grid-template-rows:auto auto;align-content:center}
+#aField.math .arrow{width:min(46%,260px)}
 #mWideRow{justify-content:flex-start;flex-wrap:nowrap;gap:10px}
 .numcell{display:flex;flex-direction:column;gap:3px;font-size:11.5px;color:var(--text-3);font-weight:600}
 .numsep{padding-top:16px;color:var(--text-3)}
@@ -583,6 +588,7 @@ body.proj .hud{font-size:15px}
       <div class="field" id="aField">
         <div class="tag" id="aTag"></div>
         <div id="aArrow"></div>
+        <div class="anum tnum" id="aNum" style="display:none"></div>
         <div class="veil" id="aVeil" style="display:none"></div>
       </div>
     </div>
@@ -1123,6 +1129,15 @@ function renderCustom(t){
       <div class="row" id="aColRow" style="display:none"><span class="lbl">色の数</span>${seg('aCols',[{v:'2',l:'2色'},{v:'4',l:'4色'},{v:'6',l:'6色'}],'2')}</div>
       ${rowRange('切替スピード','aIv',0.6,2,0.1,1.0,v=>(+v).toFixed(1)+'秒')}
       ${rowRange('1セットの時間','aDur',20,60,10,30,v=>v+'秒')}
+      ${rowToggle('暗算もする','aMath',false,v=>{ $('aMathBox').style.display=v?'block':'none'; })}
+      <div id="aMathBox" style="display:none">
+        ${rowSeg('ルール','aMRule',Object.keys(MATH_RULES).map(k=>({v:k,l:MATH_RULES[k]})),'auto')}
+        ${rowSeg('無視する数字','aMIgnore',[{v:'yes',l:'あり'},{v:'no',l:'なし（全部計算）'}],'yes')}
+        ${rowSeg('数字','aMRange',[{v:'d9',l:'0〜9'},{v:'n10',l:'1〜10'},{v:'n13',l:'1〜13'},{v:'n99',l:'1〜99'}],'n10')}
+        ${rowSeg('数字が出る','aMEvery',[{v:'1',l:'毎回'},{v:'2',l:'2回に1回'},{v:'3',l:'3回に1回'}],'2')}
+        <div class="row"><span class="lbl">数字の色</span>${chips('aMColors',['red','green','blue','yellow','purple','orange'].map(k=>({v:k,l:`<span class="cdot" style="background:${CARD_COLORS[k].c}"></span>${CARD_COLORS[k].n}`})),['red','green','blue','yellow'])}</div>
+        <div class="hint">矢印の下に色つきの数字が出ます。矢印に合わせて頭を向けながら、ルールどおりに頭の中で計算し、セットが終わったら答えを入れて答え合わせします。</div>
+      </div>
       ${rowSeg('セット数','aSets',[{v:'1',l:'1'},{v:'2',l:'2'},{v:'3',l:'3'}],'1')}
       <div class="hint" id="aRuleHint">矢印と正反対の方向へ頭を向けます。</div>
     </div>`;
@@ -1361,7 +1376,9 @@ function renderCustom(t){
 $('customStart').onclick=()=>{
   if(curTrain==='arrow') runArrow({
     rule:segVal('aRule'), dirs:+segVal('aDirs'), cols:+segVal('aCols'),
-    iv:+$('aIv').value, dur:+$('aDur').value, sets:+segVal('aSets')
+    iv:+$('aIv').value, dur:+$('aDur').value, sets:+segVal('aSets'),
+    math:$('aMath').classList.contains('on'), rule:segVal('aMRule'), ignore:segVal('aMIgnore')!=='no',
+    nrange:segVal('aMRange'), every:+segVal('aMEvery'), ncolors:cfgUI.aMColors.slice()
   });
   if(curTrain==='num') runNum({
     dig:+$('nDig').value, t:+$('nT').value, rev:$('nRev').classList.contains('on'),
@@ -1499,21 +1516,30 @@ function runArrow(cfg){
   const sh=shuffle(palette), idx=c=>palette.indexOf(c);
   const go=sh.slice(0,half).sort((a,b)=>idx(a)-idx(b));
   const anti=sh.slice(half).sort((a,b)=>idx(a)-idx(b));
-  A={cfg, go, anti, pool:palette, set:1, count:0, last:null, stops:[]};
+  A={cfg, go, anti, pool:palette, set:1, count:0, last:null, stops:[], m:null, ai:0, mres:[]};
   $('aArrow').innerHTML=BIG_ARROW;
+  $('aField').classList.toggle('math',!!cfg.math);
+  $('aNum').style.display=cfg.math?'block':'none'; $('aNum').textContent='';
   $('aSetLbl').textContent='セット';
   $('aSet').textContent=`1/${cfg.sets}`;
   $('aCount').textContent='0';
   $('aTag').innerHTML = cfg.rule==='color'
     ? go.map(c=>`<span style="color:${c.c}">${c.n}</span>`).join('')+'=そのまま　'+anti.map(c=>`<span style="color:${c.c}">${c.n}</span>`).join('')+'=反対'
     : (cfg.rule==='anti'?'反対を向く':'同じ方向を向く');
-  show('playArrow','方向トレーニング', cfg.rule==='color'?'色で判断':cfg.rule==='anti'?'反対を向く':'同じ方向');
+  A.baseTag=$('aTag').innerHTML;
+  show('playArrow','方向トレーニング', (cfg.rule==='color'?'色で判断':cfg.rule==='anti'?'反対を向く':'同じ方向')+(cfg.math?' ＋ 暗算':''));
   arrowSet(true);
 }
 function arrowSet(first){
   const c=A.cfg;
   $('aSet').textContent=`${A.set}/${c.sets}`;
   $('aClock').textContent=c.dur;
+  if(c.math){                                       // このセットの暗算（数字の数＝矢印の数 ÷ 何回に1回）
+    const arrows=Math.floor(c.dur/c.iv)+1;
+    A.m=mathBuild({ncolors:c.ncolors, mathQ:Math.max(2,Math.ceil(arrows/c.every)), nrange:c.nrange, rule:c.rule, ignore:c.ignore});
+    A.ai=0; $('aNum').textContent='';
+    $('aTag').innerHTML=A.baseTag+'　｜　'+A.m.tag;
+  }
   const begin=()=>{
     if(!A) return;
     let left=c.dur;
@@ -1525,9 +1551,11 @@ function arrowSet(first){
     arrowNext();
     A.tick=setInterval(arrowNext, Math.round(c.iv*1000));
   };
+  const info=arrowRuleInfo(c,A.go,A.anti);
+  if(c.math) info.ex=(info.ex||'')+`<div class="prep-s" style="font-size:14.5px;color:var(--text);margin-top:14px">＋ 暗算：${A.m.html}</div>`;
   A.stops.push(first
-    ? veilPrepare($('aVeil'), arrowRuleInfo(c,A.go,A.anti), begin)
-    : veilCountdown($('aVeil'), $('aTag').textContent, begin));
+    ? veilPrepare($('aVeil'), info, begin)
+    : veilCountdown($('aVeil'), c.math?`暗算：${A.m.html}`:$('aTag').textContent, begin));
 }
 function arrowNext(){
   if(!A) return;
@@ -1539,17 +1567,42 @@ function arrowNext(){
   s.style.transform=`rotate(${ANGLE[d]}deg)`;
   s.style.color = A.cfg.rule==='color' ? A.pool[Math.random()*A.pool.length|0].c : '';
   w.classList.remove('pop'); void w.offsetWidth; w.classList.add('pop');
+  if(A.cfg.math){                                   // 矢印と同時に、何回かに1回 色つきの数字を出す
+    const el=$('aNum'), m=A.m;
+    if(A.ai%A.cfg.every===0 && m.i<m.seq.length){
+      const it=m.seq[m.i++]; el.textContent=it.n; el.style.color=CARD_COLORS[it.col].c;
+      el.classList.remove('flip'); void el.offsetWidth; el.classList.add('flip');
+    }else el.textContent='';
+    A.ai++;
+  }
 }
 function arrowEnd(){
+  if(A.cfg.math && A.m){                            // セットが終わったら答え合わせ
+    const m=A.m;
+    m.seq=m.seq.slice(0,m.i); m.w=m.w.slice(0,m.i);  // 実際に出た数字だけで答えを出す
+    m.answer=m.start+m.seq.reduce((a,it,i)=>a+m.w[i]*it.n,0);
+    $('aNum').textContent='';
+    const last=A.set>=A.cfg.sets;
+    mathAskIn($('aVeil'),m,last?'結果へ':'次のセットへ',(ok,user)=>{
+      if(!A) return;
+      A.mres.push({ok,user,answer:m.answer,rule:mathRuleName(m)});
+      A.m=null; veilHide($('aVeil'));
+      if(last) return arrowDone();
+      A.stops.push(veilRest($('aVeil'),15,()=>{ if(A){ A.set++; arrowSet(false); } }));
+    });
+    return;
+  }
   if(A.set>=A.cfg.sets) return arrowDone();
   A.stops.push(veilRest($('aVeil'),15,()=>{ if(A){ A.set++; arrowSet(false); } }));
 }
 function arrowDone(){
-  const c=A.cfg, n=A.count; stopArrow();
+  const c=A.cfg, n=A.count, mres=A.mres.slice(); stopArrow();
   if(PROG && progAdvance({count:n})) return;
+  const stats=[['こなした回数',n+'回'],['セット',c.sets],['1セット',c.dur+'秒'],['スピード',c.iv.toFixed(1)+'秒']];
+  if(c.math) stats.splice(1,0,['暗算',`${mres.filter(r=>r.ok).length}/${mres.length} 正解`]);
   finish({
-    type:'arrow', cfg:c, title:'完了', note:'おつかれさまでした',
-    stats:[['こなした回数',n+'回'],['セット',c.sets],['1セット',c.dur+'秒'],['スピード',c.iv.toFixed(1)+'秒']]
+    type:'arrow', cfg:c, title:'完了', note:'おつかれさまでした', stats,
+    log: c.math ? mres.map((r,i)=>({exp:`セット${i+1}：${r.answer}（${r.rule}）`, ok:r.ok, ans:r.user===null?'未入力':'あなた '+r.user})) : undefined
   });
 }
 
@@ -3088,6 +3141,37 @@ function mathReveal(user){
   };
 }
 
+// 暗算の答え合わせ（どの画面でも使える形）。onDone(ok,user)
+function mathAskIn(veil,m,nextLabel,onDone){
+  veilShow(veil,`<div class="prep">
+      <div class="prep-k">答え</div>
+      <div class="prep-s" style="font-size:15px;color:var(--text)">${m.html}</div>
+      <input class="numin" id="mqIn" type="number" inputmode="numeric" placeholder="計算した答え" style="margin-top:16px">
+      <button class="btn prep-b" id="mqCheck">答え合わせ</button>
+      <button class="btn quiet" id="mqSkip" style="margin-top:8px">入力せずに答えを見る</button>
+    </div>`);
+  const inp=$('mqIn'); setTimeout(()=>{ try{ inp.focus(); }catch(e){} },50);
+  const go=()=>{ const v=inp.value.trim(); mathRevealIn(veil,m,v===''?null:Math.round(+v),nextLabel,onDone); };
+  $('mqCheck').onclick=go; inp.onkeydown=e=>{ if(e.key==='Enter') go(); };
+  $('mqSkip').onclick=()=>mathRevealIn(veil,m,null,nextLabel,onDone);
+}
+function mathRevealIn(veil,m,user,nextLabel,onDone){
+  const ok=user!==null && user===m.answer;
+  const chipsH=m.seq.map((it,i)=>{ const s=m.w[i]; return `<span class="mchip${s?'':' off'}" style="color:${CARD_COLORS[it.col].c}">${s>0?'＋':s<0?'−':''}${it.n}</span>`; }).join('');
+  const parts=m.seq.map((it,i)=>m.w[i]?(m.w[i]>0?'+':'−')+it.n:'').filter(Boolean);
+  const formula=(m.start?[String(m.start),...parts]:parts).join(' ').replace(/^\+/,'')+' = '+m.answer;
+  tone(now()+0.01,ok?1320:330,ok?0.25:0.3,0.35,ok?'sine':'triangle');
+  veilShow(veil,`<div class="prep">
+      <div class="prep-k">答え合わせ</div>
+      <div class="mans tnum">${m.answer}</div>
+      ${user===null?'':`<div class="mres ${ok?'ok':'ng'}">${ok?'正解！':'ざんねん（あなたの答え：'+user+'）'}</div>`}
+      <div class="prep-s">${m.html}</div>
+      <div class="mchips">${chipsH}</div>
+      <div class="mform tnum">${formula}</div>
+      <button class="btn prep-b" id="mqNext">${nextLabel}</button>
+    </div>`);
+  $('mqNext').onclick=()=>onDone(ok,user);
+}
 function cardBegin(){
   if(!C) return;
   if(C.math){ cardNext(); return; }                // 暗算は時間ではなく数字の数で終わる
@@ -3425,7 +3509,7 @@ goHome();
    Version check — 古い保存済みの画面が出ていたら、新しい版に切り替える
    （GitHub Pages は更新後しばらく古い版を返すことがあるため）
    ============================================================ */
-const APP_VER='2026-11-05 20:30';   // 更新のたびにこの日時を書き換える
+const APP_VER='2026-11-05 21:00';   // 更新のたびにこの日時を書き換える
 $('appVer').textContent='更新 '+APP_VER;
 (function checkVer(){
   if(location.protocol==='file:') return;
