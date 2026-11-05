@@ -1,0 +1,41 @@
+{
+ "updated": "2026-11-06T00:12",
+ "voices": {
+  "kore": {
+   "ready": false,
+   "count": 0,
+   "total": 134,
+   "ver": 1
+  },
+  "aoede": {
+   "ready": false,
+   "count": 0,
+   "total": 134,
+   "ver": 1
+  },
+  "leda": {
+   "ready": false,
+   "count": 0,
+   "total": 134,
+   "ver": 1
+  },
+  "despina": {
+   "ready": false,
+   "count": 0,
+   "total": 134,
+   "ver": 1
+  },
+  "sulafat": {
+   "ready": false,
+   "count": 0,
+   "total": 134,
+   "ver": 1
+  },
+  "charon": {
+   "ready": false,
+   "count": 0,
+   "total": 134,
+   "ver": 1
+  }
+ }
+}

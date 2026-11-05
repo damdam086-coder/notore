@@ -473,6 +473,11 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 .fwall-hud{position:absolute;top:max(20px,env(safe-area-inset-top));right:16px;display:flex;gap:12px;padding:6px 12px;border-radius:999px;
   background:rgba(0,0,0,.28);color:#fff;font-size:12.5px}
 .fkind{margin-bottom:var(--s3)}
+.vsel{margin-bottom:var(--s3)}
+.vseg{display:flex;flex-wrap:wrap;gap:6px}
+.vseg button{flex:1 1 calc(25% - 6px);min-width:72px;padding:9px 4px;font-size:14.5px;line-height:1.2;display:flex;flex-direction:column;align-items:center}
+.vseg button small{font-size:11px;opacity:.7;font-weight:500}
+.vseg button:disabled{opacity:.4;cursor:default}
 .fkind .seg{justify-content:stretch}
 .fkind .seg button{flex:1;padding:10px 6px;font-size:14.5px}
 .cdot{display:inline-block;width:11px;height:11px;border-radius:50%;margin-right:5px;vertical-align:-1px;box-shadow:0 0 0 1.5px #fff,0 0 0 2.5px rgba(0,0,0,.12)}
@@ -1005,6 +1010,7 @@ function openHub(t){
   renderCustom(t);
   $('quickDesc').textContent=QUICK_DESC[t];
   if(t==='card') flashKindUI(flashKindPref());
+  if(VOICE_TRAININGS.includes(t)){ $('hubTop').innerHTML=voiceRowHTML(); voiceRowRender(); voxManifest(); }
   show('hub',T.name,T.desc);
 }
 $('quickStart').onclick=()=>{ if(curTrain) startAuto(curTrain); };
@@ -2212,15 +2218,57 @@ const SND={
    まずは録音した声（voice/*.mp3）を Web Audio で鳴らす。ブラウザの読み上げ機能は
    ブラウザによって鳴らない（Brave など）ので、録音が読めないときだけ代わりに使う。 */
 const VOX_MAP={'はじめます':'hajime','吐きます':'haku','止めます':'tomeru','吸います':'suu','おわりです。ふつうの呼吸に戻しましょう':'owari','休憩':'kyukei','逆回し':'gyaku','おつかれさまでした':'otsukare','足首回し':'ankle','肩回し':'shoulder','手首回し':'wrist','腕回し':'arm','股関節回し':'hip','腰回し':'waist','ひざ回し':'knee','いち':'n1','に':'n2','さん':'n3','よん':'n4','ご':'n5','ろく':'n6','なな':'n7','はち':'n8','きゅう':'n9','じゅう':'n10','11':'n11','12':'n12','13':'n13','14':'n14','15':'n15','16':'n16','17':'n17','18':'n18','19':'n19','20':'n20','21':'n21','22':'n22','23':'n23','24':'n24','25':'n25','26':'n26','27':'n27','28':'n28','29':'n29','30':'n30','5秒':'s5','10秒':'s10','15秒':'s15','20秒':'s20','30秒':'s30','40秒':'s40','50秒':'s50','60秒':'s60','70秒':'s70','80秒':'s80','90秒':'s90','1拍で1周':'b1','2拍で1周':'b2','3拍で1周':'b3','4拍で1周':'b4','5拍で1周':'b5','6拍で1周':'b6','7拍で1周':'b7','8拍で1周':'b8','9拍で1周':'b9','10拍で1周':'b10','11拍で1周':'b11','12拍で1周':'b12','この呼吸で終わりです':'konokokyu','1分経過':'m1','2分経過':'m2','3分経過':'m3','4分経過':'m4','5分経過':'m5','6分経過':'m6','7分経過':'m7','8分経過':'m8','9分経過':'m9','10分経過':'m10','残り1分です':'r1','残り2分です':'r2','残り3分です':'r3','残り4分です':'r4','残り5分です':'r5','残り6分です':'r6','残り7分です':'r7','残り8分です':'r8','残り9分です':'r9','あか':'c_red','きいろ':'c_yellow','みどり':'c_green','あお':'c_blue','しろ':'c_white','オレンジ':'c_orange','むらさき':'c_purple','ピンク':'c_pink','みずいろ':'c_sky','おわりです':'owari2','1秒':'s1','2秒':'s2','3秒':'s3','4秒':'s4','6秒':'s6','7秒':'s7','8秒':'s8','9秒':'s9','11秒':'s11','12秒':'s12','13秒':'s13','14秒':'s14','16秒':'s16','17秒':'s17','18秒':'s18','19秒':'s19','21秒':'s21','22秒':'s22','23秒':'s23','24秒':'s24','25秒':'s25','26秒':'s26','27秒':'s27','28秒':'s28','29秒':'s29','左右ジャンプ':'st_lr','前後ジャンプ':'st_fb','右足ケンケン':'st_hopR','左足ケンケン':'st_hopL','グーパー':'st_gupa','開く・クロス':'st_cross','イン・イン・アウト・アウト':'st_inout','右足2歩・戻る':'st_walk2','シンコペーション':'st_sync','3拍子ステップ':'st_waltz','ランダム':'st_rand'};
-const VOX={raw:{}, buf:{}, src:[], fetching:false};
-const VOICE_VER='kokoro5';   // 声を作り直したら変える（古い声が残らないように）
-function voxFetch(){
-  if(VOX.fetching || location.protocol==='file:') return;
-  VOX.fetching=true;
+const VOICE_VER='kokoro5';   // 今の声（Kokoro）を作り直したら変える（古い声が残らないように）
+// 声の種類。今の声は voice/ 直下、Gemini で作った声は voice/<id>/。どれだけ出来ているかは voice/voices.json（作る係が書く）
+const VOICE_SETS=[
+  {id:'kokoro', n:'今の声', g:'',        dir:''},
+  {id:'kore',   n:'女性1',  g:'Kore',    dir:'kore/'},
+  {id:'aoede',  n:'女性2',  g:'Aoede',   dir:'aoede/'},
+  {id:'leda',   n:'女性3',  g:'Leda',    dir:'leda/'},
+  {id:'despina',n:'女性4',  g:'Despina', dir:'despina/'},
+  {id:'sulafat',n:'女性5',  g:'Sulafat', dir:'sulafat/'},
+  {id:'charon', n:'男性',   g:'Charon',  dir:'charon/'}
+];
+function voicePref(){ try{ const v=localStorage.getItem('notore-voice'); return VOICE_SETS.some(x=>x.id===v)?v:'kokoro'; }catch(e){ return 'kokoro'; } }
+const VOX={raw:[], buf:{}, src:[], fetched:{}, man:null, cur:voicePref()};
+const voiceReady=id=>id==='kokoro' || !!(VOX.man && VOX.man.voices && VOX.man.voices[id] && VOX.man.voices[id].ready);
+function voxFetch(id){
+  id=id||'kokoro';
+  if(VOX.fetched[id] || location.protocol==='file:') return;
+  const set=VOICE_SETS.find(v=>v.id===id); if(!set) return;
+  VOX.fetched[id]=true; VOX.buf[id]=VOX.buf[id]||{};
+  const ver=id==='kokoro'?VOICE_VER:((VOX.man&&VOX.man.voices[id]&&VOX.man.voices[id].ver)||1);
   [...new Set(Object.values(VOX_MAP))].forEach(f=>{
-    fetch('voice/'+f+'.mp3?v='+VOICE_VER).then(r=>r.ok?r.arrayBuffer():null).then(a=>{ if(a){ VOX.raw[f]=a; voxDecode(); } }).catch(()=>{});
+    fetch('voice/'+set.dir+f+'.mp3?v='+ver).then(r=>r.ok?r.arrayBuffer():null).then(a=>{ if(a){ VOX.raw.push([id,f,a]); voxDecode(); } }).catch(()=>{});
   });
 }
+// どの声が出来ているかを読み、選んでいる声を読み込む（出来ていない言葉は今の声で代わりに話す）
+function voxManifest(){
+  if(location.protocol==='file:') return;
+  fetch('voice/voices.json?t='+Date.now()).then(r=>r.ok?r.json():null).then(m=>{
+    VOX.man=m; if(VOX.cur!=='kokoro' && voiceReady(VOX.cur)) voxFetch(VOX.cur);
+    if($('vSel')) voiceRowRender();
+  }).catch(()=>{});
+}
+function voiceSelect(id){
+  if(!voiceReady(id)) return;
+  VOX.cur=id; try{ localStorage.setItem('notore-voice',id); }catch(e){}
+  voiceRowRender(); voxFetch(id); audioOn();
+  // 選んだ声で「はじめます」を試しに鳴らす（読み込み待ちは少しだけ待つ）
+  let n=0; const tryPlay=()=>{ const b=VOX.buf[id]&&VOX.buf[id].hajime; if(b||n++>30){ say('はじめます',true); } else setTimeout(tryPlay,100); };
+  tryPlay();
+}
+function voiceRowRender(){
+  const el=$('vSel'); if(!el) return;
+  el.innerHTML=VOICE_SETS.map(v=>{
+    const ok=voiceReady(v.id), m=VOX.man&&VOX.man.voices&&VOX.man.voices[v.id];
+    const sub=ok?(v.g||'Kokoro'):(m&&m.count?`準備中 ${m.count}/${m.total}`:'準備中');
+    return `<button data-v="${v.id}" class="${v.id===VOX.cur?'on':''}"${ok?'':' disabled'}>${v.n}<small>${sub}</small></button>`;
+  }).join('');
+  el.querySelectorAll('button').forEach(b=>b.onclick=()=>voiceSelect(b.dataset.v));
+}
+const VOICE_TRAININGS=['breath','move','spot','step'];
+function voiceRowHTML(){ return `<div class="card pad vsel"><div class="seclbl" style="margin:0 0 var(--s2) 2px">声（押すと試しに鳴ります）</div><div class="seg vseg" id="vSel"></div></div>`; }
 // 音を出す前（タップ前）でも読み込めるよう、音を出さない OfflineAudioContext で変換しておく
 let VOX_DEC=null;
 function voxDecoder(){
@@ -2230,20 +2278,20 @@ function voxDecoder(){
 }
 function voxDecode(){
   const dc=voxDecoder(); if(!dc) return;
-  Object.keys(VOX.raw).forEach(f=>{
-    const a=VOX.raw[f]; delete VOX.raw[f];
+  VOX.raw.splice(0).forEach(([id,f,a])=>{
     try{
-      const p=dc.decodeAudioData(a,b=>{ VOX.buf[f]=b; },()=>{});
+      const p=dc.decodeAudioData(a,b=>{ (VOX.buf[id]=VOX.buf[id]||{})[f]=b; },()=>{});
       if(p&&p.catch) p.catch(()=>{});
     }catch(e){}
   });
 }
-const voxReady=()=>Object.keys(VOX.buf).length>0;
+const voxReady=()=>Object.keys(VOX.buf.kokoro||{}).length>0 || Object.keys(VOX.buf[VOX.cur]||{}).length>0;
 function voxStop(){ VOX.src.forEach(s=>{ try{ s.stop(); }catch(e){} }); VOX.src=[]; }
 // 「足首回し、10秒」のように「、」で区切った部品を順に鳴らす。全部そろっていなければ false
 function voxSay(text,cut){
   if(!AU.ctx||!AU.out) return false;
-  const bufs=text.split('、').map(p=>VOX.buf[VOX_MAP[p.trim()]]);
+  const cur=VOX.buf[VOX.cur]||{}, base=VOX.buf.kokoro||{};
+  const bufs=text.split('、').map(p=>{ const f=VOX_MAP[p.trim()]; return cur[f]||base[f]; });   // 選んだ声に無い言葉は今の声で
   if(!bufs.length || bufs.some(b=>!b)) return false;
   if(cut) voxStop();
   let t=AU.ctx.currentTime+0.01;
@@ -2255,7 +2303,7 @@ function voxSay(text,cut){
   });
   return t-AU.ctx.currentTime;                     // 声が鳴り終わるまでの秒数
 }
-voxFetch();
+voxFetch('kokoro'); voxManifest();
 
 const SAY={ok:'speechSynthesis' in window, voice:null};
 function pickVoice(){ try{ SAY.voice=speechSynthesis.getVoices().find(v=>/^ja/i.test(v.lang))||null; }catch(e){} }
@@ -3947,7 +3995,7 @@ goHome();
    Version check — 古い保存済みの画面が出ていたら、新しい版に切り替える
    （GitHub Pages は更新後しばらく古い版を返すことがあるため）
    ============================================================ */
-const APP_VER='2026-11-06 01:00';   // 更新のたびにこの日時を書き換える
+const APP_VER='2026-11-06 01:40';   // 更新のたびにこの日時を書き換える
 $('appVer').textContent='更新 '+APP_VER;
 (function checkVer(){
   if(location.protocol==='file:') return;
