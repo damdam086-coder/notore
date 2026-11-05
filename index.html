@@ -1249,7 +1249,7 @@ function renderCustom(t){
       <div class="hint" id="bCountHint" style="margin-top:0;padding-bottom:var(--s2)">「いち・に・さん…」と、その段の最後の秒まで声で数えます。</div>
       <div class="row"><span class="lbl">カチカチ音</span>${seg('bSnd',[{v:'clock',l:'時計'},{v:'wood',l:'木の音'},{v:'beep',l:'電子音'},{v:'soft',l:'やさしい'},{v:'click',l:'クリック'},{v:'none',l:'なし'}],'clock',beatPreview)}</div>
       ${rowToggle('1分ごとの声かけ','bMinute',true)}
-      <div class="hint" style="margin-top:0;padding-bottom:var(--s2)">カチカチ音は、声で数えない秒に鳴ります。1分ごとに「1分経過、残り4分です」のようにお知らせします。</div>
+      <div class="hint" style="margin-top:0;padding-bottom:var(--s2)">カチカチ音は、声で数えない秒に鳴ります。1分ごとに「1分経過」とお知らせし、最後の2分は「残り2分です」「残り1分です」も言います。</div>
       <div class="hint">吐く → 止める → 吸う の順にくり返します。10-10-10 なら、10秒で吐いて、10秒止めて、10秒で吸います。</div>
       <div class="hint">はじまりに「吐きます・止めます・吸います」と声で知らせます。時間が来ても、いまの1呼吸を終えてから終わります。</div>
       <div class="hint">苦しくなったら無理をせず、ふつうの呼吸に戻してください。</div>
@@ -2502,7 +2502,7 @@ function runBreath(cfg){
   veilShow($('bVeil'),`<div class="prep">
       <div class="prep-k">ルール</div>
       <div class="prep-t">${breathPat(cfg)} の呼吸を ${cfg.min}分</div>
-      <div class="prep-s">はじまりに「吐きます・止めます・吸います」と声で知らせます。${breathCountTxt(cfg)}${cfg.minute===false?'':'1分ごとに「1分経過、残り◯分です」とお知らせします。'}</div>
+      <div class="prep-s">はじまりに「吐きます・止めます・吸います」と声で知らせます。${breathCountTxt(cfg)}${cfg.minute===false?'':'1分ごとに「◯分経過」、最後の2分は「残り◯分です」とお知らせします。'}</div>
       <div class="prep-list">${rows}</div>
       <div class="prep-s">苦しくなったら無理をせず、ふつうの呼吸に戻してください。</div>
       <button class="btn prep-b" id="bGo">はじめる</button>
@@ -2576,7 +2576,8 @@ function bStep(i,T,pre,extra){
     if(cfg.minute!==false && m>=1 && m>B.minSaid){
       B.minSaid=m;
       const r=cfg.min-m;
-      ex = r>0 ? `${m}分経過、残り${r}分です` : `${Math.min(m,10)}分経過、この呼吸で終わりです`;
+      // 「残り◯分です」は最後の2分だけ。それより前は「◯分経過」だけ言う
+      ex = r>2 ? `${m}分経過` : r>0 ? `${m}分経過、残り${r}分です` : `${Math.min(m,10)}分経過、この呼吸で終わりです`;
     }
     bStep(ni,Tn,last,ex);
   });
@@ -3159,7 +3160,7 @@ goHome();
    Version check — 古い保存済みの画面が出ていたら、新しい版に切り替える
    （GitHub Pages は更新後しばらく古い版を返すことがあるため）
    ============================================================ */
-const APP_VER='2026-11-05 17:00';   // 更新のたびにこの日時を書き換える
+const APP_VER='2026-11-05 17:30';   // 更新のたびにこの日時を書き換える
 $('appVer').textContent='更新 '+APP_VER;
 (function checkVer(){
   if(location.protocol==='file:') return;
