@@ -1668,6 +1668,7 @@ function audioOn(){
     if(!AU.ctx){ const C=window.AudioContext||window.webkitAudioContext; if(!C) return null; AU.ctx=new C(); }
     if(AU.ctx.state!=='running') AU.ctx.resume();
     if(!AU.out){ AU.out=AU.ctx.createGain(); AU.out.connect(AU.ctx.destination); }
+    voxDecode();
     // iOS: a silent blip inside the tap unlocks output
     const b=AU.ctx.createBuffer(1,1,22050), s=AU.ctx.createBufferSource(); s.buffer=b; s.connect(AU.out); s.start(0);
   }catch(e){ return null; }
@@ -1699,11 +1700,60 @@ const SND={
   end   :t=>{ tone(t,1046,0.18,0.45); tone(t+0.16,1318,0.18,0.45); tone(t+0.32,1568,0.5,0.45); }
 };
 
-/* ---- voice (speech synthesis, Japanese) ---- */
+/* ---- voice ----
+   まずは録音した声（voice/*.mp3）を Web Audio で鳴らす。ブラウザの読み上げ機能は
+   ブラウザによって鳴らない（Brave など）ので、録音が読めないときだけ代わりに使う。 */
+const VOX_MAP={'はじめます':'hajime','吐きます':'haku','止めます':'tomeru','吸います':'suu','おわりです。ふつうの呼吸に戻しましょう':'owari','休憩':'kyukei','逆回し':'gyaku','おつかれさまでした':'otsukare','足首回し':'ankle','肩回し':'shoulder','手首回し':'wrist','腕回し':'arm','股関節回し':'hip','腰回し':'waist','ひざ回し':'knee','いち':'n1','に':'n2','さん':'n3','よん':'n4','ご':'n5','ろく':'n6','なな':'n7','はち':'n8','きゅう':'n9','じゅう':'n10','11':'n11','12':'n12','13':'n13','14':'n14','15':'n15','16':'n16','17':'n17','18':'n18','19':'n19','20':'n20','21':'n21','22':'n22','23':'n23','24':'n24','25':'n25','26':'n26','27':'n27','28':'n28','29':'n29','30':'n30','5秒':'s5','10秒':'s10','15秒':'s15','20秒':'s20','30秒':'s30','40秒':'s40','50秒':'s50','60秒':'s60','70秒':'s70','80秒':'s80','90秒':'s90','1拍で1周':'b1','2拍で1周':'b2','3拍で1周':'b3','4拍で1周':'b4','5拍で1周':'b5','6拍で1周':'b6','7拍で1周':'b7','8拍で1周':'b8','9拍で1周':'b9','10拍で1周':'b10','11拍で1周':'b11','12拍で1周':'b12'};
+const VOX={raw:{}, buf:{}, src:[], fetching:false};
+function voxFetch(){
+  if(VOX.fetching || location.protocol==='file:') return;
+  VOX.fetching=true;
+  [...new Set(Object.values(VOX_MAP))].forEach(f=>{
+    fetch('voice/'+f+'.mp3').then(r=>r.ok?r.arrayBuffer():null).then(a=>{ if(a){ VOX.raw[f]=a; voxDecode(); } }).catch(()=>{});
+  });
+}
+// 音を出す前（タップ前）でも読み込めるよう、音を出さない OfflineAudioContext で変換しておく
+let VOX_DEC=null;
+function voxDecoder(){
+  if(AU.ctx) return AU.ctx;
+  if(!VOX_DEC){ try{ const O=window.OfflineAudioContext||window.webkitOfflineAudioContext; if(O) VOX_DEC=new O(1,1,24000); }catch(e){} }
+  return VOX_DEC;
+}
+function voxDecode(){
+  const dc=voxDecoder(); if(!dc) return;
+  Object.keys(VOX.raw).forEach(f=>{
+    const a=VOX.raw[f]; delete VOX.raw[f];
+    try{
+      const p=dc.decodeAudioData(a,b=>{ VOX.buf[f]=b; },()=>{});
+      if(p&&p.catch) p.catch(()=>{});
+    }catch(e){}
+  });
+}
+const voxReady=()=>Object.keys(VOX.buf).length>0;
+function voxStop(){ VOX.src.forEach(s=>{ try{ s.stop(); }catch(e){} }); VOX.src=[]; }
+// 「足首回し、10秒」のように「、」で区切った部品を順に鳴らす。全部そろっていなければ false
+function voxSay(text,cut){
+  if(!AU.ctx||!AU.out) return false;
+  const bufs=text.split('、').map(p=>VOX.buf[VOX_MAP[p.trim()]]);
+  if(!bufs.length || bufs.some(b=>!b)) return false;
+  if(cut) voxStop();
+  let t=AU.ctx.currentTime+0.01;
+  bufs.forEach(b=>{
+    const s=AU.ctx.createBufferSource(), g=AU.ctx.createGain();
+    s.buffer=b; g.gain.value=1; s.connect(g); g.connect(AU.out); s.start(t);
+    VOX.src.push(s); if(VOX.src.length>12) VOX.src.shift();
+    t+=b.duration+0.12;
+  });
+  return true;
+}
+voxFetch();
+
 const SAY={ok:'speechSynthesis' in window, voice:null};
 function pickVoice(){ try{ SAY.voice=speechSynthesis.getVoices().find(v=>/^ja/i.test(v.lang))||null; }catch(e){} }
 if(SAY.ok){ pickVoice(); try{ speechSynthesis.addEventListener('voiceschanged',pickVoice); }catch(e){} }
 function say(text,cut){
+  if(!text || !text.trim()){ if(SAY.ok) try{ speechSynthesis.speak(new SpeechSynthesisUtterance(' ')); }catch(e){} return; }
+  if(voxSay(text,cut)) return;
   if(!SAY.ok) return;
   try{
     if(cut) speechSynthesis.cancel();
@@ -1711,7 +1761,8 @@ function say(text,cut){
     speechSynthesis.speak(u);
   }catch(e){}
 }
-function sayStop(){ if(SAY.ok) try{ speechSynthesis.cancel(); }catch(e){} }
+function sayStop(){ voxStop(); if(SAY.ok) try{ speechSynthesis.cancel(); }catch(e){} }
+const canSpeak=()=>voxReady()||SAY.ok;
 
 /* ---- keep the screen on while exercising ---- */
 let WL=null;
@@ -2197,7 +2248,7 @@ function bStep(i,T){
   const cntFrom=Math.max(1,D-3);                      // 残り3秒は声で数える
   for(let k=1;k<D;k++){
     if(k<cntFrom){ if(cfg.tick) clockTick(T+k,k%2); }
-    else if(!SAY.ok) SND.tick(T+k);                   // 声が出ない端末は音で代わりに
+    else if(!canSpeak()) SND.tick(T+k);               // 声が出ない端末は音で代わりに
   }
   bAt(T,()=>{
     say(st.say,true);

@@ -1,0 +1,7 @@
+このフォルダの音声（*.mp3）は、Open JTalk（pyopenjtalk）で読み上げを作ったものです。
+
+声: HTS voice "Mei" (mei_normal)
+    Copyright (c) 2009-2018 Nagoya Institute of Technology Department of Computer Science
+    MMDAgent "Sample Script" より  — Creative Commons Attribution 3.0 (CC BY 3.0)
+    https://creativecommons.org/licenses/by/3.0/
+読み上げエンジン: Open JTalk / pyopenjtalk（Modified BSD / MIT）
