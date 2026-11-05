@@ -469,6 +469,43 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 .fkind .seg{justify-content:stretch}
 .fkind .seg button{flex:1;padding:10px 6px;font-size:14.5px}
 .cdot{display:inline-block;width:11px;height:11px;border-radius:50%;margin-right:5px;vertical-align:-1px;box-shadow:0 0 0 1.5px #fff,0 0 0 2.5px rgba(0,0,0,.12)}
+
+/* ============================================================
+   Projector
+   ============================================================ */
+body.proj{--bg:#000;--surface:#000;--surface-2:#15171c;--text:#f4f6fa;--text-2:#c4cad4;--text-3:#8d95a3;--line:#22262d;--line-2:#3a404a;--shadow:none;
+  --accent-soft:rgba(91,140,255,.16);background:#000;color:#f4f6fa}
+body.proj .app{max-width:none}
+body.proj #home .scroll,body.proj #hub .scroll,body.proj #results .scroll,body.proj .foot{max-width:560px;width:100%;margin-left:auto;margin-right:auto}
+body.proj .field:not(.light):not(#cField){border:none;border-radius:0;background:#000}
+body.proj #cField.mode-num{background:#000;border:none}
+body.proj .arrow{width:min(76vmin,1100px)}
+body.proj .ccard{height:min(90%,1000px)}
+body.proj .ring{width:min(72vmin,900px)}
+body.proj .hud{font-size:15px}
+.projcard .row{border:none;padding:0}
+.spotwall{position:fixed;inset:0;z-index:60;background:#000;color:#fff;cursor:pointer}
+.spotrot{position:absolute;inset:0}
+.spotbox{position:absolute}
+.spotwall.cal .spotbox{outline:3px dashed rgba(255,255,255,.85);outline-offset:0}
+.spotwall.cal .spotrot::before{content:"";position:absolute;inset:0;border:2px solid rgba(255,255,255,.25)}
+.spot{position:absolute;border-radius:50%;display:grid;place-items:center;font-weight:800;line-height:1;
+  font-family:-apple-system,"Helvetica Neue",Arial,sans-serif;transition:opacity .15s,transform .15s,box-shadow .15s}
+.spot.dim{opacity:.32}
+.spot.hot{transform:scale(1.08);box-shadow:0 0 0 .5vmin #fff,0 0 6vmin rgba(255,255,255,.55)}
+.spot.pulse{animation:spotpulse .45s ease-out}
+@keyframes spotpulse{0%{transform:scale(.9)}60%{transform:scale(1.14)}100%{transform:scale(1.08)}}
+.spot-cd{position:absolute;inset:0;display:grid;place-items:center;font-size:30vmin;font-weight:800;pointer-events:none;color:#fff}
+.spot-hud{position:absolute;right:14px;bottom:10px;font-size:13px;color:rgba(255,255,255,.4);pointer-events:none}
+.spot-ctl{position:absolute;left:50%;bottom:max(18px,env(safe-area-inset-bottom));transform:translateX(-50%);gap:8px;width:min(420px,90vw)}
+.spot-ctl .btn{margin:0}
+.spot-cal{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(380px,92vw);max-height:90vh;overflow:auto;
+  background:#15171c;border-color:#2b3039;color:#f4f6fa;cursor:default;--text-3:#9aa2b0;--line-2:#3a404a;--surface:#22262d}
+.spot-cal .calt{font-size:16px;font-weight:700}
+.spot-cal p{font-size:12.5px;color:#9aa2b0;line-height:1.6;margin:6px 0 10px}
+.spot-cal .calsub{margin-top:2px}
+.calrow{display:grid;grid-template-columns:86px 1fr 46px;align-items:center;gap:8px;font-size:13.5px;margin:2px 0}
+.calrow b{text-align:right;font-variant-numeric:tabular-nums;color:#8fb0ff}
 </style>
 </head>
 <body>
@@ -721,6 +758,19 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 
 </div>
 
+<!-- ============ 丸タッチ（プロジェクター）：画面いっぱいの黒に丸だけを出す ============ -->
+<div class="spotwall" id="sWall" style="display:none">
+  <div class="spotrot" id="sRot">
+    <div class="spotbox" id="sBox"></div>
+    <div class="spot-cd tnum" id="sCd"></div>
+    <div class="spot-hud tnum" id="sHud"></div>
+  </div>
+  <div class="spot-ctl" id="sCtl" style="display:none">
+    <button class="btn quiet" id="sPause">Ⅱ 一時停止</button><button class="btn" id="sStop">やめる</button>
+  </div>
+  <div class="spot-cal card pad" id="sCalPanel" style="display:none"></div>
+</div>
+
 <script>
 "use strict";
 
@@ -739,6 +789,7 @@ const ICON={
   mic   : svg('<rect x="9" y="2.75" width="6" height="11" rx="3"/><path d="M4.75 11.5a7.25 7.25 0 0 0 14.5 0"/><path d="M12 18.75V21.5"/>'),
   dash  : svg('<path d="M6 12h12"/>'),
   hand  : svg('<path d="M8 12.5V6.25a1.5 1.5 0 0 1 3 0V11"/><path d="M11 10.5V4.75a1.5 1.5 0 0 1 3 0V11"/><path d="M14 10.75V6.25a1.5 1.5 0 0 1 3 0v7.5a7 7 0 0 1-7 7h-.5a6 6 0 0 1-4.6-2.2L3.6 15.5a1.4 1.4 0 0 1 2.1-1.85L8 15.5"/>'),
+  target: svg('<circle cx="6.5" cy="7" r="3.25"/><circle cx="17.5" cy="7" r="3.25"/><circle cx="12" cy="17" r="3.25"/>'),
   spade : svg('<path d="M12 3.5c1.6 3 6.5 5.6 6.5 9.4a3.2 3.2 0 0 1-5.6 2.1c.2 1.9.9 3.2 2.4 4.5H8.7c1.5-1.3 2.2-2.6 2.4-4.5a3.2 3.2 0 0 1-5.6-2.1c0-3.8 4.9-6.4 6.5-9.4z"/>'),
   grid  : svg('<rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.5"/><path d="M15.6 5.2l1.4-1v6.3"/><path d="M5.2 15.2a1.9 1.9 0 0 1 3.6.8c0 1.3-3.7 3.3-3.7 4.5h3.9"/>'),
   wind  : svg('<path d="M3 8.5h10.5a3 3 0 1 0-3-3"/><path d="M3 12.5h15a3 3 0 1 1-3 3"/><path d="M3 16.5h6"/>'),
@@ -792,7 +843,8 @@ const TRAININGS={
   hands :{icon:'hand', name:'左右の手まね',    desc:'左右ちがう手の形をすぐにまねる'},
   breath:{icon:'wind', name:'呼吸調整',        desc:'吐く・止める・吸うを秒数どおりに'},
   mem   :{icon:'grid', name:'数字の位置記憶',  desc:'数字の場所を覚えて、1から順に押す'},
-  card  :{icon:'spade',name:'フラッシュ',      desc:'トランプ・色・数字がパッと切り替わる'}
+  card  :{icon:'spade',name:'フラッシュ',      desc:'トランプ・色・数字がパッと切り替わる'},
+  spot  :{icon:'target',name:'丸タッチ',       desc:'壁や床に映した丸を、言われたとおりに触る・飛び移る'}
 };
 
 /* ============================================================
@@ -809,7 +861,7 @@ function show(id,title,sub){
 }
 $('back').innerHTML=ICON.back;
 $('back').onclick=()=>{ stopAll(); stopProg(); if(['hub','results'].includes(document.querySelector('.screen.on').id)) goHome(); else if(curTrain) openHub(curTrain); else goHome(); };
-function stopAll(){ stopArrow(); stopNum(); stopStroop(); stopVoice(); stopGrid(); stopMove(); stopHands(); stopBreath(); stopMem(); stopCard(); }
+function stopAll(){ stopArrow(); stopNum(); stopStroop(); stopVoice(); stopGrid(); stopMove(); stopHands(); stopBreath(); stopMem(); stopCard(); stopSpot(); }
 
 /* ============================================================
    Home
@@ -826,6 +878,11 @@ function goHome(){
     b.onclick=()=>openHub(t);
     box.appendChild(b);
   });
+  const pj=document.createElement('div'); pj.className='card pad projcard';
+  pj.innerHTML=`<div class="row"><span class="lbl">プロジェクターに映す</span><button class="toggle${projPref()?' on':''}" id="projToggle"></button></div>
+    <div class="hint" style="margin-top:4px">黒い背景で大きく表示します（Mac では全画面に）。壁や床に映すときにオンにします。「丸タッチ」はいつも黒い全画面で映ります。</div>`;
+  box.appendChild(pj);
+  $('projToggle').onclick=()=>projSet(!document.body.classList.contains('proj'),true);
   show('home','NoTore','脳のトレーニング');
   curTrain=null;
 }
@@ -837,6 +894,7 @@ const QUICK_DESC={
   arrow :'「同じ方向」からはじめて、反対 → 色で判断へ。矢印は4方向から8方向、スピードも1.2秒から1.0秒へ上がります。1セット30秒。',
   num   :'8桁からスタートして10桁まで。後半は逆唱に切り替わります。表示は5秒。全10問クリアを目指します。',
   stroop:'かな → 漢字 → English。1文字ずつからはじめて、一覧・背景ラインやマスへと進みます。',
+  spot  :'3×3の丸（番号と色つき）が映ります。「あか」「さん」などの声と光の合図で、その丸に触る・飛び移る。合図は2〜4秒のランダムな間隔で60秒。プロジェクターで壁や床に映して使います（ふつうの画面でもできます）。',
   card  :'記号（スペード・ハート・ダイヤ・クラブ）、数字（1〜10）、記号と数字の色（黒・赤・緑・青・黄）が、1.5〜3秒のランダムな間隔でパッと切り替わります。60秒。',
   mem   :'1回目は見ながら 1 から順に押し、2回目は場所を思い出して 1 から順に押します（白い四角を出すか、枠だけにするかを下で選べます）。4個からスタートし、正解で1個増え、まちがえで1個減ります（3〜10個）。全10問。',
   breath:'8-8-8（8秒で吐く・8秒止める・8秒で吸う）を5分。はじまりの声と「いち・に・さん…はち」の数に合わせるだけです。1分ごとに残り時間をお知らせします。',
@@ -914,6 +972,7 @@ function startAuto(t){
   stopAll(); stopProg();
   if(t==='num'){ runNum({auto:true, total:10, plan:buildNumPlan()}); return; }
   if(t==='move'){ runMove(moveAutoCfg()); return; }
+  if(t==='spot'){ runSpot(spotAutoCfg()); return; }
   if(t==='card'){ runCard(flashAutoCfg(flashKindPref())); return; }
   if(t==='mem'){ runMem({auto:true,count:4,grid:'m',after:segVal('wAfterQ')||memAfterPref(),total:10}); return; }
   if(t==='breath'){ runBreath({min:5,out:8,hold:8,in:8,count:'up',snd:'clock',minute:true}); return; }
@@ -1105,6 +1164,27 @@ function renderCustom(t){
       <div class="hint" id="sHint2" style="display:none">マイクを使います。localhost 経由で開き、マイクを許可してください。認識には通信が必要です。</div>
     </div>`;
   }
+  if(t==='spot'){
+    box.innerHTML=`<div class="card pad">
+      <button class="btn sub" id="spCalBtn" style="margin-bottom:var(--s2)">映す範囲を合わせる（壁・床）</button>
+      <div class="hint" style="margin-top:0;padding-bottom:var(--s2);border-bottom:1px solid var(--line)">プロジェクターで映したら、最初に一度だけ合わせます。合わせた範囲は覚えておきます。</div>
+      ${rowSeg('並べ方','spLayout',Object.keys(SPOT_LAYOUTS).map(k=>({v:k,l:SPOT_LAYOUTS[k]})),'g33',v=>{ $('spCountRow').style.display=v==='rand'?'flex':'none'; })}
+      <div class="row" id="spCountRow" style="display:none"><span class="lbl">丸の数</span>${seg('spCount',[4,5,6,7,8].map(v=>({v,l:v+'個'})),'6')}</div>
+      ${rowSeg('丸の中','spContent',[{v:'both',l:'番号と色'},{v:'num',l:'番号だけ'},{v:'col',l:'色だけ'}],'both',v=>{ $('spInstrRow').style.display=v==='both'?'flex':'none'; $('spOrderRow').style.display=v==='col'?'none':'flex'; })}
+      <div class="row" id="spOrderRow"><span class="lbl">番号の並び</span>${seg('spOrder',[{v:'shuf',l:'ばらばら'},{v:'seq',l:'順番どおり'}],'shuf')}</div>
+      <div class="row" id="spInstrRow"><span class="lbl">指示のしかた</span>${seg('spInstr',[{v:'mix',l:'番号か色'},{v:'num',l:'番号で'},{v:'col',l:'色で'}],'mix')}</div>
+      ${rowSeg('合図','spSignal',[{v:'both',l:'声と光'},{v:'voice',l:'声だけ'},{v:'light',l:'光だけ'}],'both')}
+      ${rowSeg('切り替え','spTiming',[{v:'rand',l:'ランダムな間隔'},{v:'fixed',l:'一定の間隔'}],'rand',v=>{
+        $('spIvRow').style.display=v==='fixed'?'flex':'none'; $('spRandRow').style.display=v==='rand'?'flex':'none';
+      })}
+      <div class="row" id="spIvRow" style="display:none"><span class="lbl">間隔</span>${seg('spIv',[1.5,2,2.5,3,4,5].map(v=>({v,l:v+'秒'})),'3')}</div>
+      <div class="row" id="spRandRow"><span class="lbl">間隔の幅</span>${seg('spRand',[{v:'r15',l:'1.5〜3秒'},{v:'r2',l:'2〜4秒'},{v:'r3',l:'3〜5秒'}],'r2')}</div>
+      ${rowRange('時間','spDur',30,180,10,60,v=>v+'秒')}
+      ${rowToggle('ときどき並びを入れ替える','spShuffle',false)}
+      <div class="hint">「声だけ」は丸が光らないので、番号や色を聞いて自分で探します（むずかしい）。「光だけ」は声を出さず、光った丸へ動きます。</div>
+      <div class="hint">映しているあいだは、画面をタップ（クリック）すると「一時停止・やめる」が出ます。Mac のキーボードなら Space で一時停止、Esc でやめる。</div>
+    </div>`;
+  }
   if(t==='card'){
     $('hubTop').innerHTML=`<div class="card pad fkind"><div class="seclbl" style="margin:0 0 var(--s2) 2px">種類</div>${seg('fKind',Object.keys(FLASH_KINDS).map(k=>({v:k,l:FLASH_KINDS[k]})),flashKindPref(),flashKindUI)}</div>`;
     box.innerHTML=`<div class="card pad">
@@ -1226,6 +1306,7 @@ function renderCustom(t){
   if(t!=='card') $('hubTop').innerHTML='';
   binds.forEach(f=>f()); binds=[];   // attach handlers now that the DOM exists
   if(t==='mem') memAfterSet(memAfterPref());
+  if(t==='spot') $('spCalBtn').onclick=()=>spotCalOpen(spotReadCfg());
   if(t==='card') flashKindUI(flashKindPref());
   if(t==='move') moveModeUI(segVal('mMode'));
 }
@@ -1238,6 +1319,7 @@ $('customStart').onclick=()=>{
     dig:+$('nDig').value, t:+$('nT').value, rev:$('nRev').classList.contains('on'),
     total:+segVal('nQ')
   });
+  if(curTrain==='spot') runSpot(spotReadCfg());
   if(curTrain==='card') runCard({
     kind:segVal('fKind')||flashKindPref(), wallColors:cfgUI.fwColors.slice(), nrange:segVal('fnRange'),
     nchange:cfgUI.fnChange.slice(), ncolors:cfgUI.fnColors.slice(),
@@ -1882,9 +1964,9 @@ const SND={
 /* ---- voice ----
    まずは録音した声（voice/*.mp3）を Web Audio で鳴らす。ブラウザの読み上げ機能は
    ブラウザによって鳴らない（Brave など）ので、録音が読めないときだけ代わりに使う。 */
-const VOX_MAP={'はじめます':'hajime','吐きます':'haku','止めます':'tomeru','吸います':'suu','おわりです。ふつうの呼吸に戻しましょう':'owari','休憩':'kyukei','逆回し':'gyaku','おつかれさまでした':'otsukare','足首回し':'ankle','肩回し':'shoulder','手首回し':'wrist','腕回し':'arm','股関節回し':'hip','腰回し':'waist','ひざ回し':'knee','いち':'n1','に':'n2','さん':'n3','よん':'n4','ご':'n5','ろく':'n6','なな':'n7','はち':'n8','きゅう':'n9','じゅう':'n10','11':'n11','12':'n12','13':'n13','14':'n14','15':'n15','16':'n16','17':'n17','18':'n18','19':'n19','20':'n20','21':'n21','22':'n22','23':'n23','24':'n24','25':'n25','26':'n26','27':'n27','28':'n28','29':'n29','30':'n30','5秒':'s5','10秒':'s10','15秒':'s15','20秒':'s20','30秒':'s30','40秒':'s40','50秒':'s50','60秒':'s60','70秒':'s70','80秒':'s80','90秒':'s90','1拍で1周':'b1','2拍で1周':'b2','3拍で1周':'b3','4拍で1周':'b4','5拍で1周':'b5','6拍で1周':'b6','7拍で1周':'b7','8拍で1周':'b8','9拍で1周':'b9','10拍で1周':'b10','11拍で1周':'b11','12拍で1周':'b12','この呼吸で終わりです':'konokokyu','1分経過':'m1','2分経過':'m2','3分経過':'m3','4分経過':'m4','5分経過':'m5','6分経過':'m6','7分経過':'m7','8分経過':'m8','9分経過':'m9','10分経過':'m10','残り1分です':'r1','残り2分です':'r2','残り3分です':'r3','残り4分です':'r4','残り5分です':'r5','残り6分です':'r6','残り7分です':'r7','残り8分です':'r8','残り9分です':'r9'};
+const VOX_MAP={'はじめます':'hajime','吐きます':'haku','止めます':'tomeru','吸います':'suu','おわりです。ふつうの呼吸に戻しましょう':'owari','休憩':'kyukei','逆回し':'gyaku','おつかれさまでした':'otsukare','足首回し':'ankle','肩回し':'shoulder','手首回し':'wrist','腕回し':'arm','股関節回し':'hip','腰回し':'waist','ひざ回し':'knee','いち':'n1','に':'n2','さん':'n3','よん':'n4','ご':'n5','ろく':'n6','なな':'n7','はち':'n8','きゅう':'n9','じゅう':'n10','11':'n11','12':'n12','13':'n13','14':'n14','15':'n15','16':'n16','17':'n17','18':'n18','19':'n19','20':'n20','21':'n21','22':'n22','23':'n23','24':'n24','25':'n25','26':'n26','27':'n27','28':'n28','29':'n29','30':'n30','5秒':'s5','10秒':'s10','15秒':'s15','20秒':'s20','30秒':'s30','40秒':'s40','50秒':'s50','60秒':'s60','70秒':'s70','80秒':'s80','90秒':'s90','1拍で1周':'b1','2拍で1周':'b2','3拍で1周':'b3','4拍で1周':'b4','5拍で1周':'b5','6拍で1周':'b6','7拍で1周':'b7','8拍で1周':'b8','9拍で1周':'b9','10拍で1周':'b10','11拍で1周':'b11','12拍で1周':'b12','この呼吸で終わりです':'konokokyu','1分経過':'m1','2分経過':'m2','3分経過':'m3','4分経過':'m4','5分経過':'m5','6分経過':'m6','7分経過':'m7','8分経過':'m8','9分経過':'m9','10分経過':'m10','残り1分です':'r1','残り2分です':'r2','残り3分です':'r3','残り4分です':'r4','残り5分です':'r5','残り6分です':'r6','残り7分です':'r7','残り8分です':'r8','残り9分です':'r9','あか':'c_red','きいろ':'c_yellow','みどり':'c_green','あお':'c_blue','しろ':'c_white','オレンジ':'c_orange','むらさき':'c_purple','ピンク':'c_pink','みずいろ':'c_sky','おわりです':'owari2'};
 const VOX={raw:{}, buf:{}, src:[], fetching:false};
-const VOICE_VER='kokoro1';   // 声を作り直したら変える（古い声が残らないように）
+const VOICE_VER='kokoro2';   // 声を作り直したら変える（古い声が残らないように）
 function voxFetch(){
   if(VOX.fetching || location.protocol==='file:') return;
   VOX.fetching=true;
@@ -2812,10 +2894,213 @@ function cardDone(early){
 }
 
 /* ============================================================
+   PROJECTOR — 大きく映す表示（全トレーニング共通）と、丸タッチ（壁・床に映して触る／飛び移る）
+   ============================================================ */
+function projPref(){ try{ return localStorage.getItem('notore-proj')==='1'; }catch(e){ return false; } }
+function fullOn(){ try{ const d=document.documentElement; if(d.requestFullscreen && !document.fullscreenElement) d.requestFullscreen().catch(()=>{}); }catch(e){} }
+function fullOff(){ try{ if(document.fullscreenElement && document.exitFullscreen) document.exitFullscreen().catch(()=>{}); }catch(e){} }
+function projSet(on,fromTap){
+  try{ localStorage.setItem('notore-proj',on?'1':'0'); }catch(e){}
+  document.body.classList.toggle('proj',on);
+  const t=$('projToggle'); if(t) t.classList.toggle('on',on);
+  if(fromTap){ if(on) fullOn(); else fullOff(); }
+}
+
+const SPOT_COLORS=['red','yellow','green','blue','white','orange','purple','pink','sky'];   // 黒は映らないので使わない
+const SPOT_SAY={red:'あか',yellow:'きいろ',green:'みどり',blue:'あお',white:'しろ',orange:'オレンジ',purple:'むらさき',pink:'ピンク',sky:'みずいろ'};
+const SPOT_NAME={red:'赤',yellow:'黄',green:'緑',blue:'青',white:'白',orange:'オレンジ',purple:'紫',pink:'ピンク',sky:'水色'};
+const SPOT_LIGHT=new Set(['yellow','white','pink','sky','orange']);   // 上の数字を黒にする明るい色
+const SPOT_LAYOUTS={g22:'2×2',g23:'2×3',g33:'3×3',five:'サイコロの5',line4:'横に4つ',rand:'ばらばら'};
+const SPOT_RAND={r15:[1.5,3], r2:[2,4], r3:[3,5]};
+const spotIvTxt=c=>c.timing==='fixed'?`${c.iv}秒ごと`:`${SPOT_RAND[c.rand][0]}〜${SPOT_RAND[c.rand][1]}秒`;
+function spotCal(){
+  const d={top:6,bottom:6,left:6,right:6,size:100,rot:false};
+  try{ return {...d, ...(JSON.parse(localStorage.getItem('notore-proj-cal')||'{}'))}; }catch(e){ return d; }
+}
+function spotCalSave(c){ try{ localStorage.setItem('notore-proj-cal',JSON.stringify(c)); }catch(e){} }
+function spotCount(c){ return {g22:4,g23:6,g33:9,five:5,line4:4,rand:c.count||6}[c.layout]; }
+// 丸の中心（0〜1）。ばらばらは重ならないように置く
+function spotPlace(c){
+  const n=spotCount(c);
+  if(c.layout==='five') return [[.2,.22],[.8,.22],[.5,.5],[.2,.78],[.8,.78]];
+  if(c.layout==='line4') return [0,1,2,3].map(i=>[(i+.5)/4,.5]);
+  if(c.layout!=='rand'){
+    const [r,cc]={g22:[2,2],g23:[2,3],g33:[3,3]}[c.layout], out=[];
+    for(let y=0;y<r;y++) for(let x=0;x<cc;x++) out.push([(x+.5)/cc,(y+.5)/r]);
+    return out;
+  }
+  for(let tries=0;tries<400;tries++){
+    const pts=[]; let ok=true;
+    for(let i=0;i<n&&ok;i++){
+      let placed=false;
+      for(let k=0;k<200;k++){
+        const p=[.13+Math.random()*.74,.15+Math.random()*.7];
+        if(pts.every(q=>Math.hypot(q[0]-p[0],(q[1]-p[1])*.75)>.26)){ pts.push(p); placed=true; break; }
+      }
+      ok=placed;
+    }
+    if(ok) return pts;
+  }
+  return [[.2,.25],[.5,.25],[.8,.25],[.2,.75],[.5,.75],[.8,.75],[.35,.5],[.65,.5]].slice(0,n);
+}
+function spotLabels(c){
+  const n=spotCount(c);
+  let nums=[...Array(n)].map((_,i)=>i+1); if(c.order==='shuf') nums=shuffle(nums);
+  const cols=shuffle(SPOT_COLORS).slice(0,n);
+  return nums.map((v,i)=>({num:v,col:cols[i]}));
+}
+// 丸を描く（box の大きさに合わせて px で置く）
+function spotRender(box,c,place,labels,cal){
+  box.style.top=cal.top+'%'; box.style.bottom=cal.bottom+'%'; box.style.left=cal.left+'%'; box.style.right=cal.right+'%';
+  const W=box.clientWidth, H=box.clientHeight; if(!W||!H) return;
+  const cols={g22:2,g23:3,g33:3,line4:4}[c.layout], rows={g22:2,g23:2,g33:3,line4:1}[c.layout];
+  let d = cols ? Math.min(W/cols,H/rows)*.78 : Math.min(W,H)*(c.layout==='five'?.3:.24);
+  d*=cal.size/100;
+  box.innerHTML=place.map((p,i)=>{
+    const L=labels[i], showNum=c.content!=='col', showCol=c.content!=='num';
+    const bg = showCol ? WALL_COLORS[L.col].c : '#f1f2f4';
+    const fg = !showCol || SPOT_LIGHT.has(L.col) ? '#111' : '#fff';
+    return `<div class="spot" data-i="${i}" style="width:${d}px;height:${d}px;left:${p[0]*W-d/2}px;top:${p[1]*H-d/2}px;background:${bg};color:${fg};font-size:${d*.5}px">${showNum?L.num:''}</div>`;
+  }).join('');
+}
+
+let P=null;
+function stopSpot(){
+  if(!P) return;
+  P.timers.forEach(clearTimeout); clearInterval(P.clock);
+  sayStop(); wakeOff();
+  $('sWall').style.display='none'; $('sCtl').style.display='none';
+  P=null;
+}
+function spotLater(fn,ms){ const p=P; const id=setTimeout(()=>{ if(P===p && !p.paused) fn(); },ms); p.timers.push(id); }
+function runSpot(cfg){
+  stopAll(); audioOn(); say(' ',true); wakeOn(); fullOn();
+  const cal=spotCal();
+  P={cfg, cal, place:spotPlace(cfg), labels:spotLabels(cfg), timers:[], clock:null, count:0, last:-1, left:cfg.dur, paused:false, started:false};
+  const wall=$('sWall'); wall.style.display='block'; wall.classList.remove('cal');
+  $('sRot').style.transform=cal.rot?'rotate(180deg)':'';
+  $('sCalPanel').style.display='none'; $('sCtl').style.display='none';
+  $('sHud').textContent='';
+  spotRender($('sBox'),cfg,P.place,P.labels,cal);
+  say('はじめます',true);
+  let n=3; const cd=$('sCd');
+  const step=()=>{
+    if(n<=0){ cd.textContent=''; spotStart(); return; }
+    cd.textContent=n; SND.count(now()+0.01); n--; spotLater(step,1000);
+  };
+  spotLater(step,900);
+}
+function spotStart(){
+  P.started=true;
+  P.clock=setInterval(()=>{
+    if(!P||P.paused) return;
+    P.left--; $('sHud').textContent=`残り ${Math.max(0,P.left)}s ・ ${P.count}回`;
+    if(P.left<=0) spotDone();
+  },1000);
+  spotCue();
+}
+function spotCue(){
+  if(!P) return;
+  const c=P.cfg, n=P.labels.length;
+  if(c.reshuffle && P.count>0 && P.count%8===0){        // ときどき並びを入れ替える
+    P.labels=spotLabels(c); if(c.layout==='rand') P.place=spotPlace(c);
+    spotRender($('sBox'),c,P.place,P.labels,P.cal);
+  }
+  let t; do{ t=rnd(n); }while(t===P.last && n>1); P.last=t;
+  const L=P.labels[t];
+  const by = c.content==='num' ? 'num' : c.content==='col' ? 'col' : (c.instr==='mix' ? (Math.random()<.5?'num':'col') : c.instr);
+  const light=c.signal!=='voice', voice=c.signal!=='light';
+  [...$('sBox').children].forEach((el,i)=>{ el.classList.toggle('hot',light&&i===t); el.classList.toggle('dim',light&&i!==t); });
+  if(light){ const el=$('sBox').children[t]; if(el){ el.classList.remove('pulse'); void el.offsetWidth; el.classList.add('pulse'); } }
+  if(voice) say(by==='num'?numTxt(L.num):SPOT_SAY[L.col],true);
+  else tone(now()+0.01,1100,0.08,0.35);
+  P.count++; $('sHud').textContent=`残り ${Math.max(0,P.left)}s ・ ${P.count}回`;
+  const iv=c.timing==='fixed'?c.iv:(()=>{ const [a,b]=SPOT_RAND[c.rand]; return a+Math.random()*(b-a); })();
+  spotLater(spotCue,Math.round(iv*1000));
+}
+function spotPause(on){
+  if(!P||!P.started) return;
+  P.paused=on;
+  P.timers.forEach(clearTimeout); P.timers=[];
+  $('sPause').textContent=on?'▶ 続ける':'Ⅱ 一時停止';
+  if(!on){ $('sCtl').style.display='none'; spotCue(); }
+}
+function spotDone(early){
+  const p=P; if(!p) return;
+  const c=p.cfg, n=p.count, secs=c.dur-Math.max(0,p.left);
+  p.timers.forEach(clearTimeout); clearInterval(p.clock); p.paused=true;
+  [...$('sBox').children].forEach(el=>el.classList.remove('hot','dim'));
+  say(early?'おつかれさまでした':'おわりです',true);
+  setTimeout(()=>{
+    if(P!==p) return;
+    stopSpot(); fullOff();
+    finish({ type:'spot', cfg:c, title:early?'途中で終了':'完了', note:'おつかれさまでした',
+      stats:[['指示',n+'回'],['時間',fmtSecs(secs)],['並べ方',SPOT_LAYOUTS[c.layout]],['切り替え',spotIvTxt(c)]] });
+  },1300);
+}
+// 映しているあいだ：画面をタップすると操作の帯、キーボードは Space＝一時停止、Esc＝やめる
+$('sWall').addEventListener('click',e=>{
+  if(e.target.closest('#sCtl')||e.target.closest('#sCalPanel')) return;
+  if($('sWall').classList.contains('cal')){ $('sCalPanel').style.display='block'; return; }
+  if(!P) return;
+  const ctl=$('sCtl'); ctl.style.display = ctl.style.display==='flex' ? 'none' : 'flex';
+});
+$('sPause').onclick=()=>spotPause(!(P&&P.paused));
+$('sStop').onclick=()=>{ if(P) spotDone(true); };
+document.addEventListener('keydown',e=>{
+  if(!P && !$('sWall').classList.contains('cal')) return;
+  if(e.code==='Space'){ e.preventDefault(); if(P) spotPause(!P.paused); }
+  else if(e.code==='Escape'){ if(P) spotDone(true); else spotCalClose(); }
+});
+window.addEventListener('resize',()=>{
+  if(P) spotRender($('sBox'),P.cfg,P.place,P.labels,P.cal);
+  else if($('sWall').classList.contains('cal')) spotCalDraw();
+});
+
+/* ---- 映す範囲を合わせる ---- */
+let SCAL=null;
+function spotCalOpen(cfg){
+  stopAll(); fullOn();
+  SCAL={cfg, cal:spotCal(), place:spotPlace(cfg), labels:spotLabels(cfg)};
+  const wall=$('sWall'); wall.style.display='block'; wall.classList.add('cal');
+  $('sCd').textContent=''; $('sHud').textContent=''; $('sCtl').style.display='none';
+  const c=SCAL.cal, pn=$('sCalPanel'); pn.style.display='block';
+  const sl=(k,lab,min,max)=>`<label class="calrow"><span>${lab}</span><input type="range" min="${min}" max="${max}" value="${c[k]}" data-k="${k}"><b id="cal_${k}">${c[k]}${k==='size'?'%':'%'}</b></label>`;
+  pn.innerHTML=`<div class="calt">映す範囲を合わせる</div>
+    <p>白い枠が、壁や床で使いたい範囲に収まるように余白を動かします。丸がちょうど届く大きさにしてください。</p>
+    ${sl('top','上の余白',0,35)}${sl('bottom','下の余白',0,35)}${sl('left','左の余白',0,35)}${sl('right','右の余白',0,35)}${sl('size','丸の大きさ',50,150)}
+    <label class="calrow"><span>180°回す</span><button class="toggle${c.rot?' on':''}" id="calRot"></button><b></b></label>
+    <p class="calsub">床に映していて、文字がさかさまに見えるときは「180°回す」をオン。</p>
+    <div class="btnrow"><button class="btn quiet" id="calHide">パネルを隠す</button><button class="btn" id="calDone">完了</button></div>`;
+  pn.querySelectorAll('input[type=range]').forEach(r=>r.oninput=()=>{
+    c[r.dataset.k]=+r.value; $('cal_'+r.dataset.k).textContent=r.value+'%'; spotCalSave(c); spotCalDraw();
+  });
+  $('calRot').onclick=()=>{ c.rot=!c.rot; $('calRot').classList.toggle('on',c.rot); spotCalSave(c); spotCalDraw(); };
+  $('calHide').onclick=e=>{ e.stopPropagation(); pn.style.display='none'; };
+  $('calDone').onclick=e=>{ e.stopPropagation(); spotCalClose(); };
+  spotCalDraw();
+}
+function spotCalDraw(){
+  if(!SCAL) return;
+  $('sRot').style.transform=SCAL.cal.rot?'rotate(180deg)':'';
+  spotRender($('sBox'),SCAL.cfg,SCAL.place,SCAL.labels,SCAL.cal);
+}
+function spotCalClose(){
+  SCAL=null; const wall=$('sWall'); wall.classList.remove('cal'); wall.style.display='none';
+  $('sCalPanel').style.display='none'; fullOff();
+}
+const spotAutoCfg=()=>({layout:'g33',count:6,content:'both',order:'shuf',instr:'mix',signal:'both',timing:'rand',iv:3,rand:'r2',dur:60,reshuffle:false});
+function spotReadCfg(){
+  return { layout:segVal('spLayout'), count:+segVal('spCount'), content:segVal('spContent'), order:segVal('spOrder'),
+    instr:segVal('spInstr'), signal:segVal('spSignal'), timing:segVal('spTiming'), iv:+segVal('spIv'), rand:segVal('spRand'),
+    dur:+$('spDur').value, reshuffle:$('spShuffle').classList.contains('on') };
+}
+
+/* ============================================================
    Results
    ============================================================ */
 let last=null;
-const TYPE_NAME={arrow:'方向トレーニング',num:'数字記憶',stroop:'ストループ',voice:'ストループ（音声）',grid:'ストループ 一覧',move:'リズム運動',hands:'左右の手まね',breath:'呼吸調整',mem:'数字の位置記憶',card:'フラッシュ'};
+const TYPE_NAME={spot:'丸タッチ',arrow:'方向トレーニング',num:'数字記憶',stroop:'ストループ',voice:'ストループ（音声）',grid:'ストループ 一覧',move:'リズム運動',hands:'左右の手まね',breath:'呼吸調整',mem:'数字の位置記憶',card:'フラッシュ'};
 function finish(r){
   last=r;
   if(r.celebrate){
@@ -2860,19 +3145,21 @@ function rerun(type,cfg){
   else if(type==='breath') runBreath(cfg);
   else if(type==='mem') runMem(cfg);
   else if(type==='card') runCard(cfg);
+  else if(type==='spot') runSpot(cfg);
   else runVoice(cfg);
 }
 
 /* ============================================================
    Boot
    ============================================================ */
+projSet(projPref(),false);
 goHome();
 
 /* ============================================================
    Version check — 古い保存済みの画面が出ていたら、新しい版に切り替える
    （GitHub Pages は更新後しばらく古い版を返すことがあるため）
    ============================================================ */
-const APP_VER='2026-11-05 15:00';   // 更新のたびにこの日時を書き換える
+const APP_VER='2026-11-05 17:00';   // 更新のたびにこの日時を書き換える
 $('appVer').textContent='更新 '+APP_VER;
 (function checkVer(){
   if(location.protocol==='file:') return;
