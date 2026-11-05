@@ -422,6 +422,21 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 .btext{position:relative;text-align:center}
 .bphase{font-size:32px;font-weight:760;letter-spacing:.04em}
 .bnum{font-size:60px;font-weight:750;line-height:1.05;color:var(--text-2);min-height:63px}
+
+/* ============================================================
+   Memory grid (numbers' positions)
+   ============================================================ */
+#wField{place-items:center}
+.mgrid{display:grid;justify-content:center;align-content:center;padding-top:28px}
+.mc{border-radius:10px;border:1px dashed var(--line-2);background:transparent;padding:0;margin:0;
+  display:grid;place-items:center;font:inherit;font-weight:760;line-height:1;color:var(--text);cursor:pointer;
+  font-variant-numeric:tabular-nums;touch-action:manipulation}
+.mc.num{border-color:transparent}
+.mc.sq{background:var(--text);border-color:var(--text)}
+.mc.ok{background:var(--ok);border-color:var(--ok);color:#fff;animation:pop .16s cubic-bezier(.2,.8,.3,1)}
+.mc.show{background:var(--surface-2);border:1px solid var(--line-2);color:var(--text-3)}
+.mc.want{border:2px solid var(--accent);color:var(--accent)}
+.mc.ng{background:var(--ng);border-color:var(--ng);color:#fff}
 </style>
 </head>
 <body>
@@ -570,6 +585,23 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
     </div>
   </section>
 
+  <!-- ============ PLAY: MEMORY GRID ============ -->
+  <section class="screen" id="playMem">
+    <div class="stage">
+      <div class="hud">
+        <span>問 <b class="tnum" id="wProg">1/10</b></span>
+        <span>数字 <b class="tnum" id="wCnt">5</b>個</span>
+        <span>正解 <b class="tnum" id="wHits">0</b></span>
+      </div>
+      <div class="field" id="wField">
+        <div class="tag" id="wTag"></div>
+        <div class="mgrid" id="wGrid"></div>
+        <div class="veil" id="wVeil" style="display:none"></div>
+      </div>
+      <div class="below"><div class="rem" id="wMsg"></div></div>
+    </div>
+  </section>
+
   <!-- ============ PLAY: BREATH ============ -->
   <section class="screen" id="playBreath">
     <div class="stage">
@@ -651,6 +683,7 @@ const ICON={
   mic   : svg('<rect x="9" y="2.75" width="6" height="11" rx="3"/><path d="M4.75 11.5a7.25 7.25 0 0 0 14.5 0"/><path d="M12 18.75V21.5"/>'),
   dash  : svg('<path d="M6 12h12"/>'),
   hand  : svg('<path d="M8 12.5V6.25a1.5 1.5 0 0 1 3 0V11"/><path d="M11 10.5V4.75a1.5 1.5 0 0 1 3 0V11"/><path d="M14 10.75V6.25a1.5 1.5 0 0 1 3 0v7.5a7 7 0 0 1-7 7h-.5a6 6 0 0 1-4.6-2.2L3.6 15.5a1.4 1.4 0 0 1 2.1-1.85L8 15.5"/>'),
+  grid  : svg('<rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.5"/><path d="M15.6 5.2l1.4-1v6.3"/><path d="M5.2 15.2a1.9 1.9 0 0 1 3.6.8c0 1.3-3.7 3.3-3.7 4.5h3.9"/>'),
   wind  : svg('<path d="M3 8.5h10.5a3 3 0 1 0-3-3"/><path d="M3 12.5h15a3 3 0 1 1-3 3"/><path d="M3 16.5h6"/>'),
   metro : svg('<path d="M9.5 3h5l4 18h-13z"/><path d="M7 16.5h10"/><path d="M12 16.5l4.5-9.5"/>')
 };
@@ -700,7 +733,8 @@ const TRAININGS={
   stroop:{icon:'color',name:'ストループ',      desc:'文字と色の食い違い'},
   move  :{icon:'metro',name:'リズム運動',      desc:'読めないテンポや秒数に合わせて回す'},
   hands :{icon:'hand', name:'左右の手まね',    desc:'左右ちがう手の形をすぐにまねる'},
-  breath:{icon:'wind', name:'呼吸調整',        desc:'吐く・止める・吸うを秒数どおりに'}
+  breath:{icon:'wind', name:'呼吸調整',        desc:'吐く・止める・吸うを秒数どおりに'},
+  mem   :{icon:'grid', name:'数字の位置記憶',  desc:'数字の場所を覚えて、1から順に押す'}
 };
 
 /* ============================================================
@@ -717,7 +751,7 @@ function show(id,title,sub){
 }
 $('back').innerHTML=ICON.back;
 $('back').onclick=()=>{ stopAll(); stopProg(); if(['hub','results'].includes(document.querySelector('.screen.on').id)) goHome(); else if(curTrain) openHub(curTrain); else goHome(); };
-function stopAll(){ stopArrow(); stopNum(); stopStroop(); stopVoice(); stopGrid(); stopMove(); stopHands(); stopBreath(); }
+function stopAll(){ stopArrow(); stopNum(); stopStroop(); stopVoice(); stopGrid(); stopMove(); stopHands(); stopBreath(); stopMem(); }
 
 /* ============================================================
    Home
@@ -745,6 +779,7 @@ const QUICK_DESC={
   arrow :'「同じ方向」からはじめて、反対 → 色で判断へ。矢印は4方向から8方向、スピードも1.2秒から1.0秒へ上がります。1セット30秒。',
   num   :'8桁からスタートして10桁まで。後半は逆唱に切り替わります。表示は5秒。全10問クリアを目指します。',
   stroop:'かな → 漢字 → English。1文字ずつからはじめて、一覧・背景ラインやマスへと進みます。',
+  mem   :'4個からスタート。正解すると1個増え、まちがえると1個減ります（3〜10個）。1 を押すとほかの数字が四角に変わるので、2 から順に押していきます。全10問。',
   breath:'8-8-8（8秒で吐く・8秒止める・8秒で吸う）を5分。はじまりの声と、最後の3秒の「さん・に・いち」に合わせるだけです。',
   hands :'まずは数字（グー〜5）だけ、ゆっくり（3〜5秒）から。数字のテンポを上げてから、キツネやグッドなどのポーズも混ざり、最後は1.5〜3秒で切り替わります。1ステージ30秒×4本。',
   move  :'メトロノーム（4拍で1周・周の変わり目でテンポが変わる）と、秒数（5〜20秒がランダム）を交互に全6ラウンド。動きも毎回ランダム。後半は毎周テンポが変わり、最後は1周の拍数もランダムになります。'
@@ -819,6 +854,7 @@ function startAuto(t){
   stopAll(); stopProg();
   if(t==='num'){ runNum({auto:true, total:10, plan:buildNumPlan()}); return; }
   if(t==='move'){ runMove(moveAutoCfg()); return; }
+  if(t==='mem'){ runMem({auto:true,count:4,grid:'m',hide:'one',after:'square',total:10}); return; }
   if(t==='breath'){ runBreath({min:5,out:8,hold:8,in:8,count:'tick',snd:'clock'}); return; }
   PROG={type:t, stages:t==='arrow'?buildArrowProgram():t==='hands'?buildHandsProgram():buildStroopProgram(),
         i:0, count:0, secs:0, bkTick:null};
@@ -993,6 +1029,26 @@ function renderCustom(t){
       <div class="hint" id="sHint2" style="display:none">マイクを使います。localhost 経由で開き、マイクを許可してください。認識には通信が必要です。</div>
     </div>`;
   }
+  if(t==='mem'){
+    box.innerHTML=`<div class="card pad">
+      ${rowRange('数字の数','wCount',3,12,1,6,v=>'1〜'+v)}
+      ${rowSeg('マス目','wGridSel',[{v:'s',l:'小 4×5'},{v:'m',l:'中 5×7'},{v:'l',l:'大 6×9'}],'m')}
+      ${rowSeg('隠すタイミング','wHide',[{v:'one',l:'1を押したら'},{v:'t05',l:'0.5秒'},{v:'t1',l:'1秒'},{v:'t2',l:'2秒'},{v:'t3',l:'3秒'}],'one',v=>{
+        $('wHint').textContent = v==='one'
+          ? '1 を押すまで数字は出たまま。1 を押した瞬間にほかの数字が隠れます。'
+          : `数字は${MEM_HIDE[v]/1000}秒で隠れます。その前に 1 を押して始めることもできます。`;
+      })}
+      ${rowSeg('隠したあと','wAfter',[{v:'square',l:'四角を残す'},{v:'blank',l:'何も出さない'}],'square',v=>{
+        $('wHint2').textContent = v==='square'
+          ? '数字のあった場所が四角になります。四角の中から順番を思い出します。'
+          : '何も残りません。空のマス目から、場所そのものを思い出します（むずかしい）。';
+      })}
+      ${rowSeg('問題数','wQ',[{v:'5',l:'5問'},{v:'10',l:'10問'},{v:'20',l:'20問'}],'10')}
+      <div class="hint" id="wHint">1 を押すまで数字は出たまま。1 を押した瞬間にほかの数字が隠れます。</div>
+      <div class="hint" id="wHint2">数字のあった場所が四角になります。四角の中から順番を思い出します。</div>
+      <div class="hint">ちがう場所を押すと、その問題は終わりです。正しい場所が表示されます。</div>
+    </div>`;
+  }
   if(t==='breath'){
     box.innerHTML=`<div class="card pad">
       ${rowRange('時間','bMin',3,10,1,5,v=>v+'分')}
@@ -1076,6 +1132,9 @@ $('customStart').onclick=()=>{
   if(curTrain==='num') runNum({
     dig:+$('nDig').value, t:+$('nT').value, rev:$('nRev').classList.contains('on'),
     total:+segVal('nQ')
+  });
+  if(curTrain==='mem') runMem({
+    count:+$('wCount').value, grid:segVal('wGridSel'), hide:segVal('wHide'), after:segVal('wAfter'), total:+segVal('wQ')
   });
   if(curTrain==='breath'){
     const pt=segVal('bPat');
@@ -2332,10 +2391,138 @@ function bDone(secs){
 }
 
 /* ============================================================
+   MEMORY GRID engine — 数字の位置を覚えて 1 から順に押す
+   ============================================================ */
+const MEM_GRID={s:[4,5], m:[5,7], l:[6,9]};                    // [列, 行]
+const MEM_HIDE={one:0, t05:500, t1:1000, t2:2000, t3:3000};    // 0 = 1を押したら隠す
+const memHideTxt=h=>h==='one'?'1を押したら隠れる':`${MEM_HIDE[h]/1000}秒で隠れる`;
+let W=null;
+function stopMem(){ if(W){ W.stops.forEach(f=>f&&f()); clearTimeout(W.to); W=null; } }
+function runMem(cfg){
+  stopAll(); audioOn();
+  W={cfg, q:0, hits:0, k:cfg.auto?4:cfg.count, best:0, times:[], log:[], stops:[], to:null,
+     lock:true, pos:[], next:1, hidden:false, tHide:0};
+  const [c,r]=MEM_GRID[cfg.grid];
+  W.cols=c; W.rows=r;
+  $('wProg').textContent=`1/${cfg.total}`; $('wCnt').textContent=W.k; $('wHits').textContent='0';
+  $('wTag').textContent=''; $('wMsg').textContent='';
+  show('playMem','数字の位置記憶', cfg.auto?`おまかせ 全${cfg.total}問`:`${cfg.count}個 ・ ${memHideTxt(cfg.hide)}`);
+  memBuild();
+  W.stops.push(veilPrepare($('wVeil'), memRuleInfo(cfg), memNext));
+}
+function memRuleInfo(cfg){
+  const one=cfg.hide==='one', sq=cfg.after==='square';
+  return {
+    title:'数字の場所を覚える',
+    sub: one
+      ? `マス目に数字が出ます。<b>1</b> を押すと、ほかの数字が${sq?'四角':'消えて見えなく'}なります。2、3…と、場所を思い出して順に押します。`
+      : `マス目に数字が出て、${MEM_HIDE[cfg.hide]/1000}秒で${sq?'四角に変わり':'消え'}ます。1 から順に、場所を思い出して押します。`,
+    ex:`<div class="prep-list">
+        <div class="prep-li"><span>正しい場所</span><span class="act same">数字が出て次へ</span></div>
+        <div class="prep-li"><span>ちがう場所</span><span class="act opp">その問題は終わり</span></div>
+      </div>`
+  };
+}
+function memBuild(){
+  const g=$('wGrid'); g.innerHTML='';
+  for(let i=0;i<W.cols*W.rows;i++){
+    const b=document.createElement('button'); b.className='mc'; b.dataset.i=i; g.appendChild(b);
+  }
+  memLayout();
+}
+function memLayout(){
+  if(!W) return;
+  const g=$('wGrid'), f=$('wField');
+  const gap=6, Wd=f.clientWidth-20, Ht=f.clientHeight-52;
+  if(Wd<=0||Ht<=0) return;
+  const cell=Math.floor(Math.min((Wd-(W.cols-1)*gap)/W.cols,(Ht-(W.rows-1)*gap)/W.rows));
+  g.style.gridTemplateColumns=`repeat(${W.cols},${cell}px)`;
+  g.style.gridTemplateRows=`repeat(${W.rows},${cell}px)`;
+  g.style.gap=gap+'px';
+  g.style.fontSize=Math.round(cell*0.6)+'px';
+}
+window.addEventListener('resize',()=>{ if(W) memLayout(); });
+const memCell=i=>$('wGrid').children[i];
+function memNext(){
+  if(!W) return;
+  if(W.q>=W.cfg.total) return memDone();
+  W.q++;
+  const n=W.cols*W.rows, k=Math.min(W.k,n);
+  const cells=shuffle([...Array(n).keys()]).slice(0,k);
+  W.pos=[null,...cells];                          // W.pos[数字] = マスの番号
+  W.next=1; W.hidden=false; W.lock=false;
+  [...$('wGrid').children].forEach(b=>{ b.className='mc'; b.textContent=''; });
+  cells.forEach((ci,j)=>{ const b=memCell(ci); b.className='mc num'; b.textContent=j+1; });
+  $('wProg').textContent=`${W.q}/${W.cfg.total}`; $('wCnt').textContent=k;
+  $('wTag').textContent = W.cfg.hide==='one' ? '1 を押すと隠れます' : `${MEM_HIDE[W.cfg.hide]/1000}秒で隠れます`;
+  $('wMsg').textContent='';
+  if(W.cfg.hide!=='one') W.to=setTimeout(memHide, MEM_HIDE[W.cfg.hide]);
+}
+function memHide(){
+  if(!W||W.hidden) return;
+  clearTimeout(W.to);
+  W.hidden=true; W.tHide=performance.now();
+  for(let v=W.next; v<W.pos.length; v++){
+    const b=memCell(W.pos[v]); b.textContent='';
+    b.className = W.cfg.after==='square' ? 'mc sq' : 'mc';
+  }
+  $('wTag').textContent = W.next===1 ? '1 から順に押す' : `${W.next} から順に押す`;
+}
+$('wGrid').addEventListener('click',e=>{
+  const b=e.target.closest('.mc'); if(!b||!W||W.lock) return;
+  const i=+b.dataset.i, exp=W.pos[W.next];
+  if(!W.hidden){                                   // 見えているあいだは「1」だけ押せる（押すと隠れる）
+    if(W.next===1 && i===exp){ memOk(i); if(W && !W.lock) memHide(); }
+    return;
+  }
+  const v=W.pos.indexOf(i);
+  if(v>0 && v<W.next) return;                       // もう正解したマス
+  if(W.cfg.after==='square' && v<0) return;         // 四角を残すときは、四角だけが押せる
+  if(i===exp) memOk(i); else memNg(i);
+});
+function memOk(i){
+  const b=memCell(i); b.className='mc ok'; b.textContent=W.next;
+  tone(now()+0.01, 880+W.next*40, 0.08, 0.25);
+  W.next++;
+  if(W.next>=W.pos.length){                        // 全部正解
+    W.lock=true; W.hits++;
+    const t=W.hidden?(performance.now()-W.tHide)/1000:0, k=W.pos.length-1;
+    W.times.push(t); W.best=Math.max(W.best,k);
+    W.log.push({exp:`${k}個 ・ ${t.toFixed(1)}秒`, ok:true});
+    $('wHits').textContent=W.hits; $('wTag').textContent='正解！'; $('wMsg').textContent='';
+    if(W.cfg.auto) W.k=Math.min(10,W.k+1);
+    W.to=setTimeout(memNext,900);
+  }
+}
+function memNg(i){
+  W.lock=true;
+  const k=W.pos.length-1, got=W.next-1;
+  tone(now()+0.01,200,0.25,0.3,'square');
+  for(let v=W.next; v<W.pos.length; v++){ const b=memCell(W.pos[v]); b.className='mc show'; b.textContent=v; }
+  const b=memCell(i); b.classList.add('ng'); if(!b.textContent) b.textContent='×';
+  W.log.push({exp:`${k}個`, ok:false, ans:`${got}まで正解`});
+  $('wTag').textContent='ざんねん'; $('wMsg').textContent=`正しくは、ここが ${W.next} でした`;
+  memCell(W.pos[W.next]).classList.add('want');
+  if(W.cfg.auto) W.k=Math.max(3,W.k-1);
+  W.to=setTimeout(memNext,2000);
+}
+function memDone(){
+  const c=W.cfg, hits=W.hits, total=c.total, times=W.times.slice(), best=W.best, log=W.log.slice();
+  stopMem();
+  const avg=times.length?times.reduce((a,b)=>a+b,0)/times.length:0;
+  const stats=[['正解',`${hits}/${total}`],['正答率',Math.round(hits/total*100)+'%']];
+  stats.push(c.auto?['いちばん多く覚えた数',best?best+'個':'—']:['数字の数',c.count+'個']);
+  stats.push(['思い出す時間（平均）',times.length?avg.toFixed(1)+'秒':'—']);
+  finish({ type:'mem', cfg:c, autoType:c.auto?'mem':undefined, stats, log,
+    celebrate:{hits,total, title:hits===total?'パーフェクト':hits>=Math.ceil(total*0.8)?'クリア':'コンプリート',
+      note:'おつかれさまでした', tier:hits===total?'perfect':hits>=Math.ceil(total*0.8)?'good':''} });
+}
+
+/* ============================================================
    Results
    ============================================================ */
 let last=null;
-const TYPE_NAME={arrow:'方向トレーニング',num:'数字記憶',stroop:'ストループ',voice:'ストループ（音声）',grid:'ストループ 一覧',move:'リズム運動',hands:'左右の手まね',breath:'呼吸調整'};
+const TYPE_NAME={arrow:'方向トレーニング',num:'数字記憶',stroop:'ストループ',voice:'ストループ（音声）',grid:'ストループ 一覧',move:'リズム運動',hands:'左右の手まね',breath:'呼吸調整',mem:'数字の位置記憶'};
 function finish(r){
   last=r;
   if(r.celebrate){
@@ -2378,6 +2565,7 @@ function rerun(type,cfg){
   else if(type==='move') runMove(cfg);
   else if(type==='hands') runHands(cfg);
   else if(type==='breath') runBreath(cfg);
+  else if(type==='mem') runMem(cfg);
   else runVoice(cfg);
 }
 
