@@ -495,11 +495,11 @@ body.proj .hud{font-size:15px}
 .mchip.off{opacity:.35;text-decoration:line-through}
 .mform{margin-top:10px;font-size:13px;color:var(--text-3);word-break:break-all}
 #cTag b{font-weight:800}
-.anum{font-size:clamp(46px,13vmin,150px);font-weight:800;line-height:1;min-height:1em;margin-top:2vmin;
+.anum{font-size:clamp(110px,min(42vw,30vh),380px);font-weight:800;line-height:1;min-height:1em;margin-top:1vmin;letter-spacing:-.02em;
   font-family:-apple-system,"Helvetica Neue",Arial,sans-serif}
 .anum.flip{animation:flip .14s ease-out}
 #aField.math{grid-template-rows:auto auto;align-content:center}
-#aField.math .arrow{width:min(46%,260px)}
+#aField.math .arrow{width:min(38%,30vh,240px)}
 #mWideRow{justify-content:flex-start;flex-wrap:nowrap;gap:10px}
 .numcell{display:flex;flex-direction:column;gap:3px;font-size:11.5px;color:var(--text-3);font-weight:600}
 .numsep{padding-top:16px;color:var(--text-3)}
@@ -3509,7 +3509,7 @@ goHome();
    Version check — 古い保存済みの画面が出ていたら、新しい版に切り替える
    （GitHub Pages は更新後しばらく古い版を返すことがあるため）
    ============================================================ */
-const APP_VER='2026-11-05 21:00';   // 更新のたびにこの日時を書き換える
+const APP_VER='2026-11-05 21:15';   // 更新のたびにこの日時を書き換える
 $('appVer').textContent='更新 '+APP_VER;
 (function checkVer(){
   if(location.protocol==='file:') return;
