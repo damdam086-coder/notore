@@ -899,7 +899,7 @@ const QUICK_DESC={
   mem   :'1回目は見ながら 1 から順に押し、2回目は場所を思い出して 1 から順に押します（白い四角を出すか、枠だけにするかを下で選べます）。4個からスタートし、正解で1個増え、まちがえで1個減ります（3〜10個）。全10問。',
   breath:'8-8-8（8秒で吐く・8秒止める・8秒で吸う）を5分。はじまりの声と「いち・に・さん…はち」の数に合わせるだけです。1分ごとに残り時間をお知らせします。',
   hands :'まずは数字（グー〜5）だけ、ゆっくり（3〜5秒）から。数字のテンポを上げてから、キツネやグッドなどのポーズも混ざり、最後は1.5〜3秒で切り替わります。1ステージ30秒×4本。',
-  move  :'メトロノーム（4拍で1周・周の変わり目でテンポが変わる）と、秒数（5〜20秒がランダム）を交互に全6ラウンド。動きも毎回ランダム。後半は毎周テンポが変わり、最後は1周の拍数もランダムになります。'
+  move  :'メトロノーム（4拍で1周・周の変わり目でテンポが変わる）と、秒数（5〜20秒がランダム）を交互に全6ラウンド。動きも毎回ランダム。同じテンポは1〜3周続いてから変わり、最後は1周の拍数もランダムになります。'
 };
 function openHub(t){
   curTrain=t; const T=TRAININGS[t];
@@ -1289,7 +1289,7 @@ function renderCustom(t){
         ${rowRange('1周の拍数','mBeats',1,12,1,4,v=>v+'拍で1周')}
         ${rowToggle('拍数もランダム','mBeatsRand',false,v=>{ $('mBeatsHint').style.display=v?'block':'none'; })}
         <div class="hint" id="mBeatsHint" style="display:none;margin-top:0;padding-bottom:var(--s2)">テンポが変わるたびに、1周の拍数も 2〜8拍 からランダムに変わります。</div>
-        ${rowSeg('テンポが変わる','mGap',[{v:'every',l:'毎周'},{v:'mid',l:'1〜3周ごと'},{v:'rare',l:'2〜5周ごと'}],'every')}
+        ${rowSeg('テンポが変わる','mGap',[{v:'mid',l:'1〜3周ごと'},{v:'every',l:'毎周'},{v:'rare',l:'2〜5周ごと'}],'mid')}
         ${rowRange('1ラウンドの時間','mDur',20,90,10,40,v=>v+'秒')}
         ${rowToggle('ときどき逆回し','mFlip',false)}
         <div class="hint" id="mRangeHint">テンポは 1分間に 50〜110 回 のあいだで変わります。</div>
@@ -2036,7 +2036,7 @@ document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==
 /* ---- plan ---- */
 function moveAutoCfg(){
   return {auto:true, mode:'mix', moves:['ankle','shoulder','wrist','arm','hip'], rounds:6, rest:5,
-          range:'mid', gap:'every', dur:30, flip:false, beats:4, beatsRand:false, secs:[5,10,15,20], count:'beep'};
+          range:'mid', gap:'mid', dur:30, flip:false, beats:4, beatsRand:false, secs:[5,10,15,20], count:'beep'};
 }
 function buildMovePlan(cfg){
   let pool=MOVES.filter(m=>cfg.moves.includes(m.k)); if(!pool.length) pool=MOVES.slice(0,2);
@@ -2050,8 +2050,8 @@ function buildMovePlan(cfg){
       let s; do{ s=cfg.secs[rnd(cfg.secs.length)]; }while(cfg.secs.length>1 && s===lastS); lastS=s;
       r.dur=s;
     }else{
-      r.dur=cfg.dur; r.range=cfg.range; r.gap=cfg.gap||'every'; r.beats=cfg.beats||4; r.beatsRand=!!cfg.beatsRand;
-      if(cfg.auto){ r.range=metroN===0?'mid':'wide'; r.gap=metroN===0?'mid':'every'; r.beatsRand=metroN>=2; }
+      r.dur=cfg.dur; r.range=cfg.range; r.gap=cfg.gap||'mid'; r.beats=cfg.beats||4; r.beatsRand=!!cfg.beatsRand;
+      if(cfg.auto){ r.range=metroN===0?'mid':'wide'; r.gap='mid'; r.beatsRand=metroN>=2; }
       metroN++;
     }
     plan.push(r);
@@ -3160,7 +3160,7 @@ goHome();
    Version check — 古い保存済みの画面が出ていたら、新しい版に切り替える
    （GitHub Pages は更新後しばらく古い版を返すことがあるため）
    ============================================================ */
-const APP_VER='2026-11-05 17:30';   // 更新のたびにこの日時を書き換える
+const APP_VER='2026-11-05 18:00';   // 更新のたびにこの日時を書き換える
 $('appVer').textContent='更新 '+APP_VER;
 (function checkVer(){
   if(location.protocol==='file:') return;
