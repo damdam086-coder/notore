@@ -1,9 +1,9 @@
-このフォルダの音声（*.mp3）は、Open JTalk（pyopenjtalk）で読み上げを作ったものです。
+このフォルダの音声（*.mp3）は、読み上げ用に合成した声です。
 
-声: HTS voice "Mei" (mei_normal)
-    Copyright (c) 2009-2018 Nagoya Institute of Technology Department of Computer Science
-    MMDAgent "Sample Script" より  — Creative Commons Attribution 3.0 (CC BY 3.0)
-    https://creativecommons.org/licenses/by/3.0/
-読み上げエンジン: Open JTalk / pyopenjtalk（Modified BSD / MIT）
+声: Kokoro-82M（声の名前 jf_alpha）
+    https://huggingface.co/hexgrad/Kokoro-82M — Apache License 2.0
+    実行に kokoro-onnx（MIT）を使用
+読み（発音）の変換: pyopenjtalk（MIT / Modified BSD）と misaki（MIT）
 
-（2026-11-05 追加：「N分経過」「残りN分です」「この呼吸で終わりです」も同じ声で作成）
+（2026-11-05 以前は Open JTalk の HTS voice "Mei"（CC BY 3.0, 名古屋工業大学）を使っていました。
+  声の震え・機械っぽさが気になるとのことで、すべて上の声に作り直しました。）

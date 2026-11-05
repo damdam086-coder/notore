@@ -1786,11 +1786,12 @@ const SND={
    ブラウザによって鳴らない（Brave など）ので、録音が読めないときだけ代わりに使う。 */
 const VOX_MAP={'はじめます':'hajime','吐きます':'haku','止めます':'tomeru','吸います':'suu','おわりです。ふつうの呼吸に戻しましょう':'owari','休憩':'kyukei','逆回し':'gyaku','おつかれさまでした':'otsukare','足首回し':'ankle','肩回し':'shoulder','手首回し':'wrist','腕回し':'arm','股関節回し':'hip','腰回し':'waist','ひざ回し':'knee','いち':'n1','に':'n2','さん':'n3','よん':'n4','ご':'n5','ろく':'n6','なな':'n7','はち':'n8','きゅう':'n9','じゅう':'n10','11':'n11','12':'n12','13':'n13','14':'n14','15':'n15','16':'n16','17':'n17','18':'n18','19':'n19','20':'n20','21':'n21','22':'n22','23':'n23','24':'n24','25':'n25','26':'n26','27':'n27','28':'n28','29':'n29','30':'n30','5秒':'s5','10秒':'s10','15秒':'s15','20秒':'s20','30秒':'s30','40秒':'s40','50秒':'s50','60秒':'s60','70秒':'s70','80秒':'s80','90秒':'s90','1拍で1周':'b1','2拍で1周':'b2','3拍で1周':'b3','4拍で1周':'b4','5拍で1周':'b5','6拍で1周':'b6','7拍で1周':'b7','8拍で1周':'b8','9拍で1周':'b9','10拍で1周':'b10','11拍で1周':'b11','12拍で1周':'b12','この呼吸で終わりです':'konokokyu','1分経過':'m1','2分経過':'m2','3分経過':'m3','4分経過':'m4','5分経過':'m5','6分経過':'m6','7分経過':'m7','8分経過':'m8','9分経過':'m9','10分経過':'m10','残り1分です':'r1','残り2分です':'r2','残り3分です':'r3','残り4分です':'r4','残り5分です':'r5','残り6分です':'r6','残り7分です':'r7','残り8分です':'r8','残り9分です':'r9'};
 const VOX={raw:{}, buf:{}, src:[], fetching:false};
+const VOICE_VER='kokoro1';   // 声を作り直したら変える（古い声が残らないように）
 function voxFetch(){
   if(VOX.fetching || location.protocol==='file:') return;
   VOX.fetching=true;
   [...new Set(Object.values(VOX_MAP))].forEach(f=>{
-    fetch('voice/'+f+'.mp3').then(r=>r.ok?r.arrayBuffer():null).then(a=>{ if(a){ VOX.raw[f]=a; voxDecode(); } }).catch(()=>{});
+    fetch('voice/'+f+'.mp3?v='+VOICE_VER).then(r=>r.ok?r.arrayBuffer():null).then(a=>{ if(a){ VOX.raw[f]=a; voxDecode(); } }).catch(()=>{});
   });
 }
 // 音を出す前（タップ前）でも読み込めるよう、音を出さない OfflineAudioContext で変換しておく
@@ -2376,8 +2377,10 @@ function bStep(i,T,pre,extra){
     bAt(T+k,()=>{
       $('bNum').textContent = mode==='up' ? k : rem;
       if(!voiced(k) || !canSpeak()) return;
-      if(now()<B.busyUntil){ beatSound(snd==='none'?'soft':snd,now()+0.01,k%2,false); return; }
-      say(numTxt(mode==='up'?k:rem),true);
+      const txt=numTxt(mode==='up'?k:rem), wait=B.busyUntil-now();
+      if(wait>0.6){ beatSound(snd==='none'?'soft':snd,now()+0.01,k%2,false); return; }   // 長いお知らせ中は音に
+      if(wait>0){ bLater(()=>say(txt,true),wait*1000+60); return; }                     // 合図が少し長いときは、言い終わってから数える
+      say(txt,true);
     });
   }
   const Tn=T+D;
@@ -2609,7 +2612,7 @@ goHome();
    Version check — 古い保存済みの画面が出ていたら、新しい版に切り替える
    （GitHub Pages は更新後しばらく古い版を返すことがあるため）
    ============================================================ */
-const APP_VER='2026-11-05 11:30';   // 更新のたびにこの日時を書き換える
+const APP_VER='2026-11-05 12:30';   // 更新のたびにこの日時を書き換える
 $('appVer').textContent='更新 '+APP_VER;
 (function checkVer(){
   if(location.protocol==='file:') return;
