@@ -487,6 +487,14 @@ body.proj .hud{font-size:15px}
 .numbox{width:76px;padding:8px 6px;border-radius:10px;border:1px solid var(--line-2);background:var(--surface);color:var(--text);
   font:inherit;font-size:17px;font-weight:650;text-align:center;font-variant-numeric:tabular-nums}
 .numbox:focus{outline:none;border-color:var(--accent)}
+.mans{font-size:64px;font-weight:800;line-height:1.1;margin-top:6px;color:var(--text)}
+.mres{font-size:17px;font-weight:750;margin-top:2px}
+.mres.ok{color:var(--ok)} .mres.ng{color:var(--ng)}
+.mchips{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:12px}
+.mchip{min-width:38px;padding:5px 8px;border-radius:10px;background:var(--surface-2);font-weight:800;font-size:17px;font-variant-numeric:tabular-nums}
+.mchip.off{opacity:.35;text-decoration:line-through}
+.mform{margin-top:10px;font-size:13px;color:var(--text-3);word-break:break-all}
+#cTag b{font-weight:800}
 #mWideRow{justify-content:flex-start;flex-wrap:nowrap;gap:10px}
 .numcell{display:flex;flex-direction:column;gap:3px;font-size:11.5px;color:var(--text-3);font-weight:600}
 .numsep{padding-top:16px;color:var(--text-3)}
@@ -667,11 +675,12 @@ body.proj .hud{font-size:15px}
   <section class="screen" id="playCard">
     <div class="stage">
       <div class="hud">
-        <span>残り <b class="tnum" id="cLeft">60</b>s</span>
+        <span id="cLeftBox">残り <b class="tnum" id="cLeft">60</b>s</span>
         <span id="cIvLbl"></span>
         <span>枚数 <b class="tnum" id="cCount">0</b></span>
       </div>
       <div class="field" id="cField">
+        <div class="tag" id="cTag"></div>
         <div class="ccard" id="cCard"></div>
         <div class="fnum tnum" id="cNumOnly"></div>
         <div class="veil" id="cVeil" style="display:none"></div>
@@ -1217,10 +1226,16 @@ function renderCustom(t){
       </div>
       <div id="fNumBox">
         ${rowSeg('数字','fnRange',[{v:'d9',l:'0〜9'},{v:'n10',l:'1〜10'},{v:'n13',l:'1〜13'},{v:'n99',l:'1〜99'}],'n10')}
-        <div class="row"><span class="lbl">変わるもの</span>${chips('fnChange',[{v:'num',l:'数字'},{v:'col',l:'色'}],['num','col'])}</div>
+        ${rowToggle('暗算モード','fnMath',false,v=>flashMathUI(v))}
+        <div id="fnMathBox" style="display:none">
+          ${rowSeg('ルール','fnRule',Object.keys(MATH_RULES).map(k=>({v:k,l:MATH_RULES[k]})),'auto')}
+          ${rowSeg('数字の数','fnQ',[5,10,15,20].map(v=>({v,l:v+'個'})),'10')}
+          <div class="hint">ルールを決めておき、出てくる数字を頭の中で計算します。全部出たら答えを入れて答え合わせ。どの数字を足した・引いたかも見られます。「1色だけ」「足す色・引く色」は数字の色を2色以上、「2色だけ」は3色以上選んでください（足りないときは「ぜんぶ足す」になります）。</div>
+        </div>
+        <div class="row" id="fnChangeRow"><span class="lbl">変わるもの</span>${chips('fnChange',[{v:'num',l:'数字'},{v:'col',l:'色'}],['num','col'])}</div>
         <div class="row"><span class="lbl">数字の色</span>${chips('fnColors',Object.keys(CARD_COLORS).map(k=>({v:k,l:`<span class=\"cdot\" style=\"background:${CARD_COLORS[k].c}\"></span>${CARD_COLORS[k].n}`})),['black','red','green','blue','yellow'])}</div>
       </div>
-      ${rowRange('1セットの時間','cDur',20,120,10,60,v=>v+'秒')}
+      <div id="cDurBox">${rowRange('1セットの時間','cDur',20,120,10,60,v=>v+'秒')}</div>
       ${rowToggle('切り替わりの音','cBeep',false)}
       <div class="hint" id="fCardHint">「変わるもの」で選んだものだけが、カードごとに変わります（選ばなかったものは最初のまま）。前とまったく同じものは続けて出ません。「本物どおり」は、ハート・ダイヤが赤、スペード・クラブが黒になります。</div>
     </div>`;
@@ -1341,6 +1356,7 @@ $('customStart').onclick=()=>{
   if(curTrain==='card') runCard({
     kind:segVal('fKind')||flashKindPref(), wallColors:cfgUI.fwColors.slice(), nrange:segVal('fnRange'),
     nchange:cfgUI.fnChange.slice(), ncolors:cfgUI.fnColors.slice(),
+    math:$('fnMath').classList.contains('on'), rule:segVal('fnRule'), mathQ:+segVal('fnQ'),
     timing:segVal('cTiming'), iv:+segVal('cIv'), rand:segVal('cRand'), change:cfgUI.cChange.slice(),
     num:$('cNum').classList.contains('on'), range:segVal('cRange'), colorMode:segVal('cColorMode'),
     colors:cfgUI.cColors.slice(), numCol:segVal('cNumCol'), dur:+$('cDur').value, beep:$('cBeep').classList.contains('on')
@@ -2799,12 +2815,19 @@ const FLASH_QUICK={
   color:'画面いっぱいの色（赤・黄・緑・青・白・黒・橙・紫・桃・水色の10色）が、1.5〜3秒のランダムな間隔でパッと切り替わります。60秒。',
   num  :'大きな数字（1〜10）と、その色（黒・赤・緑・青・黄）が、1.5〜3秒のランダムな間隔でパッと切り替わります。60秒。'
 };
+function flashMathUI(on){
+  $('fnMathBox').style.display=on?'block':'none';
+  $('fnChangeRow').style.display=on?'none':'flex';
+  $('cDurBox').style.display=on?'none':'block';
+}
 function flashKindUI(k){
   try{ localStorage.setItem('notore-flash-kind',k); }catch(e){}
   cfgUI.fKind=k;
   const sg=$('sg_fKind'); if(sg) sg.querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.v===k));
   const show_=(id,on)=>{ const e=$(id); if(e) e.style.display=on?'block':'none'; };
-  show_('fCardBox',k==='card'); show_('fCardHint',k==='card'); show_('fColorBox',k==='color'); show_('fNumBox',k==='num');
+  show_('fCardBox',k==='card');
+  const mathOn = k==='num' && $('fnMath') && $('fnMath').classList.contains('on');
+  show_('cDurBox',!mathOn); show_('fCardHint',k==='card'); show_('fColorBox',k==='color'); show_('fNumBox',k==='num');
   if(curTrain==='card') $('quickDesc').textContent=FLASH_QUICK[k];
 }
 const WALL_COLORS={
@@ -2829,7 +2852,7 @@ const cardAutoCfg=()=>({timing:'rand',iv:2.5,rand:'r15',change:['suit','num','sc
   colorMode:'random',colors:['black','red','green','blue','yellow'],numCol:'own',dur:60,beep:false});
 
 let C=null;
-function stopCard(){ $('cWall').style.display='none'; if(C){ C.stops.forEach(f=>f&&f()); clearTimeout(C.to); clearInterval(C.clock); C=null; } }
+function stopCard(){ $('cWall').style.display='none'; if(C){ C.stops.forEach(f=>f&&f()); clearTimeout(C.to); clearTimeout(C.to2); clearInterval(C.clock); C=null; } }
 $('cWallX').onclick=()=>{ if(C) cardDone(true); };
 function runCard(cfg){
   stopAll(); if(cfg.beep) audioOn();
@@ -2843,7 +2866,7 @@ function runCard(cfg){
     const col=cfg.colorMode==='real'?(SUITS[s].red?CARD_COLORS.red.c:CARD_COLORS.black.c):CARD_COLORS[cfg.colors[i%cfg.colors.length]].c;
     return suitSvg(s,col,'mini');
   }).join('');
-  const info = kind==='color' ? {
+  let info = kind==='color' ? {
       title:'画面の色がパッと切り替わる',
       sub:`${cardIvTxt(cfg)}に、画面いっぱいの色が変わります（${cfg.wallColors.length}色）。左上の × でやめられます。`,
       ex:`<div class="prep-ex">${cfg.wallColors.map(k=>`<span class="cdot" style="width:22px;height:22px;margin:0;background:${WALL_COLORS[k].c}"></span>`).join('')}</div>`
@@ -2856,14 +2879,146 @@ function runCard(cfg){
       sub:`${cardIvTxt(cfg)}に、${cardChangeTxt(cfg)}が変わります。カードをよく見ていてください。`,
       ex:`<div class="prep-ex">${sample}</div>`
     };
+  const math = kind==='num' && cfg.math;
+  C.math = math ? mathBuild(cfg) : null;
+  $('cLeftBox').innerHTML = math ? `問 <b class="tnum" id="cLeft">0/${cfg.mathQ}</b>` : `残り <b class="tnum" id="cLeft">${cfg.dur}</b>s`;
+  $('cTag').innerHTML = math ? C.math.tag : '';
+  if(math){
+    show('playCard','フラッシュ', `暗算 ・ ${MATH_RULES[C.math.rule]} ・ ${cfg.mathQ}個`);
+    info.title='暗算のルール';
+    info.sub=`<span style="font-size:16px;color:var(--text)">${C.math.html}</span><br>数字が${cfg.mathQ}個、${cardIvTxt(cfg)}に出ます。全部出たら答えを入れます。`;
+    info.ex='';
+  }
   C.stops.push(veilPrepare($('cVeil'),info,cardBegin));
 }
 function cardChangeTxt(c){
   const m={suit:'記号',num:'数字',scol:'記号の色',ncol:'数字の色'};
   return c.change.filter(k=>c.num||(k!=='num'&&k!=='ncol')).map(k=>m[k]).join('・')||'カード';
 }
+/* ---- 数字だけ：暗算モード（ルールを決めて、出てきた数字を頭の中で計算する） ---- */
+const MATH_RULES={
+  auto:'おまかせ', add_all:'ぜんぶ足す', sub_all:'ぜんぶ引く', add_one:'1色だけ足す',
+  add_two:'2色だけ足す', add_sub:'足す色・引く色', even:'偶数だけ足す', odd:'奇数だけ足す'
+};
+const colN=k=>CARD_COLORS[k].n;
+const colB=k=>`<b style="color:${CARD_COLORS[k].c}">${CARD_COLORS[k].n}</b>`;
+function mathSign(rule,it,tg){
+  switch(rule){
+    case 'add_all': return 1;
+    case 'sub_all': return -1;
+    case 'add_one': return it.col===tg[0]?1:0;
+    case 'add_two': return (it.col===tg[0]||it.col===tg[1])?1:0;
+    case 'add_sub': return it.col===tg[0]?1:it.col===tg[1]?-1:0;
+    case 'even': return it.n%2===0?1:0;
+    case 'odd': return it.n%2===1?1:0;
+  }
+  return 0;
+}
+// 計算に使う数字が少なすぎ・多すぎにならないようにする
+function mathBalanced(rule,w,N){
+  if(rule==='add_all'||rule==='sub_all') return true;
+  const cnt=w.filter(x=>x!==0).length;
+  if(rule==='add_sub'){ const p=w.filter(x=>x>0).length, m=w.filter(x=>x<0).length; return p>=Math.max(2,Math.round(N*.2)) && m>=Math.max(1,Math.round(N*.15)) && cnt<=Math.round(N*.8); }
+  return cnt>=Math.max(2,Math.round(N*.3)) && cnt<=Math.round(N*.7);
+}
+function mathBuild(cfg){
+  const pal=cfg.ncolors.slice(), N=cfg.mathQ, vals=numOnlyValues(cfg.nrange).map(Number);
+  const ok=r=> r==='add_one'||r==='add_sub' ? pal.length>=2 : r==='add_two' ? pal.length>=3 : true;
+  let rule=cfg.rule;
+  if(rule==='auto') rule=pick(Object.keys(MATH_RULES).filter(r=>r!=='auto'&&ok(r)));
+  else if(!ok(rule)) rule='add_all';
+  const tg=shuffle(pal);
+  let seq,w,tries=0;
+  do{
+    seq=[]; let prev=null;
+    const single=(rule==='add_all'||rule==='sub_all') ? pick(pal) : null;   // 1色だけのときは、ぜんぶ同じ色
+    for(let i=0;i<N;i++){
+      let it; do{ it={n:pick(vals), col:single||pick(pal)}; }while(prev && it.n===prev.n && it.col===prev.col);
+      seq.push(it); prev=it;
+    }
+    w=seq.map(it=>mathSign(rule,it,tg)); tries++;
+  }while(tries<300 && !mathBalanced(rule,w,N));
+  let start=0;
+  if(rule==='sub_all'){ const sum=seq.reduce((a,it)=>a+it.n,0); start=Math.ceil((sum+1)/10)*10+10*rnd(2); }
+  if(rule==='add_sub'){ let run=0,minRun=0; seq.forEach((it,i)=>{ run+=w[i]*it.n; minRun=Math.min(minRun,run); }); if(minRun<0) start=Math.ceil(-minRun/10)*10; }
+  const answer=start+seq.reduce((a,it,i)=>a+w[i]*it.n,0);
+  const html={
+    add_all:'出てくる数字を、<b>ぜんぶ足して</b>ください',
+    sub_all:`<b>${start}</b> から、出てくる数字を<b>ぜんぶ引いて</b>ください`,
+    add_one:`${colB(tg[0])}の数字<b>だけ足して</b>ください（ほかの色は無視）`,
+    add_two:`${colB(tg[0])}と${colB(tg[1])}の数字<b>だけ足して</b>ください（ほかの色は無視）`,
+    add_sub:`${start?`<b>${start}</b> からスタート。`:''}${colB(tg[0])}は<b>足す</b>、${colB(tg[1])}は<b>引く</b>（ほかの色は無視）`,
+    even:'<b>偶数</b>（0・2・4・6…）<b>だけ足して</b>ください（奇数は無視）',
+    odd:'<b>奇数</b>（1・3・5…）<b>だけ足して</b>ください（偶数は無視）'
+  }[rule];
+  const tag={
+    add_all:'ぜんぶ足す', sub_all:`${start} からぜんぶ引く`, add_one:`${colB(tg[0])}だけ足す`,
+    add_two:`${colB(tg[0])}と${colB(tg[1])}を足す`, add_sub:`${start?start+'から ':''}${colB(tg[0])}は＋ ${colB(tg[1])}は−`,
+    even:'偶数だけ足す', odd:'奇数だけ足す'
+  }[rule];
+  return {rule, seq, w, start, answer, html, tag, i:0, user:null};
+}
+function mathNext(){
+  const m=C.math, el=$('cNumOnly');
+  if(m.i>=m.seq.length){ mathAsk(); return; }
+  const it=m.seq[m.i]; m.i++; C.count++;
+  $('cLeft').textContent=`${m.i}/${m.seq.length}`; $('cCount').textContent=C.count;
+  el.textContent='';                                          // 一瞬消してから出す（同じ数が続いても分かるように）
+  C.to2=setTimeout(()=>{
+    if(!C) return;
+    el.textContent=it.n; el.style.color=CARD_COLORS[it.col].c;
+    el.classList.remove('flip'); void el.offsetWidth; el.classList.add('flip');
+    if(C.cfg.beep) tone(now()+0.01,1200,0.05,0.3);
+  },140);
+  const c=C.cfg, iv=c.timing==='fixed'?c.iv:(()=>{ const [a,b]=CARD_RAND[c.rand]; return a+Math.random()*(b-a); })();
+  C.to=setTimeout(cardNext,Math.round(iv*1000));
+}
+function mathAsk(){
+  const m=C.math; $('cNumOnly').textContent='';
+  veilShow($('cVeil'),`<div class="prep">
+      <div class="prep-k">答え</div>
+      <div class="prep-s" style="font-size:15px;color:var(--text)">${m.html}</div>
+      <input class="numin" id="mathIn" type="number" inputmode="numeric" placeholder="計算した答え" style="margin-top:16px">
+      <button class="btn prep-b" id="mathCheck">答え合わせ</button>
+      <button class="btn quiet" id="mathSkip" style="margin-top:8px">入力せずに答えを見る</button>
+    </div>`);
+  const inp=$('mathIn'); setTimeout(()=>{ try{ inp.focus(); }catch(e){} },50);
+  const go=()=>{ const v=inp.value.trim(); mathReveal(v===''?null:Math.round(+v)); };
+  $('mathCheck').onclick=go;
+  inp.onkeydown=e=>{ if(e.key==='Enter') go(); };
+  $('mathSkip').onclick=()=>mathReveal(null);
+}
+function mathReveal(user){
+  const m=C.math; m.user=user;
+  const ok=user!==null && user===m.answer;
+  const chipsH=m.seq.map((it,i)=>{
+    const s=m.w[i]; const sign=s>0?'＋':s<0?'−':'';
+    return `<span class="mchip${s?'':' off'}" style="color:${CARD_COLORS[it.col].c}">${sign}${it.n}</span>`;
+  }).join('');
+  const parts=m.seq.map((it,i)=>m.w[i]?(m.w[i]>0?'+':'−')+it.n:'').filter(Boolean);
+  let formula=(m.start?String(m.start):'')+parts.join(' ');
+  formula=formula.replace(/^\+/,'').replace(/ /g,' ')+' = '+m.answer;
+  tone(now()+0.01,ok?1320:330,ok?0.25:0.3,0.35,ok?'sine':'triangle');
+  veilShow($('cVeil'),`<div class="prep">
+      <div class="prep-k">答え合わせ</div>
+      <div class="mans tnum">${m.answer}</div>
+      ${user===null?'':`<div class="mres ${ok?'ok':'ng'}">${ok?'正解！':'ざんねん（あなたの答え：'+user+'）'}</div>`}
+      <div class="prep-s">${m.html}</div>
+      <div class="mchips">${chipsH}</div>
+      <div class="mform tnum">${formula}</div>
+      <div class="btnrow"><button class="btn sub" id="mathAgain">もう一度</button><button class="btn" id="mathEnd">結果へ</button></div>
+    </div>`);
+  $('mathAgain').onclick=()=>runCard(C.cfg);
+  $('mathEnd').onclick=()=>{
+    const c=C.cfg, mm=C.math; stopCard();
+    finish({ type:'card', cfg:c, title: mm.user===null?'答えを確認しました':ok?'正解！':'ざんねん', note:'おつかれさまでした',
+      stats:[['答え',String(mm.answer)],['あなたの答え',mm.user===null?'—':String(mm.user)],['ルール',MATH_RULES[mm.rule]],['数字',mm.seq.length+'個']] });
+  };
+}
+
 function cardBegin(){
   if(!C) return;
+  if(C.math){ cardNext(); return; }                // 暗算は時間ではなく数字の数で終わる
   let left=C.cfg.dur; $('cLeft').textContent=left;
   $('cCard').style.visibility='visible';
   if(flashKindOf(C.cfg)==='color'){ $('cWall').style.display='block'; $('cWallLeft').textContent=left; }
@@ -2903,6 +3058,7 @@ function flashNext(){
 }
 function cardNext(){
   if(!C) return;
+  if(C.math){ mathNext(); return; }
   if(flashKindOf(C.cfg)!=='card'){
     flashNext(); C.count++;
     $('cCount').textContent=C.count; $('cWallCount').textContent=C.count;
@@ -3197,7 +3353,7 @@ goHome();
    Version check — 古い保存済みの画面が出ていたら、新しい版に切り替える
    （GitHub Pages は更新後しばらく古い版を返すことがあるため）
    ============================================================ */
-const APP_VER='2026-11-05 18:20';   // 更新のたびにこの日時を書き換える
+const APP_VER='2026-11-05 19:00';   // 更新のたびにこの日時を書き換える
 $('appVer').textContent='更新 '+APP_VER;
 (function checkVer(){
   if(location.protocol==='file:') return;
