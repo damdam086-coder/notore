@@ -786,7 +786,7 @@ const QUICK_DESC={
   num   :'8桁からスタートして10桁まで。後半は逆唱に切り替わります。表示は5秒。全10問クリアを目指します。',
   stroop:'かな → 漢字 → English。1文字ずつからはじめて、一覧・背景ラインやマスへと進みます。',
   mem   :'1回目は見ながら 1 から順に押し、2回目は場所を思い出して 1 から順に押します（白い四角を出すか、枠だけにするかを下で選べます）。4個からスタートし、正解で1個増え、まちがえで1個減ります（3〜10個）。全10問。',
-  breath:'8-8-8（8秒で吐く・8秒止める・8秒で吸う）を5分。はじまりの声と、最後の3秒の「さん・に・いち」に合わせるだけです。',
+  breath:'8-8-8（8秒で吐く・8秒止める・8秒で吸う）を5分。はじまりの声と「いち・に・さん…はち」の数に合わせるだけです。1分ごとに残り時間をお知らせします。',
   hands :'まずは数字（グー〜5）だけ、ゆっくり（3〜5秒）から。数字のテンポを上げてから、キツネやグッドなどのポーズも混ざり、最後は1.5〜3秒で切り替わります。1ステージ30秒×4本。',
   move  :'メトロノーム（4拍で1周・周の変わり目でテンポが変わる）と、秒数（5〜20秒がランダム）を交互に全6ラウンド。動きも毎回ランダム。後半は毎周テンポが変わり、最後は1周の拍数もランダムになります。'
 };
@@ -861,7 +861,7 @@ function startAuto(t){
   if(t==='num'){ runNum({auto:true, total:10, plan:buildNumPlan()}); return; }
   if(t==='move'){ runMove(moveAutoCfg()); return; }
   if(t==='mem'){ runMem({auto:true,count:4,grid:'m',after:segVal('wAfterQ')||memAfterPref(),total:10}); return; }
-  if(t==='breath'){ runBreath({min:5,out:8,hold:8,in:8,count:'tick',snd:'clock'}); return; }
+  if(t==='breath'){ runBreath({min:5,out:8,hold:8,in:8,count:'up',snd:'clock',minute:true}); return; }
   PROG={type:t, stages:t==='arrow'?buildArrowProgram():t==='hands'?buildHandsProgram():buildStroopProgram(),
         i:0, count:0, secs:0, bkTick:null};
   progStage();
@@ -1072,16 +1072,17 @@ function renderCustom(t){
         ${rowRange('止める','bHold',0,20,1,8,v=>v==0?'止めない':v+'秒')}
         ${rowRange('吸う','bIn',3,20,1,8,v=>v+'秒')}
       </div>
-      ${rowSeg('あいだの数え方','bCount',[{v:'tick',l:'音だけ'},{v:'voice',l:'声で数える'},{v:'none',l:'なし'}],'tick',v=>{
-        $('bSndRow').style.display=v==='tick'?'flex':'none';
-        $('bCountHint').textContent = v==='tick' ? '最後の3秒の前は、1秒ごとに音が鳴ります。'
-          : v==='voice' ? '最後の3秒の前は「いち・に・さん…」と声で数えます。最後の3秒は「さん・に・いち」。'
-          : '最後の3秒の前は静かです。';
+      ${rowSeg('声で数える','bCount',[{v:'up',l:'最後まで'},{v:'last3',l:'残り3秒だけ'},{v:'off',l:'数えない'}],'up',v=>{
+        $('bCountHint').textContent = v==='up' ? '「いち・に・さん…」と、その段の最後の秒まで声で数えます。'
+          : v==='last3' ? '残り3秒だけ「さん・に・いち」と数えます。それまでは下の音が1秒ごとに鳴ります。'
+          : '声では数えません。下の音が1秒ごとに鳴ります。';
       })}
-      <div class="row" id="bSndRow"><span class="lbl">音の種類</span>${seg('bSnd',[{v:'clock',l:'時計'},{v:'wood',l:'木の音'},{v:'beep',l:'電子音'},{v:'soft',l:'やさしい'},{v:'click',l:'クリック'}],'clock',beatPreview)}</div>
-      <div class="hint" id="bCountHint" style="margin-top:0;padding-bottom:var(--s2)">最後の3秒の前は、1秒ごとに音が鳴ります。</div>
+      <div class="hint" id="bCountHint" style="margin-top:0;padding-bottom:var(--s2)">「いち・に・さん…」と、その段の最後の秒まで声で数えます。</div>
+      <div class="row"><span class="lbl">カチカチ音</span>${seg('bSnd',[{v:'clock',l:'時計'},{v:'wood',l:'木の音'},{v:'beep',l:'電子音'},{v:'soft',l:'やさしい'},{v:'click',l:'クリック'},{v:'none',l:'なし'}],'clock',beatPreview)}</div>
+      ${rowToggle('1分ごとの声かけ','bMinute',true)}
+      <div class="hint" style="margin-top:0;padding-bottom:var(--s2)">カチカチ音は、声で数えない秒に鳴ります。1分ごとに「1分経過、残り4分です」のようにお知らせします。</div>
       <div class="hint">吐く → 止める → 吸う の順にくり返します。10-10-10 なら、10秒で吐いて、10秒止めて、10秒で吸います。</div>
-      <div class="hint">はじまりに「吐きます・止めます・吸います」と声で知らせ、最後の3秒は「さん・に・いち」と数えます。時間が来ても、いまの1呼吸を終えてから終わります。</div>
+      <div class="hint">はじまりに「吐きます・止めます・吸います」と声で知らせます。時間が来ても、いまの1呼吸を終えてから終わります。</div>
       <div class="hint">苦しくなったら無理をせず、ふつうの呼吸に戻してください。</div>
     </div>`;
   }
@@ -1152,7 +1153,7 @@ $('customStart').onclick=()=>{
   if(curTrain==='breath'){
     const pt=segVal('bPat');
     const c = pt==='c' ? {out:+$('bOut').value, hold:+$('bHold').value, in:+$('bIn').value} : {out:+pt, hold:+pt, in:+pt};
-    runBreath({min:+$('bMin').value, ...c, count:segVal('bCount'), snd:segVal('bSnd')});
+    runBreath({min:+$('bMin').value, ...c, count:segVal('bCount'), snd:segVal('bSnd'), minute:$('bMinute').classList.contains('on')});
   }
   if(curTrain==='hands') runHands({
     set:segVal('hSetSel'), show:segVal('hShow'), spd:segVal('hSpd'), dur:+$('hDur').value, sets:+segVal('hSets'),
@@ -1783,7 +1784,7 @@ const SND={
 /* ---- voice ----
    まずは録音した声（voice/*.mp3）を Web Audio で鳴らす。ブラウザの読み上げ機能は
    ブラウザによって鳴らない（Brave など）ので、録音が読めないときだけ代わりに使う。 */
-const VOX_MAP={'はじめます':'hajime','吐きます':'haku','止めます':'tomeru','吸います':'suu','おわりです。ふつうの呼吸に戻しましょう':'owari','休憩':'kyukei','逆回し':'gyaku','おつかれさまでした':'otsukare','足首回し':'ankle','肩回し':'shoulder','手首回し':'wrist','腕回し':'arm','股関節回し':'hip','腰回し':'waist','ひざ回し':'knee','いち':'n1','に':'n2','さん':'n3','よん':'n4','ご':'n5','ろく':'n6','なな':'n7','はち':'n8','きゅう':'n9','じゅう':'n10','11':'n11','12':'n12','13':'n13','14':'n14','15':'n15','16':'n16','17':'n17','18':'n18','19':'n19','20':'n20','21':'n21','22':'n22','23':'n23','24':'n24','25':'n25','26':'n26','27':'n27','28':'n28','29':'n29','30':'n30','5秒':'s5','10秒':'s10','15秒':'s15','20秒':'s20','30秒':'s30','40秒':'s40','50秒':'s50','60秒':'s60','70秒':'s70','80秒':'s80','90秒':'s90','1拍で1周':'b1','2拍で1周':'b2','3拍で1周':'b3','4拍で1周':'b4','5拍で1周':'b5','6拍で1周':'b6','7拍で1周':'b7','8拍で1周':'b8','9拍で1周':'b9','10拍で1周':'b10','11拍で1周':'b11','12拍で1周':'b12'};
+const VOX_MAP={'はじめます':'hajime','吐きます':'haku','止めます':'tomeru','吸います':'suu','おわりです。ふつうの呼吸に戻しましょう':'owari','休憩':'kyukei','逆回し':'gyaku','おつかれさまでした':'otsukare','足首回し':'ankle','肩回し':'shoulder','手首回し':'wrist','腕回し':'arm','股関節回し':'hip','腰回し':'waist','ひざ回し':'knee','いち':'n1','に':'n2','さん':'n3','よん':'n4','ご':'n5','ろく':'n6','なな':'n7','はち':'n8','きゅう':'n9','じゅう':'n10','11':'n11','12':'n12','13':'n13','14':'n14','15':'n15','16':'n16','17':'n17','18':'n18','19':'n19','20':'n20','21':'n21','22':'n22','23':'n23','24':'n24','25':'n25','26':'n26','27':'n27','28':'n28','29':'n29','30':'n30','5秒':'s5','10秒':'s10','15秒':'s15','20秒':'s20','30秒':'s30','40秒':'s40','50秒':'s50','60秒':'s60','70秒':'s70','80秒':'s80','90秒':'s90','1拍で1周':'b1','2拍で1周':'b2','3拍で1周':'b3','4拍で1周':'b4','5拍で1周':'b5','6拍で1周':'b6','7拍で1周':'b7','8拍で1周':'b8','9拍で1周':'b9','10拍で1周':'b10','11拍で1周':'b11','12拍で1周':'b12','この呼吸で終わりです':'konokokyu','1分経過':'m1','2分経過':'m2','3分経過':'m3','4分経過':'m4','5分経過':'m5','6分経過':'m6','7分経過':'m7','8分経過':'m8','9分経過':'m9','10分経過':'m10','残り1分です':'r1','残り2分です':'r2','残り3分です':'r3','残り4分です':'r4','残り5分です':'r5','残り6分です':'r6','残り7分です':'r7','残り8分です':'r8','残り9分です':'r9'};
 const VOX={raw:{}, buf:{}, src:[], fetching:false};
 function voxFetch(){
   if(VOX.fetching || location.protocol==='file:') return;
@@ -1824,7 +1825,7 @@ function voxSay(text,cut){
     VOX.src.push(s); if(VOX.src.length>12) VOX.src.shift();
     t+=b.duration+0.12;
   });
-  return true;
+  return t-AU.ctx.currentTime;                     // 声が鳴り終わるまでの秒数
 }
 voxFetch();
 
@@ -1833,13 +1834,14 @@ function pickVoice(){ try{ SAY.voice=speechSynthesis.getVoices().find(v=>/^ja/i.
 if(SAY.ok){ pickVoice(); try{ speechSynthesis.addEventListener('voiceschanged',pickVoice); }catch(e){} }
 function say(text,cut){
   if(!text || !text.trim()){ if(SAY.ok) try{ speechSynthesis.speak(new SpeechSynthesisUtterance(' ')); }catch(e){} return; }
-  if(voxSay(text,cut)) return;
-  if(!SAY.ok) return;
+  const d=voxSay(text,cut); if(d) return d;
+  if(!SAY.ok) return 0;
   try{
     if(cut) speechSynthesis.cancel();
     const u=new SpeechSynthesisUtterance(text); u.lang='ja-JP'; if(SAY.voice) u.voice=SAY.voice; u.rate=1.1;
     speechSynthesis.speak(u);
   }catch(e){}
+  return text.length*0.14;                         // 読み上げ機能のときはおおよその長さ
 }
 function sayStop(){ voxStop(); if(SAY.ok) try{ speechSynthesis.cancel(); }catch(e){} }
 const canSpeak=()=>voxReady()||SAY.ok;
@@ -2252,8 +2254,17 @@ const BREATH_STEPS=[
   {k:'in',  n:'吸う',   say:'吸います'}
 ];
 const breathPat=c=>`${c.out}-${c.hold}-${c.in}`;
-const breathCount=c=>c.count||(c.tick===false?'none':'tick');   // 古い設定（tick:true/false）も読む
-const breathCountTxt=c=>({tick:`${BEAT_KINDS[c.snd||'clock']}の音で1秒ずつ、`,voice:'「いち・に・さん…」と声で数え、',none:''})[breathCount(c)];
+// 声の数え方：up=最後まで数える／last3=残り3秒だけ「さん・に・いち」／off=数えない（古い設定も読む）
+const breathCount=c=>({up:'up',last3:'last3',off:'off',voice:'up'})[c.count]||'last3';
+const breathSnd=c=>(c.count==='none'||c.tick===false)?'none':(c.snd||'clock');
+function breathCountTxt(c){
+  const md=breathCount(c), sn=breathSnd(c);
+  const tick = sn==='none' ? '' : `（数えない秒は${BEAT_KINDS[sn]}の音）`;
+  return md==='up' ? '各段は「いち・に・さん…」と最後の秒まで声で数えます。'
+       : md==='last3' ? `各段の残り3秒を「さん・に・いち」と数えます${tick}。`
+       : `声では数えません${tick}。`;
+}
+const numTxt=n=>KANA_NUM[n]||String(n);
 // 時計の針のような「カチ」（ノイズを細い帯域に絞った短い音）
 let NOISE=null;
 function clockTick(t,alt){
@@ -2270,6 +2281,7 @@ function clockTick(t,alt){
 const BEAT_KINDS={clock:'時計',wood:'木の音',beep:'電子音',soft:'やさしい',click:'クリック'};
 function beatSound(kind,t,alt,accent){
   switch(kind){
+    case 'none' : break;
     case 'clock': clockTick(t,alt&&!accent); if(accent) tone(t,2400,0.04,0.3,'triangle'); break;
     case 'wood' : tone(t,accent?1250:880,0.07,0.55,'triangle'); tone(t,(accent?1250:880)*2.7,0.025,0.18); break;
     case 'beep' : tone(t,accent?1500:1000,0.07,0.45); break;
@@ -2278,7 +2290,7 @@ function beatSound(kind,t,alt,accent){
   }
 }
 // 設定で音を選んだときに、その場で試しに鳴らす
-function beatPreview(kind){ audioOn(); const t=now()+0.03; beatSound(kind,t,false,true); beatSound(kind,t+0.45,false,false); beatSound(kind,t+0.9,true,false); }
+function beatPreview(kind){ if(kind==='none') return; audioOn(); const t=now()+0.03; beatSound(kind,t,false,true); beatSound(kind,t+0.45,false,false); beatSound(kind,t+0.9,true,false); }
 
 let B=null;
 function stopBreath(){
@@ -2297,7 +2309,7 @@ const fmtClock=s=>{ s=Math.max(0,Math.ceil(s)); return `${Math.floor(s/60)}:${St
 function runBreath(cfg){
   stopAll();
   const steps=BREATH_STEPS.map(s=>({...s,d:cfg[s.k]})).filter(s=>s.d>0);
-  B={cfg, steps, timers:[], clock:null, cycles:0, t0:0, total:cfg.min*60, over:false, started:false};
+  B={cfg, steps, timers:[], clock:null, cycles:0, t0:0, total:cfg.min*60, over:false, started:false, busyUntil:0, minSaid:0};
   $('bLeft').textContent=fmtClock(B.total);
   $('bPatLbl').textContent=breathPat(cfg);
   $('bCycles').textContent='0';
@@ -2309,7 +2321,7 @@ function runBreath(cfg){
   veilShow($('bVeil'),`<div class="prep">
       <div class="prep-k">ルール</div>
       <div class="prep-t">${breathPat(cfg)} の呼吸を ${cfg.min}分</div>
-      <div class="prep-s">はじまりに「吐きます・止めます・吸います」と声で知らせます。あいだは${breathCountTxt(cfg)}最後の3秒は「さん・に・いち」と数えます。</div>
+      <div class="prep-s">はじまりに「吐きます・止めます・吸います」と声で知らせます。${breathCountTxt(cfg)}${cfg.minute===false?'':'1分ごとに「1分経過、残り◯分です」とお知らせします。'}</div>
       <div class="prep-list">${rows}</div>
       <div class="prep-s">苦しくなったら無理をせず、ふつうの呼吸に戻してください。</div>
       <button class="btn prep-b" id="bGo">はじめる</button>
@@ -2339,20 +2351,18 @@ function bStart(){
   },250);
   bStep(0,T);
 }
-function bStep(i,T){
-  const st=B.steps[i], D=st.d, cfg=B.cfg;
-  const cntFrom=Math.max(1,D-3);                      // 残り3秒は声で数える
-  const mode=breathCount(cfg);
+// pre＝前の段の最後の数（「じゅうご」など）、extra＝1分ごとのお知らせ。どちらも段の合図と続けて話す
+function bStep(i,T,pre,extra){
+  const st=B.steps[i], D=st.d, cfg=B.cfg, mode=breathCount(cfg), snd=breathSnd(cfg);
+  const voiced=k=> mode==='up' ? true : mode==='last3' ? k>=Math.max(1,D-3) : false;   // k秒目を声で数えるか
   for(let k=1;k<D;k++){
-    if(k<cntFrom){
-      if(mode==='tick') beatSound(cfg.snd||'clock',T+k,k%2,false);
-      else if(mode==='voice' && !canSpeak()) SND.tick(T+k);
-    }
-    else if(!canSpeak()) SND.tick(T+k);               // 声が出ない端末は音で代わりに
+    if(!voiced(k)) beatSound(snd,T+k,k%2,false);
+    else if(!canSpeak()) SND.tick(T+k);              // 声が出ない端末は音で代わりに
   }
   bAt(T,()=>{
-    say(st.say,true);
-    $('bPhase').textContent=st.n; $('bNum').textContent=D;
+    const d=say([pre,st.say,extra].filter(Boolean).join('、'),true);
+    B.busyUntil=now()+(d||0)-0.2;                     // 話しているあいだの数は、音に置きかえる
+    $('bPhase').textContent=st.n; $('bNum').textContent = mode==='up' ? 0 : D;
     const bub=$('bBub');
     bub.className='bub '+st.k;
     bub.style.transition=`transform ${D}s linear`;
@@ -2364,36 +2374,42 @@ function bStep(i,T){
   for(let k=1;k<D;k++){
     const rem=D-k;
     bAt(T+k,()=>{
-      $('bNum').textContent=rem;
-      if(k>=cntFrom) say(KANA_NUM[rem]||String(rem),true);        // 残り3秒：さん・に・いち
-      else if(mode==='voice'){                                     // それまで：いち・に・さん…
-        if(k===3 && rem===4) beatSound(cfg.snd||'clock',now()+0.01,false,false);   // 「さん、さん」と続かないように
-        else say(KANA_NUM[k]||String(k),true);
-      }
+      $('bNum').textContent = mode==='up' ? k : rem;
+      if(!voiced(k) || !canSpeak()) return;
+      if(now()<B.busyUntil){ beatSound(snd==='none'?'soft':snd,now()+0.01,k%2,false); return; }
+      say(numTxt(mode==='up'?k:rem),true);
     });
   }
   const Tn=T+D;
   bAt(Tn-0.3,()=>{
+    const last = mode==='up' ? numTxt(D) : '';        // 最後まで数えるときは、最後の秒を次の合図の前に言う
     let ni=i+1;
     if(ni>=B.steps.length){
       ni=0; B.cycles++; $('bCycles').textContent=B.cycles;
-      if(Tn-B.t0>=B.total-0.5) return bEnd(Tn,false);   // 時間が来たら、1呼吸を終えてから終了
+      if(Tn-B.t0>=B.total-0.5) return bEnd(Tn,false,last);   // 時間が来たら、1呼吸を終えてから終了
     }
-    bStep(ni,Tn);
+    let ex='';
+    const m=Math.floor((Tn-B.t0+0.5)/60);
+    if(cfg.minute!==false && m>=1 && m>B.minSaid){
+      B.minSaid=m;
+      const r=cfg.min-m;
+      ex = r>0 ? `${m}分経過、残り${r}分です` : `${Math.min(m,10)}分経過、この呼吸で終わりです`;
+    }
+    bStep(ni,Tn,last,ex);
   });
 }
-function bEnd(T,early){
+function bEnd(T,early,pre){
   if(early){ audioCut(true); T=now()+0.02; }
   const secs=Math.max(0,T-B.t0);
-  SND.end(T);
+  SND.end(T+(pre?0.5:0));
   bAt(T,()=>{
     B.over=true;
-    say('おわりです。ふつうの呼吸に戻しましょう',true);
+    say([pre,'おわりです。ふつうの呼吸に戻しましょう'].filter(Boolean).join('、'),true);
     $('bPhase').textContent='おわり'; $('bNum').textContent='';
     const bub=$('bBub'); bub.style.transition='transform 1.2s ease'; bub.style.transform='scale(.8)'; bub.className='bub';
     $('bNext').textContent=''; $('bStop').style.display='none';
     const b=B;
-    setTimeout(()=>{ if(B===b) bDone(secs); },2600);
+    setTimeout(()=>{ if(B===b) bDone(secs); },3200);
   });
 }
 $('bStop').onclick=()=>{ if(B && B.started && !B.over) bEnd(0,true); };
@@ -2593,7 +2609,7 @@ goHome();
    Version check — 古い保存済みの画面が出ていたら、新しい版に切り替える
    （GitHub Pages は更新後しばらく古い版を返すことがあるため）
    ============================================================ */
-const APP_VER='2026-11-05 10:50';   // 更新のたびにこの日時を書き換える
+const APP_VER='2026-11-05 11:30';   // 更新のたびにこの日時を書き換える
 $('appVer').textContent='更新 '+APP_VER;
 (function checkVer(){
   if(location.protocol==='file:') return;

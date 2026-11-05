@@ -5,3 +5,5 @@
     MMDAgent "Sample Script" より  — Creative Commons Attribution 3.0 (CC BY 3.0)
     https://creativecommons.org/licenses/by/3.0/
 読み上げエンジン: Open JTalk / pyopenjtalk（Modified BSD / MIT）
+
+（2026-11-05 追加：「N分経過」「残りN分です」「この呼吸で終わりです」も同じ声で作成）
