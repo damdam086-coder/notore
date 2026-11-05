@@ -468,6 +468,7 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
         <div class="qk">おまかせ</div>
         <h2 class="qt">設定なしではじめる</h2>
         <p class="qp" id="quickDesc"></p>
+        <div id="quickExtra"></div>
         <button class="btn" id="quickStart">トレーニング開始</button>
       </div>
       <div class="seclbl">自分で設定する</div>
@@ -784,7 +785,7 @@ const QUICK_DESC={
   arrow :'「同じ方向」からはじめて、反対 → 色で判断へ。矢印は4方向から8方向、スピードも1.2秒から1.0秒へ上がります。1セット30秒。',
   num   :'8桁からスタートして10桁まで。後半は逆唱に切り替わります。表示は5秒。全10問クリアを目指します。',
   stroop:'かな → 漢字 → English。1文字ずつからはじめて、一覧・背景ラインやマスへと進みます。',
-  mem   :'1回目は見ながら 1 から順に押し、2回目は四角に変わった場所を思い出して 1 から順に押します。4個からスタートし、正解で1個増え、まちがえで1個減ります（3〜10個）。全10問。',
+  mem   :'1回目は見ながら 1 から順に押し、2回目は場所を思い出して 1 から順に押します（白い四角を出すか、枠だけにするかを下で選べます）。4個からスタートし、正解で1個増え、まちがえで1個減ります（3〜10個）。全10問。',
   breath:'8-8-8（8秒で吐く・8秒止める・8秒で吸う）を5分。はじまりの声と、最後の3秒の「さん・に・いち」に合わせるだけです。',
   hands :'まずは数字（グー〜5）だけ、ゆっくり（3〜5秒）から。数字のテンポを上げてから、キツネやグッドなどのポーズも混ざり、最後は1.5〜3秒で切り替わります。1ステージ30秒×4本。',
   move  :'メトロノーム（4拍で1周・周の変わり目でテンポが変わる）と、秒数（5〜20秒がランダム）を交互に全6ラウンド。動きも毎回ランダム。後半は毎周テンポが変わり、最後は1周の拍数もランダムになります。'
@@ -859,7 +860,7 @@ function startAuto(t){
   stopAll(); stopProg();
   if(t==='num'){ runNum({auto:true, total:10, plan:buildNumPlan()}); return; }
   if(t==='move'){ runMove(moveAutoCfg()); return; }
-  if(t==='mem'){ runMem({auto:true,count:4,grid:'m',after:'square',total:10}); return; }
+  if(t==='mem'){ runMem({auto:true,count:4,grid:'m',after:segVal('wAfterQ')||memAfterPref(),total:10}); return; }
   if(t==='breath'){ runBreath({min:5,out:8,hold:8,in:8,count:'tick',snd:'clock'}); return; }
   PROG={type:t, stages:t==='arrow'?buildArrowProgram():t==='hands'?buildHandsProgram():buildStroopProgram(),
         i:0, count:0, secs:0, bkTick:null};
@@ -964,8 +965,23 @@ function moveModeUI(v){
   :               'ラウンドごとに、メトロノームか秒数かがランダムに決まります。';
 }
 
+// 数字の位置記憶：2回目の表示（白い四角あり／枠だけ）は、おまかせと自分で設定の両方で使い、次回も覚えておく
+const MEM_AFTER_OPTS=[{v:'square',l:'白い四角あり'},{v:'blank',l:'枠だけ（四角なし）'}];
+function memAfterPref(){ try{ return localStorage.getItem('notore-mem-after')==='blank'?'blank':'square'; }catch(e){ return 'square'; } }
+function memAfterSet(v){
+  try{ localStorage.setItem('notore-mem-after',v); }catch(e){}
+  ['wAfterQ','wAfter'].forEach(n=>{
+    cfgUI[n]=v; const c=$('sg_'+n);
+    if(c) c.querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));
+  });
+  const h=$('wHint2'); if(h) h.textContent = v==='square'
+    ? '数字のあった場所が白い四角になります。四角の中から順番を思い出します。'
+    : '白い四角は出ず、空の枠だけになります。数字の場所そのものを覚えておく必要があります（むずかしい）。';
+}
 function renderCustom(t){
   const box=$('hubCustom'); cfgUI={}; binds=[];
+  $('quickExtra').innerHTML = t==='mem'
+    ? `<div style="margin:-4px 0 var(--s3)">${rowSeg('2回目の表示','wAfterQ',MEM_AFTER_OPTS,memAfterPref(),memAfterSet)}</div>` : '';
   if(t==='arrow'){
     box.innerHTML=`<div class="card pad">
       ${rowSeg('反応','aRule',[{v:'anti',l:'反対を向く'},{v:'same',l:'同じ方向'},{v:'color',l:'色で判断'}],'anti',v=>{
@@ -1038,14 +1054,10 @@ function renderCustom(t){
     box.innerHTML=`<div class="card pad">
       ${rowRange('数字の数','wCount',3,12,1,6,v=>'1〜'+v)}
       ${rowSeg('マス目','wGridSel',[{v:'s',l:'小 4×5'},{v:'m',l:'中 5×7'},{v:'l',l:'大 6×9'}],'m')}
-      ${rowSeg('2回目の表示','wAfter',[{v:'square',l:'白い四角あり'},{v:'blank',l:'枠だけ（四角なし）'}],'square',v=>{
-        $('wHint2').textContent = v==='square'
-          ? '数字のあった場所が白い四角になります。四角の中から順番を思い出します。'
-          : '白い四角は出ず、空の枠だけになります。数字の場所そのものを覚えておく必要があります（むずかしい）。';
-      })}
+      ${rowSeg('2回目の表示','wAfter',MEM_AFTER_OPTS,memAfterPref(),memAfterSet)}
       ${rowSeg('問題数','wQ',[{v:'5',l:'5問'},{v:'10',l:'10問'},{v:'20',l:'20問'}],'10')}
       <div class="hint">1回目は、見えている数字を 1 から順に押して覚えます。全部押すと数字が隠れ、2回目は覚えた場所を 1 から順に押します。</div>
-      <div class="hint" id="wHint2">数字のあった場所が白い四角になります。四角の中から順番を思い出します。</div>
+      <div class="hint" id="wHint2"></div>
       <div class="hint">ちがう場所を押すと、その問題は終わりです。正しい場所が表示されます。</div>
     </div>`;
   }
@@ -1122,6 +1134,7 @@ function renderCustom(t){
     </div>`;
   }
   binds.forEach(f=>f()); binds=[];   // attach handlers now that the DOM exists
+  if(t==='mem') memAfterSet(memAfterPref());
   if(t==='move') moveModeUI(segVal('mMode'));
 }
 $('customStart').onclick=()=>{
@@ -2404,7 +2417,7 @@ function runMem(cfg){
   W.cols=c; W.rows=r;
   $('wProg').textContent=`1/${cfg.total}`; $('wCnt').textContent=W.k; $('wHits').textContent='0';
   $('wTag').textContent=''; $('wMsg').textContent='';
-  show('playMem','数字の位置記憶', cfg.auto?`おまかせ 全${cfg.total}問`:`${cfg.count}個 ・ ${cfg.after==='square'?'白い四角あり':'枠だけ'}`);
+  show('playMem','数字の位置記憶', cfg.auto?`おまかせ 全${cfg.total}問 ・ ${cfg.after==='square'?'白い四角あり':'枠だけ'}`:`${cfg.count}個 ・ ${cfg.after==='square'?'白い四角あり':'枠だけ'}`);
   memBuild();
   W.stops.push(veilPrepare($('wVeil'), memRuleInfo(cfg), memNext));
 }
@@ -2580,7 +2593,7 @@ goHome();
    Version check — 古い保存済みの画面が出ていたら、新しい版に切り替える
    （GitHub Pages は更新後しばらく古い版を返すことがあるため）
    ============================================================ */
-const APP_VER='2026-11-05 10:00';   // 更新のたびにこの日時を書き換える
+const APP_VER='2026-11-05 10:15';   // 更新のたびにこの日時を書き換える
 $('appVer').textContent='更新 '+APP_VER;
 (function checkVer(){
   if(location.protocol==='file:') return;
