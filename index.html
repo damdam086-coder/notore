@@ -455,6 +455,19 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 .csuit{width:62%;height:auto;display:block}
 .csuit.big{width:76%}
 .prep-ex .mini{width:38px;height:38px}
+#cField.mode-num{background:#fff;border-color:rgba(0,0,0,.08)}
+#cField.mode-num .ccard,#cField.mode-color .ccard,#cField.mode-card .fnum,#cField.mode-color .fnum{display:none}
+#cField.mode-num .fnum{display:block}
+.fnum{display:none;font-size:min(62vw,52vh,340px);font-weight:700;line-height:1;letter-spacing:-.03em;font-family:-apple-system,"Helvetica Neue",Arial,sans-serif}
+.fnum.flip{animation:flip .14s ease-out}
+.fwall{position:fixed;inset:0;z-index:50}
+.fwall-x{position:absolute;top:max(14px,env(safe-area-inset-top));left:14px;width:40px;height:40px;border-radius:50%;border:none;
+  background:rgba(0,0,0,.28);color:#fff;font-size:22px;line-height:1;cursor:pointer}
+.fwall-hud{position:absolute;top:max(20px,env(safe-area-inset-top));right:16px;display:flex;gap:12px;padding:6px 12px;border-radius:999px;
+  background:rgba(0,0,0,.28);color:#fff;font-size:12.5px}
+.fkind{margin-bottom:var(--s3)}
+.fkind .seg{justify-content:stretch}
+.fkind .seg button{flex:1;padding:10px 6px;font-size:14.5px}
 .cdot{display:inline-block;width:11px;height:11px;border-radius:50%;margin-right:5px;vertical-align:-1px;box-shadow:0 0 0 1.5px #fff,0 0 0 2.5px rgba(0,0,0,.12)}
 </style>
 </head>
@@ -479,6 +492,7 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
   <!-- ============ TRAINING SETTINGS ============ -->
   <section class="screen" id="hub">
     <div class="scroll">
+      <div id="hubTop"></div>
       <div class="card pad quick">
         <div class="qk">おまかせ</div>
         <h2 class="qt">設定なしではじめる</h2>
@@ -616,8 +630,14 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
       </div>
       <div class="field" id="cField">
         <div class="ccard" id="cCard"></div>
+        <div class="fnum tnum" id="cNumOnly"></div>
         <div class="veil" id="cVeil" style="display:none"></div>
       </div>
+    </div>
+    <!-- カラー：画面いっぱいに色だけを出す -->
+    <div class="fwall" id="cWall" style="display:none">
+      <button class="fwall-x" id="cWallX" aria-label="やめる">×</button>
+      <div class="fwall-hud"><span>残り <b class="tnum" id="cWallLeft">60</b>s</span><span><b class="tnum" id="cWallCount">0</b>枚</span></div>
     </div>
   </section>
 
@@ -772,7 +792,7 @@ const TRAININGS={
   hands :{icon:'hand', name:'左右の手まね',    desc:'左右ちがう手の形をすぐにまねる'},
   breath:{icon:'wind', name:'呼吸調整',        desc:'吐く・止める・吸うを秒数どおりに'},
   mem   :{icon:'grid', name:'数字の位置記憶',  desc:'数字の場所を覚えて、1から順に押す'},
-  card  :{icon:'spade',name:'トランプフラッシュ',desc:'記号・数字・色がパッと切り替わる'}
+  card  :{icon:'spade',name:'フラッシュ',      desc:'トランプ・色・数字がパッと切り替わる'}
 };
 
 /* ============================================================
@@ -827,6 +847,7 @@ function openHub(t){
   curTrain=t; const T=TRAININGS[t];
   renderCustom(t);
   $('quickDesc').textContent=QUICK_DESC[t];
+  if(t==='card') flashKindUI(flashKindPref());
   show('hub',T.name,T.desc);
 }
 $('quickStart').onclick=()=>{ if(curTrain) startAuto(curTrain); };
@@ -893,7 +914,7 @@ function startAuto(t){
   stopAll(); stopProg();
   if(t==='num'){ runNum({auto:true, total:10, plan:buildNumPlan()}); return; }
   if(t==='move'){ runMove(moveAutoCfg()); return; }
-  if(t==='card'){ runCard(cardAutoCfg()); return; }
+  if(t==='card'){ runCard(flashAutoCfg(flashKindPref())); return; }
   if(t==='mem'){ runMem({auto:true,count:4,grid:'m',after:segVal('wAfterQ')||memAfterPref(),total:10}); return; }
   if(t==='breath'){ runBreath({min:5,out:8,hold:8,in:8,count:'up',snd:'clock',minute:true}); return; }
   PROG={type:t, stages:t==='arrow'?buildArrowProgram():t==='hands'?buildHandsProgram():buildStroopProgram(),
@@ -1085,12 +1106,14 @@ function renderCustom(t){
     </div>`;
   }
   if(t==='card'){
+    $('hubTop').innerHTML=`<div class="card pad fkind"><div class="seclbl" style="margin:0 0 var(--s2) 2px">種類</div>${seg('fKind',Object.keys(FLASH_KINDS).map(k=>({v:k,l:FLASH_KINDS[k]})),flashKindPref(),flashKindUI)}</div>`;
     box.innerHTML=`<div class="card pad">
       ${rowSeg('切り替え','cTiming',[{v:'fixed',l:'一定の間隔'},{v:'rand',l:'ランダムな間隔'}],'fixed',v=>{
         $('cFixRow').style.display=v==='fixed'?'flex':'none'; $('cRandRow').style.display=v==='rand'?'flex':'none';
       })}
       <div class="row" id="cFixRow"><span class="lbl">間隔</span>${seg('cIv',[1,1.5,2,2.5,3,4].map(v=>({v,l:v+'秒'})),'2.5')}</div>
       <div class="row" id="cRandRow" style="display:none"><span class="lbl">間隔の幅</span>${seg('cRand',[{v:'r1',l:'1〜2秒'},{v:'r15',l:'1.5〜3秒'},{v:'r2',l:'2〜4秒'}],'r15')}</div>
+      <div id="fCardBox">
       <div class="row"><span class="lbl">変わるもの</span>${chips('cChange',[{v:'suit',l:'記号'},{v:'num',l:'数字'},{v:'scol',l:'記号の色'},{v:'ncol',l:'数字の色'}],['suit','num','scol','ncol'])}</div>
       ${rowToggle('数字を付ける','cNum',true,v=>{ $('cNumBox').style.display=v?'block':'none'; })}
       <div id="cNumBox">
@@ -1101,10 +1124,19 @@ function renderCustom(t){
         $('cColRow').style.display=v==='random'?'flex':'none';
       })}
       <div class="row" id="cColRow"><span class="lbl">使う色</span>${chips('cColors',Object.keys(CARD_COLORS).map(k=>({v:k,l:`<span class="cdot" style="background:${CARD_COLORS[k].c}"></span>${CARD_COLORS[k].n}`})),['black','red','green','blue','yellow'])}</div>
+      </div>
+      <div id="fColorBox">
+        <div class="row"><span class="lbl">使う色</span>${chips('fwColors',WALL_COLOR_CHIPS(),Object.keys(WALL_COLORS))}</div>
+        <div class="hint">画面いっぱいが、選んだ色の中からランダムに切り替わります（同じ色は続けて出ません）。左上の × でやめられます。</div>
+      </div>
+      <div id="fNumBox">
+        ${rowSeg('数字','fnRange',[{v:'d9',l:'0〜9'},{v:'n10',l:'1〜10'},{v:'n13',l:'1〜13'},{v:'n99',l:'1〜99'}],'n10')}
+        <div class="row"><span class="lbl">変わるもの</span>${chips('fnChange',[{v:'num',l:'数字'},{v:'col',l:'色'}],['num','col'])}</div>
+        <div class="row"><span class="lbl">数字の色</span>${chips('fnColors',Object.keys(CARD_COLORS).map(k=>({v:k,l:`<span class=\"cdot\" style=\"background:${CARD_COLORS[k].c}\"></span>${CARD_COLORS[k].n}`})),['black','red','green','blue','yellow'])}</div>
+      </div>
       ${rowRange('1セットの時間','cDur',20,120,10,60,v=>v+'秒')}
       ${rowToggle('切り替わりの音','cBeep',false)}
-      <div class="hint">「変わるもの」で選んだものだけが、カードごとに変わります（選ばなかったものは最初のまま）。前のカードとまったく同じカードは続けて出ません。</div>
-      <div class="hint">「本物どおり」は、ハート・ダイヤが赤、スペード・クラブが黒になります。</div>
+      <div class="hint" id="fCardHint">「変わるもの」で選んだものだけが、カードごとに変わります（選ばなかったものは最初のまま）。前とまったく同じものは続けて出ません。「本物どおり」は、ハート・ダイヤが赤、スペード・クラブが黒になります。</div>
     </div>`;
   }
   if(t==='mem'){
@@ -1191,8 +1223,10 @@ function renderCustom(t){
       <div class="hint" id="mHint"></div>
     </div>`;
   }
+  if(t!=='card') $('hubTop').innerHTML='';
   binds.forEach(f=>f()); binds=[];   // attach handlers now that the DOM exists
   if(t==='mem') memAfterSet(memAfterPref());
+  if(t==='card') flashKindUI(flashKindPref());
   if(t==='move') moveModeUI(segVal('mMode'));
 }
 $('customStart').onclick=()=>{
@@ -1205,6 +1239,8 @@ $('customStart').onclick=()=>{
     total:+segVal('nQ')
   });
   if(curTrain==='card') runCard({
+    kind:segVal('fKind')||flashKindPref(), wallColors:cfgUI.fwColors.slice(), nrange:segVal('fnRange'),
+    nchange:cfgUI.fnChange.slice(), ncolors:cfgUI.fnColors.slice(),
     timing:segVal('cTiming'), iv:+segVal('cIv'), rand:segVal('cRand'), change:cfgUI.cChange.slice(),
     num:$('cNum').classList.contains('on'), range:segVal('cRange'), colorMode:segVal('cColorMode'),
     colors:cfgUI.cColors.slice(), numCol:segVal('cNumCol'), dur:+$('cDur').value, beep:$('cBeep').classList.contains('on')
@@ -2634,26 +2670,73 @@ const CARD_RAND={r1:[1,2], r15:[1.5,3], r2:[2,4]};
 const cardIvTxt=c=>c.timing==='fixed'?`${c.iv}秒ごと`:`${CARD_RAND[c.rand][0]}〜${CARD_RAND[c.rand][1]}秒`;
 const suitSvg=(s,col,cls)=>`<svg class="${cls||'suit'}" viewBox="0 0 100 100"><g fill="${col}">${SUITS[s].svg}</g></svg>`;
 const pick=a=>a[rnd(a.length)];
+// フラッシュの種類
+const FLASH_KINDS={card:'トランプ', color:'カラー', num:'数字だけ'};
+const flashKindOf=c=>c.kind||'card';
+function flashKindPref(){ try{ const k=localStorage.getItem('notore-flash-kind'); return FLASH_KINDS[k]?k:'card'; }catch(e){ return 'card'; } }
+const FLASH_QUICK={
+  card :'記号（スペード・ハート・ダイヤ・クラブ）、数字（1〜10）、記号と数字の色（黒・赤・緑・青・黄）が、1.5〜3秒のランダムな間隔でパッと切り替わります。60秒。',
+  color:'画面いっぱいの色（赤・黄・緑・青・白・黒・橙・紫・桃・水色の10色）が、1.5〜3秒のランダムな間隔でパッと切り替わります。60秒。',
+  num  :'大きな数字（1〜10）と、その色（黒・赤・緑・青・黄）が、1.5〜3秒のランダムな間隔でパッと切り替わります。60秒。'
+};
+function flashKindUI(k){
+  try{ localStorage.setItem('notore-flash-kind',k); }catch(e){}
+  cfgUI.fKind=k;
+  const sg=$('sg_fKind'); if(sg) sg.querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.v===k));
+  const show_=(id,on)=>{ const e=$(id); if(e) e.style.display=on?'block':'none'; };
+  show_('fCardBox',k==='card'); show_('fCardHint',k==='card'); show_('fColorBox',k==='color'); show_('fNumBox',k==='num');
+  if(curTrain==='card') $('quickDesc').textContent=FLASH_QUICK[k];
+}
+const WALL_COLORS={
+  red:{n:'赤',c:'#e53935'}, yellow:{n:'黄',c:'#fdd835'}, green:{n:'緑',c:'#43a047'}, blue:{n:'青',c:'#1e6fe0'},
+  white:{n:'白',c:'#ffffff'}, black:{n:'黒',c:'#111111'}, orange:{n:'橙',c:'#fb8c00'}, purple:{n:'紫',c:'#8e24aa'},
+  pink:{n:'桃',c:'#f48fb1'}, sky:{n:'水色',c:'#4fc3f7'}
+};
+const WALL_COLOR_CHIPS=()=>Object.keys(WALL_COLORS).map(k=>({v:k,l:`<span class="cdot" style="background:${WALL_COLORS[k].c}"></span>${WALL_COLORS[k].n}`}));
+function numOnlyValues(r){
+  if(r==='d9') return [...Array(10)].map((_,i)=>String(i));
+  if(r==='n13') return [...Array(13)].map((_,i)=>String(i+1));
+  if(r==='n99') return [...Array(99)].map((_,i)=>String(i+1));
+  return [...Array(10)].map((_,i)=>String(i+1));
+}
+function flashAutoCfg(k){
+  const base={kind:k,timing:'rand',iv:2.5,rand:'r15',dur:60,beep:false};
+  if(k==='color') return {...base, wallColors:Object.keys(WALL_COLORS)};
+  if(k==='num') return {...base, nrange:'n10', nchange:['num','col'], ncolors:['black','red','green','blue','yellow']};
+  return {...cardAutoCfg(), kind:'card'};
+}
 const cardAutoCfg=()=>({timing:'rand',iv:2.5,rand:'r15',change:['suit','num','scol','ncol'],num:true,range:'n10',
   colorMode:'random',colors:['black','red','green','blue','yellow'],numCol:'own',dur:60,beep:false});
 
 let C=null;
-function stopCard(){ if(C){ C.stops.forEach(f=>f&&f()); clearTimeout(C.to); clearInterval(C.clock); C=null; } }
+function stopCard(){ $('cWall').style.display='none'; if(C){ C.stops.forEach(f=>f&&f()); clearTimeout(C.to); clearInterval(C.clock); C=null; } }
+$('cWallX').onclick=()=>{ if(C) cardDone(true); };
 function runCard(cfg){
   stopAll(); if(cfg.beep) audioOn();
   C={cfg, count:0, cur:null, stops:[], to:null, clock:null};
   $('cLeft').textContent=cfg.dur; $('cCount').textContent='0'; $('cIvLbl').textContent=cardIvTxt(cfg);
-  $('cCard').innerHTML=''; $('cCard').style.visibility='hidden';
-  show('playCard','トランプフラッシュ', cardIvTxt(cfg)+' ・ '+cfg.dur+'秒');
-  const sample=Object.keys(SUITS).map((s,i)=>{
+  $('cCard').innerHTML=''; $('cCard').style.visibility='hidden'; $('cNumOnly').textContent='';
+  const kind=flashKindOf(cfg);
+  $('cField').className='field mode-'+kind;
+  show('playCard','フラッシュ', FLASH_KINDS[flashKindOf(cfg)]+' ・ '+cardIvTxt(cfg)+' ・ '+cfg.dur+'秒');
+  const sample=kind!=='card'?'':Object.keys(SUITS).map((s,i)=>{
     const col=cfg.colorMode==='real'?(SUITS[s].red?CARD_COLORS.red.c:CARD_COLORS.black.c):CARD_COLORS[cfg.colors[i%cfg.colors.length]].c;
     return suitSvg(s,col,'mini');
   }).join('');
-  C.stops.push(veilPrepare($('cVeil'),{
-    title:'カードがパッと切り替わる',
-    sub:`${cardIvTxt(cfg)}に、${cardChangeTxt(cfg)}が変わります。カードをよく見ていてください。`,
-    ex:`<div class="prep-ex">${sample}</div>`
-  },cardBegin));
+  const info = kind==='color' ? {
+      title:'画面の色がパッと切り替わる',
+      sub:`${cardIvTxt(cfg)}に、画面いっぱいの色が変わります（${cfg.wallColors.length}色）。左上の × でやめられます。`,
+      ex:`<div class="prep-ex">${cfg.wallColors.map(k=>`<span class="cdot" style="width:22px;height:22px;margin:0;background:${WALL_COLORS[k].c}"></span>`).join('')}</div>`
+    } : kind==='num' ? {
+      title:'数字がパッと切り替わる',
+      sub:`${cardIvTxt(cfg)}に、${cfg.nchange.map(x=>x==='num'?'数字':'色').join('と')}が変わります。`,
+      ex:`<div class="prep-ex">${cfg.ncolors.slice(0,5).map((k,i)=>`<span style="font-size:30px;font-weight:700;color:${CARD_COLORS[k].c}">${numOnlyValues(cfg.nrange)[i%numOnlyValues(cfg.nrange).length]}</span>`).join('')}</div>`
+    } : {
+      title:'カードがパッと切り替わる',
+      sub:`${cardIvTxt(cfg)}に、${cardChangeTxt(cfg)}が変わります。カードをよく見ていてください。`,
+      ex:`<div class="prep-ex">${sample}</div>`
+    };
+  C.stops.push(veilPrepare($('cVeil'),info,cardBegin));
 }
 function cardChangeTxt(c){
   const m={suit:'記号',num:'数字',scol:'記号の色',ncol:'数字の色'};
@@ -2663,7 +2746,8 @@ function cardBegin(){
   if(!C) return;
   let left=C.cfg.dur; $('cLeft').textContent=left;
   $('cCard').style.visibility='visible';
-  C.clock=setInterval(()=>{ left--; $('cLeft').textContent=Math.max(0,left); if(left<=0) cardDone(); },1000);
+  if(flashKindOf(C.cfg)==='color'){ $('cWall').style.display='block'; $('cWallLeft').textContent=left; }
+  C.clock=setInterval(()=>{ left--; $('cLeft').textContent=Math.max(0,left); $('cWallLeft').textContent=Math.max(0,left); if(left<=0) cardDone(); },1000);
   cardNext();
 }
 function cardRoll(prev){
@@ -2677,8 +2761,36 @@ function cardRoll(prev){
   else if(ch('ncol')) st.ncol=pick(c.colors);
   return st;
 }
+function flashNext(){
+  const c=C.cfg, kind=flashKindOf(c), prev=C.cur||{};
+  let st={...prev}, n=0;
+  if(kind==='color'){
+    do{ st.wall=pick(c.wallColors); n++; }while(c.wallColors.length>1 && st.wall===prev.wall && n<30);
+    $('cWall').style.background=WALL_COLORS[st.wall].c;
+    const dark=['black','blue','purple','green','red'].includes(st.wall);
+    $('cWallX').style.background=$('cWall').querySelector('.fwall-hud').style.background=dark?'rgba(255,255,255,.22)':'rgba(0,0,0,.28)';
+  }else{
+    const vals=numOnlyValues(c.nrange), ch=k=>!C.cur||c.nchange.includes(k);
+    do{
+      if(ch('num')) st.n=pick(vals);
+      if(ch('col')) st.col=pick(c.ncolors);
+      n++;
+    }while(C.cur && n<40 && st.n===prev.n && st.col===prev.col);
+    const el=$('cNumOnly'); el.textContent=st.n; el.style.color=CARD_COLORS[st.col].c;
+    el.classList.remove('flip'); void el.offsetWidth; el.classList.add('flip');
+  }
+  C.cur=st;
+}
 function cardNext(){
   if(!C) return;
+  if(flashKindOf(C.cfg)!=='card'){
+    flashNext(); C.count++;
+    $('cCount').textContent=C.count; $('cWallCount').textContent=C.count;
+    if(C.cfg.beep){ tone(now()+0.01,1200,0.05,0.3); }
+    const c=C.cfg, iv=c.timing==='fixed'?c.iv:(()=>{ const [a,b]=CARD_RAND[c.rand]; return a+Math.random()*(b-a); })();
+    C.to=setTimeout(cardNext,Math.round(iv*1000));
+    return;
+  }
   const prev=C.cur; let st,n=0;
   do{ st=cardRoll(prev); n++; }                     // 前のカードと見た目が同じにならないように
   while(prev && n<50 && st.suit===prev.suit && (!C.cfg.num||st.num===prev.num) && st.scol===prev.scol && (!C.cfg.num||st.ncol===prev.ncol));
@@ -2692,17 +2804,18 @@ function cardNext(){
   const c=C.cfg, iv=c.timing==='fixed'?c.iv:(()=>{ const [a,b]=CARD_RAND[c.rand]; return a+Math.random()*(b-a); })();
   C.to=setTimeout(cardNext,Math.round(iv*1000));
 }
-function cardDone(){
-  const c=C.cfg, n=C.count; stopCard();
-  finish({ type:'card', cfg:c, title:'完了', note:'おつかれさまでした',
-    stats:[['見たカード',n+'枚'],['時間',c.dur+'秒'],['切り替え',cardIvTxt(c)],['変わったもの',cardChangeTxt(c)]] });
+function cardDone(early){
+  const c=C.cfg, n=C.count, kind=flashKindOf(c); stopCard();
+  const what = kind==='color' ? ['色',c.wallColors.length+'色'] : kind==='num' ? ['変わったもの',c.nchange.map(x=>x==='num'?'数字':'色').join('・')] : ['変わったもの',cardChangeTxt(c)];
+  finish({ type:'card', cfg:c, title:early?'途中で終了':'完了', note:'おつかれさまでした',
+    stats:[[kind==='color'?'見た色':kind==='num'?'見た数字':'見たカード',n+'枚'],['種類',FLASH_KINDS[kind]],['切り替え',cardIvTxt(c)],what] });
 }
 
 /* ============================================================
    Results
    ============================================================ */
 let last=null;
-const TYPE_NAME={arrow:'方向トレーニング',num:'数字記憶',stroop:'ストループ',voice:'ストループ（音声）',grid:'ストループ 一覧',move:'リズム運動',hands:'左右の手まね',breath:'呼吸調整',mem:'数字の位置記憶',card:'トランプフラッシュ'};
+const TYPE_NAME={arrow:'方向トレーニング',num:'数字記憶',stroop:'ストループ',voice:'ストループ（音声）',grid:'ストループ 一覧',move:'リズム運動',hands:'左右の手まね',breath:'呼吸調整',mem:'数字の位置記憶',card:'フラッシュ'};
 function finish(r){
   last=r;
   if(r.celebrate){
@@ -2759,7 +2872,7 @@ goHome();
    Version check — 古い保存済みの画面が出ていたら、新しい版に切り替える
    （GitHub Pages は更新後しばらく古い版を返すことがあるため）
    ============================================================ */
-const APP_VER='2026-11-05 14:00';   // 更新のたびにこの日時を書き換える
+const APP_VER='2026-11-05 15:00';   // 更新のたびにこの日時を書き換える
 $('appVer').textContent='更新 '+APP_VER;
 (function checkVer(){
   if(location.protocol==='file:') return;
