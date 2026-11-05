@@ -1038,14 +1038,14 @@ function renderCustom(t){
     box.innerHTML=`<div class="card pad">
       ${rowRange('数字の数','wCount',3,12,1,6,v=>'1〜'+v)}
       ${rowSeg('マス目','wGridSel',[{v:'s',l:'小 4×5'},{v:'m',l:'中 5×7'},{v:'l',l:'大 6×9'}],'m')}
-      ${rowSeg('隠したあと','wAfter',[{v:'square',l:'四角を残す'},{v:'blank',l:'何も出さない'}],'square',v=>{
+      ${rowSeg('2回目の表示','wAfter',[{v:'square',l:'白い四角あり'},{v:'blank',l:'枠だけ（四角なし）'}],'square',v=>{
         $('wHint2').textContent = v==='square'
-          ? '数字のあった場所が四角になります。四角の中から順番を思い出します。'
-          : '何も残りません。空のマス目から、場所そのものを思い出します（むずかしい）。';
+          ? '数字のあった場所が白い四角になります。四角の中から順番を思い出します。'
+          : '白い四角は出ず、空の枠だけになります。数字の場所そのものを覚えておく必要があります（むずかしい）。';
       })}
       ${rowSeg('問題数','wQ',[{v:'5',l:'5問'},{v:'10',l:'10問'},{v:'20',l:'20問'}],'10')}
       <div class="hint">1回目は、見えている数字を 1 から順に押して覚えます。全部押すと数字が隠れ、2回目は覚えた場所を 1 から順に押します。</div>
-      <div class="hint" id="wHint2">数字のあった場所が四角になります。四角の中から順番を思い出します。</div>
+      <div class="hint" id="wHint2">数字のあった場所が白い四角になります。四角の中から順番を思い出します。</div>
       <div class="hint">ちがう場所を押すと、その問題は終わりです。正しい場所が表示されます。</div>
     </div>`;
   }
@@ -2404,7 +2404,7 @@ function runMem(cfg){
   W.cols=c; W.rows=r;
   $('wProg').textContent=`1/${cfg.total}`; $('wCnt').textContent=W.k; $('wHits').textContent='0';
   $('wTag').textContent=''; $('wMsg').textContent='';
-  show('playMem','数字の位置記憶', cfg.auto?`おまかせ 全${cfg.total}問`:`${cfg.count}個 ・ ${cfg.after==='square'?'四角を残す':'何も出さない'}`);
+  show('playMem','数字の位置記憶', cfg.auto?`おまかせ 全${cfg.total}問`:`${cfg.count}個 ・ ${cfg.after==='square'?'白い四角あり':'枠だけ'}`);
   memBuild();
   W.stops.push(veilPrepare($('wVeil'), memRuleInfo(cfg), memNext));
 }
@@ -2580,7 +2580,7 @@ goHome();
    Version check — 古い保存済みの画面が出ていたら、新しい版に切り替える
    （GitHub Pages は更新後しばらく古い版を返すことがあるため）
    ============================================================ */
-const APP_VER='2026-11-05 09:50';   // 更新のたびにこの日時を書き換える
+const APP_VER='2026-11-05 10:00';   // 更新のたびにこの日時を書き換える
 $('appVer').textContent='更新 '+APP_VER;
 (function checkVer(){
   if(location.protocol==='file:') return;
