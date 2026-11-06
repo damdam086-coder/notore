@@ -2530,7 +2530,8 @@ const VOICE_SETS=[
 ];
 function voicePref(){ try{ const v=localStorage.getItem('notore-voice'); return VOICE_SETS.some(x=>x.id===v)?v:'kokoro'; }catch(e){ return 'kokoro'; } }
 const VOX={raw:[], buf:{}, src:[], fetched:{}, man:null, cur:voicePref()};
-const voiceReady=id=>id==='kokoro' || !!(VOX.man && VOX.man.voices && VOX.man.voices[id] && VOX.man.voices[id].ready);
+// 8割できた声は先に選べる（まだ無い言葉は今の声で代わりに話す）
+const voiceReady=id=>{ if(id==='kokoro') return true; const m=VOX.man&&VOX.man.voices&&VOX.man.voices[id]; return !!m && (m.ready || m.count>=m.total*0.75); };
 function voxFetch(id){
   id=id||'kokoro';
   if(VOX.fetched[id] || location.protocol==='file:') return;
@@ -2562,7 +2563,7 @@ function voiceRowRender(){
   const eff=voiceReady(VOX.cur)?VOX.cur:'kokoro';     // 選んだ声がまだ準備中なら、今の声で話している
   el.innerHTML=VOICE_SETS.map(v=>{
     const ok=voiceReady(v.id), m=VOX.man&&VOX.man.voices&&VOX.man.voices[v.id];
-    const sub=ok?(v.g||'Kokoro'):(m&&m.count?`準備中 ${m.count}/${m.total}`:'準備中');
+    const sub=ok?((m&&!m.ready)?`${v.g} ${m.count}/${m.total}`:(v.g||'Kokoro')):(m&&m.count?`準備中 ${m.count}/${m.total}`:'準備中');
     return `<button data-v="${v.id}" class="${v.id===eff?'on':''}"${ok?'':' disabled'}>${v.n}<small>${sub}</small></button>`;
   }).join('');
   el.querySelectorAll('button').forEach(b=>b.onclick=()=>voiceSelect(b.dataset.v));
@@ -4299,7 +4300,7 @@ goHome();
    Version check — 古い保存済みの画面が出ていたら、新しい版に切り替える
    （GitHub Pages は更新後しばらく古い版を返すことがあるため）
    ============================================================ */
-const APP_VER='2026-11-06 10:00';   // 更新のたびにこの日時を書き換える
+const APP_VER='2026-11-06 10:20';   // 更新のたびにこの日時を書き換える
 $('appVer').textContent='更新 '+APP_VER;
 (function checkVer(){
   if(location.protocol==='file:') return;
