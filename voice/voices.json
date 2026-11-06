@@ -1,15 +1,9 @@
 {
- "updated": "2026-11-06T17:04",
+ "updated": "2026-11-06T17:09",
  "voices": {
-  "kore": {
-   "ready": false,
-   "count": 170,
-   "total": 172,
-   "ver": 1
-  },
   "aoede": {
    "ready": false,
-   "count": 0,
+   "count": 83,
    "total": 172,
    "ver": 1
   },
