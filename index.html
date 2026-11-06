@@ -523,6 +523,24 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 .ek.down{background:#9db7ff!important}
 .ek.ans{background:var(--ng)!important;color:#fff}
 .ear-ex{font-size:30px;font-weight:750;gap:12px}
+/* 発声トレーニング */
+.sing-field{display:flex;flex-direction:column;align-items:stretch;justify-content:flex-start;padding:12px;gap:10px}
+.sing-top{position:relative;text-align:center;flex:none;padding-top:4px;min-height:150px}
+.sing-task{font-size:clamp(30px,7vw,46px);font-weight:780;line-height:1.15}
+.sing-task small{font-size:.42em;color:var(--text-3);margin-left:.5em;font-weight:600}
+.sing-big{font-size:clamp(56px,13vw,104px);font-weight:800;font-variant-numeric:tabular-nums;line-height:1.05;min-height:1.05em}
+.sing-big small{font-size:.3em;color:var(--text-3);font-weight:650}
+.sing-cnt{color:var(--accent)}
+.sing-slots{display:inline-flex;gap:.5em;font-size:.62em}
+.sing-slots .ok{color:var(--ok)} .sing-slots .ng{color:var(--ng)}
+.sing-bar{height:14px;border-radius:7px;background:var(--surface-2);overflow:hidden;max-width:520px;margin:8px auto 0}
+.sing-bar i{display:block;height:100%;width:0;background:var(--accent);transition:width .08s linear}
+.sing-bar.ok i{background:var(--ok)}
+.sing-hint{font-size:22px;font-weight:750;min-height:1.3em;margin-top:4px}
+.sing-hint.up{color:#e8862b} .sing-hint.down{color:#5b8cff}
+.sing-cv{flex:1;min-height:170px;width:100%;border-radius:12px;display:block}
+.singsex{display:flex;gap:8px;margin:0 0 var(--s3)}
+.singsex button{flex:1;min-height:52px;font-size:18px;font-weight:700}
 .qrow .qplay{flex:none;width:34px;height:34px;border-radius:50%;border:1px solid var(--line-2);background:var(--surface-2);color:var(--accent);font-size:16px;cursor:pointer}
 
 /* ============================================================
@@ -696,6 +714,7 @@ body.proj .hud{font-size:15px}
       </div>
       <div id="hubLevelsWrap" style="display:none">
         <div class="seclbl">レベルを選んでチャレンジ</div>
+        <div id="hubLevelsSex"></div>
         <div class="lvgrid" id="hubLevels"></div>
       </div>
       <button class="trainerhead" id="trainerHead" style="display:none"><span>トレーナーが設定する</span><span class="chev"></span></button>
@@ -900,6 +919,29 @@ body.proj .hud{font-size:15px}
     </div>
   </section>
 
+  <!-- ============ PLAY: SING ============ -->
+  <section class="screen" id="playSing">
+    <div class="stage">
+      <div class="hud">
+        <span>お題 <b class="tnum" id="gProg">1/4</b></span>
+        <span>クリア <b class="tnum" id="gHits">0</b></span>
+        <span>残り <b class="tnum" id="gLeft">--</b>s</span>
+      </div>
+      <div class="field sing-field" id="gField">
+        <div class="sing-top">
+          <div class="sing-task" id="gTask"></div>
+          <div class="sing-big" id="gBig"></div>
+          <div class="sing-bar" id="gBar"><i id="gFill"></i></div>
+          <div class="sing-hint" id="gHint"></div>
+          <div class="emark" id="gMark"></div>
+          <button class="ereplay" id="gReplay" aria-label="もう一度聴く">♪</button>
+        </div>
+        <canvas class="sing-cv" id="gCv"></canvas>
+        <div class="veil" id="gVeil" style="display:none"></div>
+      </div>
+    </div>
+  </section>
+
   <!-- ============ PLAY: BREATH ============ -->
   <section class="screen" id="playBreath">
     <div class="stage">
@@ -1057,6 +1099,7 @@ const TRAININGS={
   mem   :{icon:'grid', name:'数字の位置記憶',  desc:'数字の場所を覚えて、1から順に押す'},
   card  :{icon:'spade',name:'フラッシュ',      desc:'トランプ・色・数字がパッと切り替わる'},
   ear   :{icon:'note', name:'音感トレーニング',desc:'伴奏の上で鳴るフレーズを聴いて、鍵盤で答える'},
+  sing  :{icon:'mic',  name:'発声トレーニング',desc:'お題の高さで声をのばす・3音を正しい高さで'},
   step  :{icon:'steps', name:'リズムステップ', desc:'床の線や枠で、リズムに合わせて足でステップ'},
   spot  :{icon:'target',name:'丸タッチ',       desc:'壁や床に映した丸を、言われたとおりに触る・飛び移る'}
 };
@@ -1076,7 +1119,7 @@ function show(id,title,sub){
 }
 $('back').innerHTML=ICON.back;
 $('back').onclick=()=>{ stopAll(); stopProg(); if(['hub','results'].includes(document.querySelector('.screen.on').id)) goHome(); else if(curTrain) openHub(curTrain); else goHome(); };
-function stopAll(){ stopArrow(); stopNum(); stopStroop(); stopVoice(); stopGrid(); stopMove(); stopHands(); stopBreath(); stopMem(); stopCard(); stopSpot(); stopStep(); stopEar(); }
+function stopAll(){ stopArrow(); stopNum(); stopStroop(); stopVoice(); stopGrid(); stopMove(); stopHands(); stopBreath(); stopMem(); stopCard(); stopSpot(); stopStep(); stopEar(); stopSing(); }
 
 /* ============================================================
    Home
@@ -1084,7 +1127,7 @@ function stopAll(){ stopArrow(); stopNum(); stopStroop(); stopVoice(); stopGrid(
 /* ============================================================
    LEVELS — 7つのトレーニングのレベル1〜10（鍵・記録なし。選んでチャレンジ）
    ============================================================ */
-const LEVEL_TRAININGS=['arrow','num','stroop','move','hands','mem','card','ear'];
+const LEVEL_TRAININGS=['arrow','num','stroop','move','hands','mem','card','ear','sing'];
 const MOVE_BASE={mode:'metro', moves:['ankle','shoulder','wrist','arm','hip'], rounds:3, rest:5, range:'slow', bpmStep:20, gap:'rare', dur:30,
   flip:false, beats:4, beatsRand:false, snd:'click', secs:[5,10,15], count:'beep', secMode:'list', secMin:4, secMax:12, secSets:3};
 const CARD_BASE={kind:'card', timing:'fixed', iv:2.5, rand:'r15', change:['suit','scol'], num:false, range:'n10', colorMode:'random',
@@ -1179,6 +1222,7 @@ const LEVELS={
     {t:'跳躍が続く',          say:'音を聴いて鍵盤で答えます', cfg:{stage:'s9', dur:60,bgm:true}},
     {t:'調の外の音（デ・リ・フィ・サ・チ）', say:'音を聴いて鍵盤で答えます、ドレミ以外の音も出ます', cfg:{stage:'s10',dur:60,bgm:true}}
   ],
+  sing:Array.from({length:10},(_,i)=>({t:'', say:'音を聴いて同じ高さで声を出します', cfg:{lvl:i+1}})),   // 中身は男性・女性で別の表（SING_LV）
   card:[
     {t:'カラー4色・3秒ごと',               say:'画面の色が変わるのを見ていましょう', cfg:{kind:'color',timing:'fixed',iv:3,rand:'r15',dur:30,beep:false,wallColors:['red','yellow','green','blue']}},
     {t:'カラー4色・2秒ごと',               say:'画面の色が変わるのを見ていましょう', cfg:{kind:'color',timing:'fixed',iv:2,rand:'r15',dur:30,beep:false,wallColors:['red','yellow','green','blue']}},
@@ -1213,6 +1257,7 @@ function levelStart(t,lv){
   else if(t==='mem') runMem(cfg);
   else if(t==='card') runCard(cfg);
   else if(t==='ear') runEar(cfg);
+  else if(t==='sing') runSing(cfg);
   // 始める前の説明に「レベル○」を大きく出し、説明を読み上げる
   const prep=document.querySelector('.screen.on .veil .prep');
   if(prep){
@@ -1229,6 +1274,7 @@ function levelPass(r){
   if(c.lvT==='move') return log.every(l=>l.ok);
   if(c.lvT==='card') return r.title==='正解！'||r.title==='完了';
   if(c.lvT==='ear') return !!r.earPass;
+  if(c.lvT==='sing') return !!r.singPass;
   return r.title!=='途中で終了';
 }
 function levelResult(r){
@@ -1256,6 +1302,9 @@ function levelHubRender(t){
   $('quickTitle').textContent='設定なしで始める';
   $('quickStart').textContent='トレーニング開始';
   $('quickExtra').innerHTML='';
+  const sx=$('hubLevelsSex');
+  sx.innerHTML = t==='sing' ? `<div class="seg singsex">${Object.keys(SING_SEX).map(k=>`<button data-v="${k}" class="${singSexPref()===k?'on':''}">${SING_SEX[k]}</button>`).join('')}</div>` : '';
+  sx.querySelectorAll('button').forEach(b=>b.onclick=()=>{ singSexSet(b.dataset.v); sx.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b)); });
   lv.innerHTML=LEVELS[t].map((L,i)=>`<button class="lvbtn${i===9?' hard':''}" data-lv="${i+1}" style="--lc:hsl(${215-i*24},70%,44%)" title="${L.t}">
       <span class="lvn">${i===9?'難問':'Lv.'+(i+1)}</span></button>`).join('');
   lv.querySelectorAll('.lvbtn').forEach(b=>b.onclick=()=>levelStart(t,+b.dataset.lv));
@@ -1335,6 +1384,7 @@ const QUICK_DESC={
   spot  :'3×3の丸（番号と色つき）が映ります。「あか」「さん」などの声と光の合図で、その丸に触る・飛び移る。合図は2〜4秒のランダムな間隔で60秒。プロジェクターで壁や床に映して使います（ふつうの画面でもできます）。',
   card  :'記号（スペード・ハート・ダイヤ・クラブ）と色（赤・黒）が、1.5〜3秒のランダムな間隔でパッと切り替わります。はじめに「赤いスペードは何回？」のような数えるお題が出るので、数えながら見て、最後に答えます。60秒。',
   ear   :'',
+  sing  :'',
   mem   :'1回目は見ながら 1 から順に押し、2回目は場所を思い出して 1 から順に押します（白い四角を出すか、枠だけにするかを下で選べます）。4個からスタートし、正解で1個増え、まちがえで1個減ります（3〜10個）。全10問。',
   breath:'8-8-8（8秒で吐く・8秒止める・8秒で吸う）を5分。はじまりの声と「いち・に・さん…はち」の数に合わせるだけです。1分ごとに残り時間をお知らせします。',
   hands :'お題が出たら、カチッという音ごとに左右の形を入れ替えます。数字（グー〜5）・1.5秒ごとの入れ替えから始めて、1秒ごと、キツネやグッドなどのポーズも混ざり、最後はお題が3〜5秒で変わります。1ステージ30秒×4本。',
@@ -1348,7 +1398,7 @@ function openHub(t){
   if(LEVEL_TRAININGS.includes(t)){ const qe=$('quickExtra').firstElementChild; if(qe && t==='mem') $('hubCustom').prepend(qe); }
   else { $('quickTitle').textContent='設定なしで始める'; $('quickStart').textContent='トレーニング開始'; }
   levelHubRender(t);
-  if(t==='ear') pianoLoad();
+  if(t==='ear'||t==='sing') pianoLoad();
   show('hub',T.name,'');
 }
 $('quickStart').onclick=()=>{
@@ -1722,6 +1772,18 @@ function renderCustom(t){
       ${rowSeg('鍵盤の文字','eLab',[{v:'sol',l:'ドレミ'},{v:'none',l:'なし'}],'sol')}
     </div>`;
   }
+  if(t==='sing'){
+    const def=singSexPref()==='f'?67:55;
+    box.innerHTML=`<div class="card pad">
+      ${rowSeg('お題','gKind',[{v:'long',l:'ロングトーン'},{v:'phr',l:'3音'}],'long',v=>{ $('gLongBox').style.display=v==='long'?'block':'none'; $('gPhrBox').style.display=v==='phr'?'block':'none'; })}
+      ${rowRange('高さ','gNote',40,84,1,def,v=>singName(+v)+'（'+singKara(+v)+'・'+singSol(+v)+'）')}
+      <div id="gLongBox">${rowSeg('秒数','gSec',[5,8,10,15,20].map(v=>({v:String(v),l:v+'秒'})),'10')}</div>
+      <div id="gPhrBox" style="display:none">${rowSeg('形','gShape',[{v:'up',l:'上がる'},{v:'down',l:'下がる'},{v:'yama',l:'山'},{v:'chord',l:'ドミソ'}],'up')}
+        ${rowSeg('1音の長さ','gNd',[{v:'1.5',l:'1.5秒'},{v:'1.2',l:'1.2秒'},{v:'2',l:'2秒'}],'1.5')}</div>
+      ${rowSeg('回数','gReps',[{v:'1',l:'1回'},{v:'3',l:'3回'},{v:'5',l:'5回'}],'3')}
+      ${rowSeg('合格の幅','gTol',[{v:'60',l:'ゆるめ'},{v:'50',l:'ふつう'},{v:'35',l:'きびしめ'}],'50')}
+    </div>`;
+  }
   if(t==='breath'){
     box.innerHTML=`<div class="card pad">
       ${rowRange('時間','bMin',3,10,1,5,v=>v+'分')}
@@ -1858,6 +1920,11 @@ $('customStart').onclick=()=>{
   if(curTrain==='ear') runEar({
     stage:segVal('eStage'), dur:+segVal('eDur'), fast:segVal('eFast')==='1', bgm:$('eBgm').classList.contains('on'), labels:segVal('eLab')
   });
+  if(curTrain==='sing'){
+    const m=+$('gNote').value, reps=+segVal('gReps'), kind=segVal('gKind');
+    const one=()=>kind==='long'?{kind:'long',m,sec:+segVal('gSec')}:{kind:'phr',ms:SING_SHAPES[segVal('gShape')].map(d=>m+d),nd:+segVal('gNd')};
+    runSing({custom:true, tol:+segVal('gTol'), tasks:Array.from({length:reps},one)});
+  }
   if(curTrain==='mem') runMem({
     count:+$('wCount').value, grid:segVal('wGridSel'), after:segVal('wAfterQ')||memAfterPref(), total:+segVal('wQ')
   });
@@ -2588,7 +2655,7 @@ const SND={
 /* ---- voice ----
    まずは録音した声（voice/*.mp3）を Web Audio で鳴らす。ブラウザの読み上げ機能は
    ブラウザによって鳴らない（Brave など）ので、録音が読めないときだけ代わりに使う。 */
-const VOX_MAP={'はじめます':'hajime','吐きます':'haku','止めます':'tomeru','吸います':'suu','おわりです。ふつうの呼吸に戻しましょう':'owari','休憩':'kyukei','逆回し':'gyaku','おつかれさまでした':'otsukare','足首回し':'ankle','肩回し':'shoulder','手首回し':'wrist','腕回し':'arm','股関節回し':'hip','腰回し':'waist','ひざ回し':'knee','いち':'n1','に':'n2','さん':'n3','よん':'n4','ご':'n5','ろく':'n6','なな':'n7','はち':'n8','きゅう':'n9','じゅう':'n10','11':'n11','12':'n12','13':'n13','14':'n14','15':'n15','16':'n16','17':'n17','18':'n18','19':'n19','20':'n20','21':'n21','22':'n22','23':'n23','24':'n24','25':'n25','26':'n26','27':'n27','28':'n28','29':'n29','30':'n30','5秒':'s5','10秒':'s10','15秒':'s15','20秒':'s20','30秒':'s30','40秒':'s40','50秒':'s50','60秒':'s60','70秒':'s70','80秒':'s80','90秒':'s90','1拍で1周':'b1','2拍で1周':'b2','3拍で1周':'b3','4拍で1周':'b4','5拍で1周':'b5','6拍で1周':'b6','7拍で1周':'b7','8拍で1周':'b8','9拍で1周':'b9','10拍で1周':'b10','11拍で1周':'b11','12拍で1周':'b12','この呼吸で終わりです':'konokokyu','1分経過':'m1','2分経過':'m2','3分経過':'m3','4分経過':'m4','5分経過':'m5','6分経過':'m6','7分経過':'m7','8分経過':'m8','9分経過':'m9','10分経過':'m10','残り1分です':'r1','残り2分です':'r2','残り3分です':'r3','残り4分です':'r4','残り5分です':'r5','残り6分です':'r6','残り7分です':'r7','残り8分です':'r8','残り9分です':'r9','あか':'c_red','きいろ':'c_yellow','みどり':'c_green','あお':'c_blue','しろ':'c_white','オレンジ':'c_orange','むらさき':'c_purple','ピンク':'c_pink','みずいろ':'c_sky','おわりです':'owari2','1秒':'s1','2秒':'s2','3秒':'s3','4秒':'s4','6秒':'s6','7秒':'s7','8秒':'s8','9秒':'s9','11秒':'s11','12秒':'s12','13秒':'s13','14秒':'s14','16秒':'s16','17秒':'s17','18秒':'s18','19秒':'s19','21秒':'s21','22秒':'s22','23秒':'s23','24秒':'s24','25秒':'s25','26秒':'s26','27秒':'s27','28秒':'s28','29秒':'s29','左右ジャンプ':'st_lr','前後ジャンプ':'st_fb','右足ケンケン':'st_hopR','左足ケンケン':'st_hopL','グーパー':'st_gupa','開く・クロス':'st_cross','イン・イン・アウト・アウト':'st_inout','右足2歩・戻る':'st_walk2','シンコペーション':'st_sync','3拍子ステップ':'st_waltz','ランダム':'st_rand','レベル1':'lv1','レベル2':'lv2','レベル3':'lv3','レベル4':'lv4','レベル5':'lv5','レベル6':'lv6','レベル7':'lv7','レベル8':'lv8','レベル9':'lv9','レベル10':'lv10','難問です':'nanmon','矢印と同じ方向を向きます':'r_ar_same','矢印と反対の方向を向きます':'r_ar_anti','矢印の色で向きが変わります':'r_ar_color','暗算もします':'r_math_too','数字を覚えてそのまま答えます':'r_num','数字を覚えて逆から答えます':'r_num_rev','文字を読みます':'r_st_read','インクの色を答えます':'r_st_color','一覧を順番にインクの色で答えます':'r_st_grid','背景の色でルールが変わります':'r_st_cell','音に合わせて大きく回します':'r_mv_metro','秒数のあいだ回し続けます':'r_mv_sec','音と秒数に合わせて回します':'r_mv_mix','左右で違う形をまねします':'r_hd','カチッという音で左右を入れ替えます':'r_hd_swap','数字の場所を覚えて1から順に押します':'r_mem','画面の色が変わるのを見ていましょう':'r_cd_color','お題の数を数えながら見ます':'r_cd_quiz','数字を頭の中で計算します':'r_cd_math','クリアです':'clear','難問クリアです':'clear10','次は':'tsugiwa','チャレンジしましょう':'challenge','もう一度チャレンジしましょう':'again','音を聴いて鍵盤で答えます':'r_ear','ドレミ以外の音も出ます':'r_ear_chr'};
+const VOX_MAP={'はじめます':'hajime','吐きます':'haku','止めます':'tomeru','吸います':'suu','おわりです。ふつうの呼吸に戻しましょう':'owari','休憩':'kyukei','逆回し':'gyaku','おつかれさまでした':'otsukare','足首回し':'ankle','肩回し':'shoulder','手首回し':'wrist','腕回し':'arm','股関節回し':'hip','腰回し':'waist','ひざ回し':'knee','いち':'n1','に':'n2','さん':'n3','よん':'n4','ご':'n5','ろく':'n6','なな':'n7','はち':'n8','きゅう':'n9','じゅう':'n10','11':'n11','12':'n12','13':'n13','14':'n14','15':'n15','16':'n16','17':'n17','18':'n18','19':'n19','20':'n20','21':'n21','22':'n22','23':'n23','24':'n24','25':'n25','26':'n26','27':'n27','28':'n28','29':'n29','30':'n30','5秒':'s5','10秒':'s10','15秒':'s15','20秒':'s20','30秒':'s30','40秒':'s40','50秒':'s50','60秒':'s60','70秒':'s70','80秒':'s80','90秒':'s90','1拍で1周':'b1','2拍で1周':'b2','3拍で1周':'b3','4拍で1周':'b4','5拍で1周':'b5','6拍で1周':'b6','7拍で1周':'b7','8拍で1周':'b8','9拍で1周':'b9','10拍で1周':'b10','11拍で1周':'b11','12拍で1周':'b12','この呼吸で終わりです':'konokokyu','1分経過':'m1','2分経過':'m2','3分経過':'m3','4分経過':'m4','5分経過':'m5','6分経過':'m6','7分経過':'m7','8分経過':'m8','9分経過':'m9','10分経過':'m10','残り1分です':'r1','残り2分です':'r2','残り3分です':'r3','残り4分です':'r4','残り5分です':'r5','残り6分です':'r6','残り7分です':'r7','残り8分です':'r8','残り9分です':'r9','あか':'c_red','きいろ':'c_yellow','みどり':'c_green','あお':'c_blue','しろ':'c_white','オレンジ':'c_orange','むらさき':'c_purple','ピンク':'c_pink','みずいろ':'c_sky','おわりです':'owari2','1秒':'s1','2秒':'s2','3秒':'s3','4秒':'s4','6秒':'s6','7秒':'s7','8秒':'s8','9秒':'s9','11秒':'s11','12秒':'s12','13秒':'s13','14秒':'s14','16秒':'s16','17秒':'s17','18秒':'s18','19秒':'s19','21秒':'s21','22秒':'s22','23秒':'s23','24秒':'s24','25秒':'s25','26秒':'s26','27秒':'s27','28秒':'s28','29秒':'s29','左右ジャンプ':'st_lr','前後ジャンプ':'st_fb','右足ケンケン':'st_hopR','左足ケンケン':'st_hopL','グーパー':'st_gupa','開く・クロス':'st_cross','イン・イン・アウト・アウト':'st_inout','右足2歩・戻る':'st_walk2','シンコペーション':'st_sync','3拍子ステップ':'st_waltz','ランダム':'st_rand','レベル1':'lv1','レベル2':'lv2','レベル3':'lv3','レベル4':'lv4','レベル5':'lv5','レベル6':'lv6','レベル7':'lv7','レベル8':'lv8','レベル9':'lv9','レベル10':'lv10','難問です':'nanmon','矢印と同じ方向を向きます':'r_ar_same','矢印と反対の方向を向きます':'r_ar_anti','矢印の色で向きが変わります':'r_ar_color','暗算もします':'r_math_too','数字を覚えてそのまま答えます':'r_num','数字を覚えて逆から答えます':'r_num_rev','文字を読みます':'r_st_read','インクの色を答えます':'r_st_color','一覧を順番にインクの色で答えます':'r_st_grid','背景の色でルールが変わります':'r_st_cell','音に合わせて大きく回します':'r_mv_metro','秒数のあいだ回し続けます':'r_mv_sec','音と秒数に合わせて回します':'r_mv_mix','左右で違う形をまねします':'r_hd','カチッという音で左右を入れ替えます':'r_hd_swap','数字の場所を覚えて1から順に押します':'r_mem','画面の色が変わるのを見ていましょう':'r_cd_color','お題の数を数えながら見ます':'r_cd_quiz','数字を頭の中で計算します':'r_cd_math','クリアです':'clear','難問クリアです':'clear10','次は':'tsugiwa','チャレンジしましょう':'challenge','もう一度チャレンジしましょう':'again','音を聴いて鍵盤で答えます':'r_ear','音を聴いて同じ高さで声を出します':'r_sing','ドレミ以外の音も出ます':'r_ear_chr'};
 const VOICE_VER='kokoro6';   // 今の声（Kokoro）を作り直したら変える（古い声が残らないように）
 // 声の種類。今の声は voice/ 直下、Gemini で作った声は voice/<id>/。どれだけ出来ているかは voice/voices.json（作る係が書く）
 const VOICE_SETS=[
@@ -3725,6 +3792,331 @@ function earReview(q){
 }
 
 /* ============================================================
+   SING engine — 発声トレーニング（ロングトーン／3音を正しい高さで）
+   声の高さは McLeod Pitch Method（KoeNote の音程チェッカーと同じ求め方）。音はこの端末の中だけで測る
+   ============================================================ */
+const SING_NAMES=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+const SING_SOL=['ド','ド#','レ','レ#','ミ','ファ','ファ#','ソ','ソ#','ラ','ラ#','シ'];
+const SING_KARA=['lowlow','low','mid1','mid2','hi','hihi','hihihi'];
+const singName=m=>{ const r=Math.round(m); return SING_NAMES[((r%12)+12)%12]+(Math.floor(r/12)-1); };
+const singSol=m=>SING_SOL[((Math.round(m)%12)+12)%12];
+// カラオケ式：ラ（A）から次のソ#までを1組。A2〜G#3＝mid1、A3〜G#4＝mid2
+const singKara=m=>{ const r=Math.round(m), i=Math.floor((r-21)/12); return (SING_KARA[i]||(i<0?'lowlowlow':'hihihihi'))+SING_NAMES[((r%12)+12)%12]; };
+const singMidi=s=>{ const x=s.match(/^([A-G])(#?)(\d)$/); return 12*(+x[3]+1)+{C:0,D:2,E:4,F:5,G:7,A:9,B:11}[x[1]]+(x[2]?1:0); };
+const singHzToMidi=f=>69+12*Math.log2(f/440);
+function singMpm(x,sr){
+  const n=x.length, maxTau=Math.min(n-2,Math.floor(sr/55)), minTau=Math.max(2,Math.floor(sr/1500));
+  const nsdf=new Float32Array(maxTau+2);
+  let m=0; for(let i=0;i<n;i++) m+=x[i]*x[i]; m*=2;
+  for(let tau=0;tau<=maxTau;tau++){
+    if(tau>0) m-=x[tau-1]*x[tau-1]+x[n-tau]*x[n-tau];
+    let acf=0; for(let i=0;i<n-tau;i++) acf+=x[i]*x[i+tau];
+    nsdf[tau]=m>1e-9?(2*acf)/m:0;
+  }
+  const peaks=[]; let tau=1;
+  while(tau<maxTau&&nsdf[tau]>0) tau++;
+  while(tau<maxTau){
+    while(tau<maxTau&&nsdf[tau]<=0) tau++;
+    let best=-1; while(tau<maxTau&&nsdf[tau]>0){ if(best<0||nsdf[tau]>nsdf[best]) best=tau; tau++; }
+    if(best>=minTau) peaks.push(best);
+  }
+  if(!peaks.length) return null;
+  const top=Math.max(...peaks.map(p=>nsdf[p])), pick=peaks.find(p=>nsdf[p]>=0.9*top);
+  let t=pick; const a=nsdf[pick-1], b=nsdf[pick], c=nsdf[pick+1], d=a-2*b+c;
+  if(d!==0){ const s=0.5*(a-c)/d; if(Math.abs(s)<1) t=pick+s; }
+  return {hz:sr/t, clarity:b};
+}
+
+/* ---- レベル（男性・女性で別の表）----
+   よく言われる目安（個人差が大きい）：男性は F4〜A4 あたりで地声が裏声へ切り替わる（テノールは F#4〜A4、バリトンは E♭4〜E4）。
+   女性は E4〜G4 あたりで1回目、F5〜G5 あたりで2回目の切り替わり。低いほうは 男性 A2〜C3・女性 G3〜A3 が出しにくい */
+const SL=(n,sec)=>({kind:'long', m:singMidi(n), sec});
+const SP=(ns,nd)=>({kind:'phr', ms:ns.map(singMidi), nd:nd||1.5});
+const SING_LV={
+  m:[
+    {t:'楽な高さ・5秒',          tol:60, tasks:[SL('C3',5),SL('E3',5),SL('G3',5),SP(['C3','D3','E3'])]},
+    {t:'楽な高さ・8秒',          tol:60, tasks:[SL('D3',8),SL('A3',8),SP(['G3','A3','B3']),SP(['A3','G3','F3'])]},
+    {t:'低い音（A2〜C3）',       tol:60, tasks:[SL('B2',5),SL('A2',5),SL('C3',8),SP(['C3','B2','A2'])]},
+    {t:'C4・D4を8秒',           tol:60, tasks:[SL('C4',8),SL('D4',8),SP(['C4','D4','E4']),SP(['E4','D4','C4'])]},
+    {t:'換声点の入り口 E4・F4',  tol:50, tasks:[SL('E4',5),SL('F4',5),SP(['D4','E4','F4']),SP(['F4','E4','D4'])]},
+    {t:'G4を5秒',               tol:50, tasks:[SL('F4',8),SL('G4',5),SP(['E4','F4','G4'],1.3),SP(['G4','F4','E4'],1.3)]},
+    {t:'G4を10秒',              tol:50, tasks:[SL('G4',10),SL('F4',10),SP(['F4','G4','A4'],1.3),SP(['C4','E4','G4'],1.3)]},
+    {t:'A4を5秒',               tol:50, tasks:[SL('A4',5),SL('G4',10),SP(['G4','A4','G4'],1.3),SP(['E4','G4','A4'],1.3)]},
+    {t:'A4を10秒・B4',          tol:40, tasks:[SL('A4',10),SL('B4',5),SP(['G4','A4','B4'],1.2),SP(['B4','A4','G4'],1.2)]},
+    {t:'低い音と高い音を10秒',   tol:40, tasks:[SL('A2',10),SL('A4',10),SL('B4',8),SP(['A3','E4','A4'],1.2),SP(['B4','G4','E4'],1.2)]}
+  ],
+  f:[
+    {t:'楽な高さ・5秒',          tol:60, tasks:[SL('C4',5),SL('D4',5),SL('E4',5),SP(['C4','D4','E4'])]},
+    {t:'換声点の入り口 F4・G4',  tol:60, tasks:[SL('F4',8),SL('G4',8),SP(['E4','F4','G4']),SP(['G4','F4','E4'])]},
+    {t:'低い音（G3〜B3）',       tol:60, tasks:[SL('A3',5),SL('G3',5),SL('B3',8),SP(['C4','B3','A3'])]},
+    {t:'A4・B4を8秒',           tol:60, tasks:[SL('A4',8),SL('B4',8),SP(['A4','B4','C5']),SP(['C5','B4','A4'])]},
+    {t:'C5・D5を5秒',           tol:50, tasks:[SL('C5',5),SL('D5',5),SP(['B4','C5','D5']),SP(['D5','C5','B4'])]},
+    {t:'E5を5秒',               tol:50, tasks:[SL('C5',8),SL('E5',5),SP(['C5','D5','E5'],1.3),SP(['E5','D5','C5'],1.3)]},
+    {t:'E5を10秒',              tol:50, tasks:[SL('D5',10),SL('E5',10),SP(['D5','E5','F5'],1.3),SP(['G4','C5','E5'],1.3)]},
+    {t:'F5を5秒',               tol:50, tasks:[SL('F5',5),SL('E5',10),SP(['E5','F5','E5'],1.3),SP(['C5','E5','F5'],1.3)]},
+    {t:'F5を10秒・G5',          tol:40, tasks:[SL('F5',10),SL('G5',5),SP(['E5','F5','G5'],1.2),SP(['G5','F5','E5'],1.2)]},
+    {t:'低い音と高い音を10秒',   tol:40, tasks:[SL('G3',10),SL('F5',10),SL('G5',8),SP(['C5','G5','C5'],1.2),SP(['G5','E5','C5'],1.2)]}
+  ]
+};
+const SING_SEX={m:'男性',f:'女性'};
+function singSexPref(){ try{ return localStorage.getItem('notore-sing-sex')==='f'?'f':'m'; }catch(e){ return 'm'; } }
+function singSexSet(v){ try{ localStorage.setItem('notore-sing-sex',v); }catch(e){} }
+const SING_SHAPES={up:[0,2,4], down:[4,2,0], yama:[0,4,0], chord:[0,4,7]};
+const singTaskText=T=>T.kind==='long'?`${singName(T.m)} ${T.sec}秒`:T.ms.map(singSol).join('・')+`（${T.ms.map(singName).join(' ')}）`;
+
+/* ---- 進行 ---- */
+let SG=null;   // 発声トレーニングの状態（G は一覧ストループで使用済み）
+const SING_GAP=0.4;            // 声がこれより長く途切れたら、のばしは切れる
+function stopSing(){
+  if(!SG) return;
+  clearInterval(SG.iv); cancelAnimationFrame(SG.raf); SG.to.forEach(clearTimeout);
+  SG.stops.forEach(f=>f&&f());
+  if(SG.stream) SG.stream.getTracks().forEach(t=>t.stop());
+  if(SG.src){ try{ SG.src.disconnect(); }catch(e){} }
+  SG=null;
+}
+const pnow=()=>performance.now()/1000;
+function runSing(cfg){
+  stopAll(); audioOn(); pianoLoad();
+  let tasks, tol;
+  if(cfg.custom){ tasks=cfg.tasks; tol=cfg.tol; }
+  else { const L=SING_LV[cfg.sex||singSexPref()][(cfg.lvl||1)-1]; tasks=L.tasks; tol=L.tol; cfg.sex=cfg.sex||singSexPref(); }
+  SG={cfg, tasks:JSON.parse(JSON.stringify(tasks)), tol, i:-1, hits:0, log:[], to:[], stops:[], iv:0, raf:0,
+     stream:null, src:null, an:null, buf:null, hist:[], recent:[], smooth:null, pending:null, phase:'wait', T:null, maxRun:0};
+  $('gProg').textContent=`1/${SG.tasks.length}`; $('gHits').textContent='0'; $('gLeft').textContent='--';
+  $('gTask').innerHTML=''; $('gBig').innerHTML=''; $('gMark').className='emark'; $('gBar').style.visibility='hidden';
+  show('playSing','発声トレーニング',cfg.custom?'':SING_SEX[cfg.sex]);
+  SG.stops.push(veilPrepare($('gVeil'),{title:'同じ高さで声を出す',
+    ex:`<div class="prep-ex ear-ex"><span>♪</span><span class="ar">→</span><span>アー</span></div>`},()=>singBegin()));
+  singDrawLoop();
+}
+async function singBegin(){
+  if(!SG) return;
+  audioOn();
+  try{
+    SG.stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false, noiseSuppression:false, autoGainControl:false}});
+  }catch(e){
+    if(!SG) return;
+    $('gTask').textContent='マイクが使えません'; $('gBig').innerHTML='<small>アドレス欄のマイクの印から許可してください</small>';
+    return;
+  }
+  if(!SG){ return; }
+  const c=AU.ctx;
+  SG.src=c.createMediaStreamSource(SG.stream);
+  SG.an=c.createAnalyser(); SG.an.fftSize=2048; SG.src.connect(SG.an);
+  SG.buf=new Float32Array(SG.an.fftSize);
+  SG.iv=setInterval(singTick,25);                       // 測るのは setInterval（画面が隠れても止まらない）
+  pianoLoad().then(()=>{ if(SG) singNext(); });
+}
+function singAnalyse(t){
+  SG.an.getFloatTimeDomainData(SG.buf);
+  let rms=0; for(let i=0;i<SG.buf.length;i++) rms+=SG.buf[i]*SG.buf[i]; rms=Math.sqrt(rms/SG.buf.length);
+  let m=null;
+  if(rms>0.012){ const r=singMpm(SG.buf,AU.ctx.sampleRate); if(r&&r.clarity>0.85&&r.hz>60&&r.hz<1400) m=singHzToMidi(r.hz); }
+  if(m!=null && SG.smooth!=null && Math.abs(m-SG.smooth)>7){       // 1回だけ大きく跳んだ値は、次も同じなら採る
+    if(SG.pending==null||Math.abs(SG.pending-m)>1){ SG.pending=m; m=null; } else SG.pending=null;
+  } else SG.pending=null;
+  if(m!=null){
+    SG.recent.push(m); if(SG.recent.length>3) SG.recent.shift();
+    const med=[...SG.recent].sort((a,b)=>a-b)[Math.floor(SG.recent.length/2)];
+    SG.smooth=SG.smooth==null||Math.abs(med-SG.smooth)>1?med:SG.smooth*0.6+med*0.4;
+  } else { SG.recent=[]; SG.smooth=null; }
+  SG.hist.push({t,m:SG.smooth});
+  while(SG.hist.length&&SG.hist[0].t<t-20) SG.hist.shift();
+}
+function singNext(){
+  if(!SG) return;
+  SG.i++;
+  if(SG.i>=SG.tasks.length){ singEnd(); return; }
+  const T=SG.T=SG.tasks[SG.i]; T.try=T.try||0;
+  $('gProg').textContent=`${SG.i+1}/${SG.tasks.length}`;
+  $('gMark').className='emark';
+  const notes=T.kind==='long'?[T.m]:T.ms;
+  $('gTask').innerHTML=T.kind==='long'
+    ? `${singName(T.m)}<small>${singKara(T.m)}・${singSol(T.m)}</small>`
+    : notes.map(singName).join('　');
+  singListen();
+}
+// お手本を鳴らす（鳴っている間と余韻は測らない）
+function singListen(){
+  const T=SG.T; SG.phase='listen';
+  $('gBar').style.visibility='hidden'; $('gHint').textContent='';
+  const a0=now()+0.08, p0=pnow()+0.08, stops=[];
+  let len;
+  if(T.kind==='long'){ stops.push(pianoPlay(T.m,a0,0.62,1.5)); len=1.5; $('gBig').innerHTML='♪'; }
+  else {
+    T.ms.forEach((m,k)=>stops.push(pianoPlay(m,a0+k*T.nd,0.62,T.nd*0.92)));
+    len=T.ms.length*T.nd; singPhrSlots(null);
+  }
+  SG.stops.push(...stops);
+  SG.listenEnd=p0+len;
+  SG.to.push(setTimeout(()=>{ stops.forEach(f=>f&&f()); },(len+0.05)*1000));
+  SG.to.push(setTimeout(()=>{ if(!SG) return; T.kind==='long'?singLongStart():singCount(); },(len+0.45)*1000));
+}
+function singReplay(){ if(SG&&SG.T&&(SG.phase==='long'||SG.phase==='count')){ SG.to.forEach(clearTimeout); SG.to=[]; singListen(); } }
+
+/* ロングトーン：お題の高さ（±tol セント）で声が続いた長さを数える。途切れたら0から */
+function singLongStart(){
+  const T=SG.T, t=pnow();
+  SG.phase='long'; T.run=null; T.best=T.best||0; T.limitAt=t+T.sec+12;
+  $('gBar').style.visibility='visible'; $('gBar').classList.remove('ok'); $('gFill').style.width='0%';
+  $('gBig').innerHTML=`0.0<small> / ${T.sec}秒</small>`;
+  SND.tick(now()+0.01);
+}
+function singTick(){
+  if(!SG||!SG.an) return;
+  const t=pnow();
+  singAnalyse(t);
+  const T=SG.T; if(!T) return;
+  if(SG.phase==='long'){
+    if(t<SG.listenEnd+0.6) return;
+    const win=SG.hist.filter(h=>h.t>t-0.3&&h.m!=null).map(h=>h.m);   // 0.3秒の平均（ビブラートをならす）
+    const dev=win.length&&SG.smooth!=null?(win.reduce((a,b)=>a+b,0)/win.length-T.m)*100:null;
+    const inTol=dev!=null&&Math.abs(dev)<=SG.tol;
+    if(inTol){ if(!T.run) T.run={a:t}; T.run.last=t; }
+    else if(T.run && t-T.run.last>SING_GAP){ T.best=Math.max(T.best,T.run.last-T.run.a); T.run=null; }
+    const dur=T.run?T.run.last-T.run.a:0;
+    $('gBig').innerHTML=`${dur.toFixed(1)}<small> / ${T.sec}秒</small>`;
+    $('gFill').style.width=Math.min(100,dur/T.sec*100)+'%';
+    $('gHint').textContent=dev==null||inTol?'':dev<0?'▲ 高く':'▼ 低く';
+    $('gHint').className='sing-hint '+(dev!=null&&!inTol?(dev<0?'up':'down'):'');
+    $('gLeft').textContent=Math.max(0,Math.ceil(T.limitAt-t));
+    if(dur>=T.sec){ singDone(true,null); return; }
+    if(t>=T.limitAt){ const b=Math.max(T.best,dur); singDone(false,`最長 ${b.toFixed(1)}秒`); }
+  }
+  else if(SG.phase==='phr' && t>=SG.phrEnd+0.05){ singPhrJudge(); }
+}
+/* 3音：お手本のあと 3・2・1 で、バーの上を自分で歌う */
+function singCount(){
+  const T=SG.T; SG.phase='count';
+  $('gBar').style.visibility='hidden';
+  const a0=now()+0.05, p0=pnow()+0.05, beat=0.6;
+  [3,2,1].forEach((n,k)=>{
+    SND.count(a0+k*beat);
+    SG.to.push(setTimeout(()=>{ if(SG&&SG.phase==='count') $('gBig').innerHTML=`<span class="sing-cnt">${n}</span>`; },(p0+k*beat-pnow())*1000));
+  });
+  SG.phrT0=p0+3*beat; SG.phrEnd=SG.phrT0+T.ms.length*T.nd;
+  SG.to.push(setTimeout(()=>{ if(!SG) return; SG.phase='phr'; singPhrSlots(null); },(SG.phrT0-pnow())*1000));
+}
+function singPhrSlots(res){
+  const T=SG.T;
+  $('gBig').innerHTML=`<span class="sing-slots">${T.ms.map((m,k)=>`<span class="${res?(res[k]?'ok':'ng'):''}">${singSol(m)}</span>`).join('')}</span>`;
+}
+function singPhrJudge(){
+  const T=SG.T, res=[];
+  SG.phase='judge';
+  T.ms.forEach((m,k)=>{
+    const a=SG.phrT0+k*T.nd+0.3, b=SG.phrT0+(k+1)*T.nd-0.05;
+    const s=SG.hist.filter(h=>h.t>=a&&h.t<=b);
+    const okN=s.filter(h=>h.m!=null&&Math.abs((h.m-m)*100)<=SG.tol+10).length;
+    res.push(s.length>0 && okN/s.length>=0.5);
+  });
+  T.res=res; singPhrSlots(res);
+  const ok=res.every(Boolean);
+  if(ok||T.try>=1) singDone(ok, res.map(x=>x?'○':'×').join(''));
+  else {                                                     // 1回目で外したら、もう一度だけ
+    T.try++; $('gMark').className='emark ng';
+    SG.to.push(setTimeout(()=>{ if(!SG) return; $('gMark').className='emark'; singListen(); },1500));
+  }
+}
+function singDone(ok,ans){
+  const T=SG.T;
+  SG.phase='done';
+  $('gHint').textContent=''; $('gLeft').textContent='--';
+  if(ok){ SG.hits++; $('gHits').textContent=SG.hits; if(T.kind==='long'){ $('gBar').classList.add('ok'); $('gFill').style.width='100%'; } SND.end(now()+0.02); }
+  $('gMark').className='emark '+(ok?'ok':'ng');
+  SG.log.push({ok, exp:singTaskText(T)+(ok&&T.try?'（2回目）':''), ans});
+  SG.to.push(setTimeout(singNext, ok?1600:2000));
+}
+function singEnd(){
+  if(!SG) return;
+  const c=SG.cfg, log=SG.log.slice(), hits=SG.hits, n=log.length;
+  const longs=SG.tasks.filter(T=>T.kind==='long');
+  stopSing();
+  const pass=n>0 && hits>=Math.ceil(n*0.75);
+  finish({type:'sing', cfg:c, log,
+    stats:[['クリア',`${hits}/${n}`],['ロングトーン',longs.length?longs.map(T=>singName(T.m)).join('・'):'—']],
+    singPass:pass,
+    celebrate:{hits, total:Math.max(n,1), title:n&&hits===n?'パーフェクト':pass?'クリア':'コンプリート', note:'おつかれさまでした', tier:n&&hits===n?'perfect':pass?'good':''}});
+}
+$('gReplay').onclick=singReplay;
+
+/* ---- 高さの帯を描く（横＝時間、縦＝音。お題の高さの帯に、自分の声の線が入れば合っている） ---- */
+function singDrawLoop(){
+  if(!SG) return;
+  singDraw();
+  SG.raf=requestAnimationFrame(singDrawLoop);
+}
+function singDraw(){
+  const cv=$('gCv'); if(!cv||!SG) return;
+  const dpr=window.devicePixelRatio||1, W=cv.clientWidth, H=cv.clientHeight;
+  if(!W||!H) return;
+  if(cv.width!==Math.round(W*dpr)||cv.height!==Math.round(H*dpr)){ cv.width=Math.round(W*dpr); cv.height=Math.round(H*dpr); }
+  const g=cv.getContext('2d'); g.setTransform(dpr,0,0,dpr,0,0);
+  g.fillStyle='#121a17'; g.fillRect(0,0,W,H);
+  const T=SG.T||SG.tasks[0]; if(!T) return;
+  const notes=T.kind==='long'?[T.m]:T.ms;
+  const lo=Math.min(...notes), hi=Math.max(...notes), vis=Math.max(13,hi-lo+9), row=H/vis, lowM=(lo+hi)/2-vis/2+0.5;
+  const y=m=>H-(m-lowM)*row, LABEL=W<500?40:52, t=pnow();
+  for(let n=Math.floor(lowM)-1;n<=Math.ceil(lowM+vis)+1;n++){
+    const yc=y(n), sharp=SING_NAMES[((n%12)+12)%12].includes('#'), isT=notes.includes(n);
+    if(sharp){ g.fillStyle='rgba(0,0,0,0.25)'; g.fillRect(LABEL,yc-row/2,W-LABEL,row); }
+    g.strokeStyle='rgba(255,255,255,0.07)'; g.lineWidth=1; g.beginPath(); g.moveTo(LABEL,yc); g.lineTo(W,yc); g.stroke();
+    if(!sharp||isT){
+      g.fillStyle=isT?'#ffd58a':'rgba(247,243,235,0.5)'; g.font=(isT?'700 ':'')+(W<500?11:12)+'px system-ui,sans-serif'; g.textBaseline='middle';
+      g.fillText(singName(n),6,yc);
+    }
+  }
+  // 時間 → 横の位置
+  let x;
+  if(T.kind==='long'){ const span=6, pps=(W-LABEL-24)/span; x=tt=>W-24-(t-tt)*pps; }
+  else {
+    const t0=(SG.phrT0||t)-0.5, tot=T.ms.length*T.nd+1.0;
+    x=tt=>LABEL+(tt-t0)/tot*(W-LABEL-8);
+  }
+  const band=m=>[y(m)-row*SG.tol/100, row*SG.tol/50];
+  // お題の帯
+  if(T.kind==='long'){
+    const [by,bh]=band(T.m);
+    g.fillStyle='rgba(91,140,255,0.28)'; g.fillRect(LABEL,by,W-LABEL,bh);
+    g.strokeStyle='rgba(91,140,255,0.9)'; g.lineWidth=1.5; g.beginPath(); g.moveTo(LABEL,y(T.m)); g.lineTo(W,y(T.m)); g.stroke();
+  } else if(SG.phrT0){
+    T.ms.forEach((m,k)=>{
+      const [by,bh]=band(m), x0=x(SG.phrT0+k*T.nd)+2, x1=x(SG.phrT0+(k+1)*T.nd)-2;
+      g.fillStyle=T.res&&SG.phase!=='phr'&&SG.phase!=='count'?(T.res[k]?'rgba(26,157,90,0.55)':'rgba(217,65,65,0.5)'):'rgba(91,140,255,0.35)';
+      singRound(g,x0,by,x1-x0,bh,Math.min(8,bh/2)); g.fill();
+    });
+  }
+  // 自分の声の線（合っているところは緑）
+  const tgtAt=tt=>{
+    if(T.kind==='long') return T.m;
+    if(!SG.phrT0) return null;
+    const k=Math.floor((tt-SG.phrT0)/T.nd); return k>=0&&k<T.ms.length?T.ms[k]:null;
+  };
+  let prev=null;
+  g.lineWidth=3; g.lineCap='round';
+  const from=T.kind==='long'?t-6.2:(SG.phrT0||t)-0.5;
+  for(const h of SG.hist){
+    if(h.t<from){ prev=h; continue; }
+    if(h.m!=null&&prev&&prev.m!=null&&h.t-prev.t<0.15){
+      const tg=tgtAt(h.t), ok=tg!=null&&Math.abs((h.m-tg)*100)<=SG.tol;
+      g.strokeStyle=ok?'#3ddc84':'#ef6c57';
+      g.beginPath(); g.moveTo(x(prev.t),y(prev.m)); g.lineTo(x(h.t),y(h.m)); g.stroke();
+    }
+    prev=h;
+  }
+  // 3音：いま歌うところの縦線
+  if(T.kind==='phr'&&SG.phase==='phr'){
+    g.strokeStyle='rgba(255,255,255,0.8)'; g.lineWidth=2; g.beginPath(); g.moveTo(x(t),0); g.lineTo(x(t),H); g.stroke();
+  }
+  const last=SG.hist[SG.hist.length-1];
+  if(T.kind==='long'&&last&&last.m!=null){ g.fillStyle='#ffb347'; g.beginPath(); g.arc(W-24,y(last.m),5,0,Math.PI*2); g.fill(); }
+}
+function singRound(g,x,y,w,h,r){
+  g.beginPath(); g.moveTo(x+r,y); g.arcTo(x+w,y,x+w,y+h,r); g.arcTo(x+w,y+h,x,y+h,r); g.arcTo(x,y+h,x,y,r); g.arcTo(x,y,x+w,y,r); g.closePath();
+}
+
+/* ============================================================
    CARD FLASH engine — トランプの記号・数字・色がパッと切り替わる
    ============================================================ */
 const SUITS={
@@ -4569,7 +4961,7 @@ const stepAutoCfg=()=>({drills:['lr','fb','hopR','hopL','gupa','cross','inout','
    Results
    ============================================================ */
 let last=null;
-const TYPE_NAME={step:'リズムステップ',spot:'丸タッチ',arrow:'方向トレーニング',num:'数字記憶',stroop:'ストループ',voice:'ストループ（音声）',grid:'ストループ 一覧',move:'リズム運動',hands:'左右の手まね',breath:'呼吸調整',mem:'数字の位置記憶',card:'フラッシュ',ear:'音感トレーニング'};
+const TYPE_NAME={step:'リズムステップ',spot:'丸タッチ',arrow:'方向トレーニング',num:'数字記憶',stroop:'ストループ',voice:'ストループ（音声）',grid:'ストループ 一覧',move:'リズム運動',hands:'左右の手まね',breath:'呼吸調整',mem:'数字の位置記憶',card:'フラッシュ',ear:'音感トレーニング',sing:'発声トレーニング'};
 function finish(r){
   if(r.type==='breath' && r.cfg && r.cfg.thenLv){ const x=r.cfg.thenLv; levelStart(x.t,x.lv); return; }   // 呼吸のあと、そのままレベル1へ
   last=r;
@@ -4620,6 +5012,7 @@ function rerun(type,cfg){
   else if(type==='mem') runMem(cfg);
   else if(type==='card') runCard(cfg);
   else if(type==='ear') runEar(cfg);
+  else if(type==='sing') runSing(cfg);
   else if(type==='spot') runSpot(cfg);
   else if(type==='step') runStep(cfg);
   else runVoice(cfg);
@@ -4635,7 +5028,7 @@ goHome();
    Version check — 古い保存済みの画面が出ていたら、新しい版に切り替える
    （GitHub Pages は更新後しばらく古い版を返すことがあるため）
    ============================================================ */
-const APP_VER='2026-11-06 16:30';   // 更新のたびにこの日時を書き換える
+const APP_VER='2026-11-06 19:00';   // 更新のたびにこの日時を書き換える
 $('appVer').textContent='更新 '+APP_VER;
 (function checkVer(){
   if(location.protocol==='file:') return;
