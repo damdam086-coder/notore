@@ -133,8 +133,8 @@ button{font-family:inherit;color:inherit}
 }
 .menu .ico svg{width:24px;height:24px}
 .menu .t{flex:1;min-width:0}
-.menu .t h2{margin:0;font-size:16px;font-weight:640;letter-spacing:.01em}
-.menu .t p{margin:2px 0 0;font-size:13px;color:var(--text-3);line-height:1.45}
+.menu .t h2{margin:0;font-size:18px;font-weight:640;letter-spacing:.01em}
+.menu .t p{margin:3px 0 0;font-size:14.5px;color:var(--text-3);line-height:1.45}
 .menu .chev{color:var(--text-3);flex:none}
 .menu .chev svg{width:18px;height:18px;display:block}
 
@@ -145,9 +145,9 @@ button{font-family:inherit;color:inherit}
   flex-wrap:wrap; padding:var(--s3) 0; border-bottom:1px solid var(--line);
 }
 .row:last-child{border-bottom:none}
-.row .lbl{font-size:15px;font-weight:500;white-space:nowrap}
+.row .lbl{font-size:16px;font-weight:500;white-space:nowrap}
 .row .val{font-size:15px;font-weight:650;color:var(--accent)}
-.hint{font-size:13px;color:var(--text-3);line-height:1.6;margin-top:var(--s2)}
+.hint{font-size:14.5px;color:var(--text-3);line-height:1.6;margin-top:var(--s2)}
 
 .seg{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;flex:1 1 auto}
 .seg button{
@@ -251,11 +251,11 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 .field.light .veil .lab{color:#6b7280}
 
 /* rule confirmation before a session starts */
-.prep{padding:var(--s5) var(--s4);text-align:center;max-width:340px;width:100%}
-.prep-k{font-size:11px;font-weight:700;letter-spacing:.14em;color:var(--text-3)}
+.prep{padding:var(--s5) var(--s4);text-align:center;max-width:460px;width:100%}
+.prep-k{font-size:13px;font-weight:700;letter-spacing:.14em;color:var(--text-3)}
 .field.light .prep-k{color:#8b94a3}
-.prep-t{font-size:22px;font-weight:700;margin-top:6px;letter-spacing:.01em}
-.prep-s{font-size:13.5px;color:var(--text-3);margin-top:8px;line-height:1.65}
+.prep-t{font-size:clamp(26px,6.4vw,36px);font-weight:700;margin-top:6px;letter-spacing:.01em}
+.prep-s{font-size:16px;color:var(--text-2);margin-top:8px;line-height:1.65}
 .field.light .prep-s{color:#6b7280}
 .prep-ex{
   display:flex;align-items:center;justify-content:center;gap:14px;
@@ -328,10 +328,38 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 
 /* quick-start (auto program) card */
 .quick{margin-bottom:var(--s4)}
+/* レベル */
+.lvgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin-bottom:var(--s4)}
+.lvbtn{display:flex;flex-direction:column;align-items:flex-start;gap:3px;padding:12px 14px;border-radius:var(--r2);border:1px solid var(--line-2);background:var(--surface);text-align:left;cursor:pointer;color:var(--text)}
+.lvbtn:active{transform:scale(.98)}
+.lvn{font-size:21px;font-weight:800;color:var(--accent);line-height:1.1}
+.lvt{font-size:14px;line-height:1.4;color:var(--text-2)}
+.lvbtn.hard{border-color:var(--gold)} .lvbtn.hard .lvn{color:var(--gold)}
+.lvbadge{font-size:12px;font-weight:700;color:var(--accent);background:var(--accent-soft);padding:2px 8px;border-radius:999px;margin-left:8px;vertical-align:2px;white-space:nowrap}
+.trainerhead{display:flex;align-items:center;gap:10px;width:100%;padding:14px 16px;margin:4px 0 var(--s3);border-radius:var(--r2);border:1px dashed var(--line-2);background:none;color:var(--text-2);font-size:16px;font-weight:700;cursor:pointer;text-align:left}
+.trainerhead .th-sub{font-size:13px;font-weight:500;color:var(--text-3)}
+.trainerhead .chev{margin-left:auto;width:10px;height:10px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(45deg);transition:transform .15s}
+.trainerhead.open .chev{transform:rotate(225deg)}
+.homelbl{margin:var(--s4) 0 var(--s2) 2px}
+.homelbl:first-child{margin-top:0}
+.menu.warm{border-color:var(--ok)}
+.menu.dev{opacity:.7}
+.prep-k.lvk{font-size:20px;color:var(--accent);letter-spacing:.06em}
+.lvsay{font-size:clamp(20px,4.8vw,27px);font-weight:760;line-height:1.5;margin-top:10px;color:var(--text)}
+.prep-li{font-size:19px;font-weight:600}
+.prep-li .act{font-size:19px}
+.lvres{text-align:center;padding:var(--s5) var(--s4) var(--s4);border-bottom:1px solid var(--line)}
+.lvres-k{font-size:16px;font-weight:700;color:var(--accent)}
+.lvres-t{font-size:30px;font-weight:800;margin-top:4px}
+.lvres.ok .lvres-t{color:var(--ok)}
+.lvres-s{font-size:18px;margin-top:6px}
+.lvres-s b{color:var(--accent)}
+.lvnext{margin-top:var(--s4)}
+
 .quick .qk{font-size:11px;font-weight:700;letter-spacing:.14em;color:var(--accent)}
-.quick .qt{margin:6px 0 0;font-size:19px;font-weight:700;letter-spacing:.01em}
-.quick .qp{margin:8px 0 var(--s4);font-size:13.5px;color:var(--text-3);line-height:1.65}
-.seclbl{font-size:11px;font-weight:700;letter-spacing:.14em;color:var(--text-3);margin:0 0 var(--s2) 2px}
+.quick .qt{margin:6px 0 0;font-size:23px;font-weight:700;letter-spacing:.01em}
+.quick .qp{margin:8px 0 var(--s4);font-size:15.5px;color:var(--text-3);line-height:1.65}
+.seclbl{font-size:13px;font-weight:700;letter-spacing:.1em;color:var(--text-2);margin:0 0 var(--s2) 2px}
 
 /* stage break */
 .brkstage{justify-content:center;align-items:center}
@@ -633,15 +661,20 @@ body.proj .hud{font-size:15px}
       <div id="hubTop"></div>
       <div class="card pad quick">
         <div class="qk">おまかせ</div>
-        <h2 class="qt">設定なしではじめる</h2>
+        <h2 class="qt" id="quickTitle">設定なしではじめる</h2>
         <p class="qp" id="quickDesc"></p>
         <div id="quickExtra"></div>
         <button class="btn" id="quickStart">トレーニング開始</button>
       </div>
-      <div class="seclbl">自分で設定する</div>
+      <div id="hubLevelsWrap" style="display:none">
+        <div class="seclbl">レベルを選んでチャレンジ</div>
+        <div class="lvgrid" id="hubLevels"></div>
+      </div>
+      <button class="trainerhead" id="trainerHead" style="display:none"><span>トレーナーが設定する</span><span class="th-sub">細かい設定</span><span class="chev"></span></button>
+      <div class="seclbl" id="customLbl">自分で設定する</div>
       <div id="hubCustom"></div>
     </div>
-    <div class="foot">
+    <div class="foot" id="hubFoot">
       <button class="btn sub" id="customStart">この設定ではじめる</button>
     </div>
   </section>
@@ -870,6 +903,7 @@ body.proj .hud{font-size:15px}
   <section class="screen" id="results">
     <div class="scroll">
       <div class="card">
+        <div id="lvBox" style="display:none"></div>
         <div class="verdict" id="verdict"></div>
         <div class="grid2" id="stats"></div>
         <div class="qlist" id="qlist"></div>
@@ -988,7 +1022,7 @@ function show(id,title,sub){
   $('back').style.display = id==='home'?'none':'grid';
   $('setBtn').style.display = id==='home'?'flex':'none';
   if(title!==undefined) $('ttl').textContent=title;
-  if(sub!==undefined) $('sub').textContent=sub;
+  if(sub!==undefined) $('sub').textContent=(LVNOW&&id.startsWith('play')?lvName(LVNOW.lv)+' ・ ':'')+sub;
 }
 $('back').innerHTML=ICON.back;
 $('back').onclick=()=>{ stopAll(); stopProg(); if(['hub','results'].includes(document.querySelector('.screen.on').id)) goHome(); else if(curTrain) openHub(curTrain); else goHome(); };
@@ -997,6 +1031,185 @@ function stopAll(){ stopArrow(); stopNum(); stopStroop(); stopVoice(); stopGrid(
 /* ============================================================
    Home
    ============================================================ */
+/* ============================================================
+   LEVELS — 7つのトレーニングのレベル1〜10（鍵・記録なし。選んでチャレンジ）
+   ============================================================ */
+const LEVEL_TRAININGS=['arrow','num','stroop','move','hands','mem','card'];
+const MOVE_BASE={mode:'metro', moves:['ankle','shoulder','wrist','arm','hip'], rounds:3, rest:5, range:'slow', bpmStep:20, gap:'rare', dur:30,
+  flip:false, beats:4, beatsRand:false, snd:'click', secs:[5,10,15], count:'beep', secMode:'list', secMin:4, secMax:12, secSets:3};
+const CARD_BASE={kind:'card', timing:'fixed', iv:2.5, rand:'r15', change:['suit','scol'], num:false, range:'n10', colorMode:'random',
+  colors:['black','red'], numCol:'own', dur:45, beep:false, quiz:true};
+const FNUM_BASE={kind:'num', timing:'fixed', iv:2.5, rand:'r15', dur:60, beep:false, nrange:'n10', nchange:['num','col'],
+  ncolors:['black','red','green','blue'], math:true, rule:'add_all', mathQ:5, ignore:true};
+const AR=(rule,dirs,iv,ex)=>({rule,dirs,cols:2,iv,dur:30,sets:1,math:false,...(ex||{})});
+const AR_MATH={math:true, nrange:'n10', ncolors:['red','green','blue','yellow'], ignore:true};
+// t＝レベル一覧に出す短い名前、say＝始める前に読み上げる説明
+const LEVELS={
+  arrow:[
+    {t:'同じ方向・4方向・ゆっくり', say:'矢印と同じ方向を向きます', cfg:AR('same',4,2.0)},
+    {t:'同じ方向・4方向・少し速く', say:'矢印と同じ方向を向きます', cfg:AR('same',4,1.5)},
+    {t:'同じ方向・8方向',           say:'矢印と同じ方向を向きます', cfg:AR('same',8,1.5)},
+    {t:'反対を向く・4方向・ゆっくり',say:'矢印と反対の方向を向きます', cfg:AR('anti',4,2.0)},
+    {t:'反対を向く・4方向',         say:'矢印と反対の方向を向きます', cfg:AR('anti',4,1.5)},
+    {t:'反対を向く・8方向',         say:'矢印と反対の方向を向きます', cfg:AR('anti',8,1.5)},
+    {t:'色で判断・4方向',           say:'矢印の色で向きが変わります', cfg:AR('color',4,1.5,{cols:2})},
+    {t:'色で判断・8方向・速く',     say:'矢印の色で向きが変わります', cfg:AR('color',8,1.2,{cols:4})},
+    {t:'反対・8方向・速く＋暗算',   say:'矢印と反対の方向を向きます、暗算もします', cfg:AR('anti',8,1.0,{...AR_MATH, every:3, mrule:'add_all'})},
+    {t:'色で判断・とても速く＋暗算（全部計算）', say:'矢印の色で向きが変わります、暗算もします', cfg:AR('color',8,0.8,{...AR_MATH, cols:4, every:1, nrange:'d9', mrule:'auto', ignore:false})}
+  ],
+  num:[
+    {t:'4桁・7秒見る',  say:'数字を覚えてそのまま答えます', cfg:{dig:4,t:7,rev:false,total:3}},
+    {t:'5桁・6秒',      say:'数字を覚えてそのまま答えます', cfg:{dig:5,t:6,rev:false,total:3}},
+    {t:'6桁・5秒',      say:'数字を覚えてそのまま答えます', cfg:{dig:6,t:5,rev:false,total:3}},
+    {t:'7桁・5秒',      say:'数字を覚えてそのまま答えます', cfg:{dig:7,t:5,rev:false,total:3}},
+    {t:'8桁・5秒',      say:'数字を覚えてそのまま答えます', cfg:{dig:8,t:5,rev:false,total:3}},
+    {t:'4桁を逆から・6秒',say:'数字を覚えて逆から答えます', cfg:{dig:4,t:6,rev:true,total:3}},
+    {t:'5桁を逆から・5秒',say:'数字を覚えて逆から答えます', cfg:{dig:5,t:5,rev:true,total:3}},
+    {t:'6桁を逆から・5秒',say:'数字を覚えて逆から答えます', cfg:{dig:6,t:5,rev:true,total:3}},
+    {t:'9桁・4秒',      say:'数字を覚えてそのまま答えます', cfg:{dig:9,t:4,rev:false,total:3}},
+    {t:'7桁を逆から・4秒',say:'数字を覚えて逆から答えます', cfg:{dig:7,t:4,rev:true,total:3}}
+  ],
+  stroop:[
+    {t:'文字を読む・かな・ゆっくり', say:'文字を読みます',       cfg:{sc:'kana', rule:'read', iv:2.0,dur:30,sets:1}},
+    {t:'色を答える・かな・ゆっくり', say:'インクの色を答えます', cfg:{sc:'kana', rule:'color',iv:2.0,dur:30,sets:1}},
+    {t:'色を答える・漢字',           say:'インクの色を答えます', cfg:{sc:'kanji',rule:'color',iv:1.5,dur:30,sets:1}},
+    {t:'色を答える・漢字・少し速く', say:'インクの色を答えます', cfg:{sc:'kanji',rule:'color',iv:1.2,dur:30,sets:1}},
+    {t:'一覧で色を答える・20字',     say:'一覧を順番にインクの色で答えます', grid:true, cfg:{sc:'kanji',rule:'color',count:20,bg:'none'}},
+    {t:'色を答える・English',        say:'インクの色を答えます', cfg:{sc:'en',   rule:'color',iv:1.5,dur:30,sets:1}},
+    {t:'一覧で色を答える・30字',     say:'一覧を順番にインクの色で答えます', grid:true, cfg:{sc:'kanji',rule:'color',count:30,bg:'none'}},
+    {t:'色を答える・漢字・速く',     say:'インクの色を答えます', cfg:{sc:'kanji',rule:'color',iv:1.0,dur:30,sets:1}},
+    {t:'一覧・English・40字',        say:'一覧を順番にインクの色で答えます', grid:true, cfg:{sc:'en',rule:'color',count:40,bg:'none'}},
+    {t:'一覧・背景の色でルールが変わる・40字', say:'背景の色でルールが変わります', grid:true, cfg:{sc:'kanji',rule:'color',count:40,bg:'cell'}}
+  ],
+  move:[
+    {t:'メトロノーム・ゆっくり・テンポはたまに変わる', say:'音に合わせて大きく回します', cfg:{...MOVE_BASE}},
+    {t:'メトロノーム・ふつうの速さ',     say:'音に合わせて大きく回します', cfg:{...MOVE_BASE, range:'mid', gap:'mid', rounds:4}},
+    {t:'秒数（5・10・15秒）',            say:'秒数のあいだ回し続けます',   cfg:{...MOVE_BASE, mode:'sec', rounds:4}},
+    {t:'メトロノームと秒数をまぜる',     say:'音と秒数に合わせて回します', cfg:{...MOVE_BASE, mode:'mix', range:'mid', gap:'mid', rounds:5}},
+    {t:'速め・毎周テンポが変わる',       say:'音に合わせて大きく回します', cfg:{...MOVE_BASE, range:'fast', gap:'every', rounds:5}},
+    {t:'速め＋ときどき逆回し',           say:'音に合わせて大きく回します', cfg:{...MOVE_BASE, range:'fast', gap:'every', rounds:5, flip:true}},
+    {t:'速め＋逆回し＋拍数もランダム',   say:'音に合わせて大きく回します', cfg:{...MOVE_BASE, range:'fast', gap:'every', rounds:5, flip:true, beatsRand:true}},
+    {t:'ばらばらのテンポ（40〜140）',    say:'音に合わせて大きく回します', cfg:{...MOVE_BASE, range:'wide', bpmStep:30, gap:'mid', rounds:6, flip:true, beatsRand:true}},
+    {t:'秒数ランダム4〜12秒を10セット連続', say:'秒数のあいだ回し続けます', cfg:{...MOVE_BASE, mode:'sec', secMode:'rand', secSets:10, count:'voice', rounds:3}},
+    {t:'全部まぜる・8ラウンド',          say:'音と秒数に合わせて回します', cfg:{...MOVE_BASE, mode:'mix', range:'wide', bpmStep:30, gap:'every', rounds:8, flip:true, beatsRand:true, secMode:'rand'}}
+  ],
+  hands:[
+    {t:'数字の形・入れ替えなし・ゆっくり', say:'左右で違う形をまねします', cfg:{set:'num',show:'art',spd:'s58',swap:0,  dur:30,sets:1,names:false,beep:true}},
+    {t:'数字の形・入れ替えなし',           say:'左右で違う形をまねします', cfg:{set:'num',show:'art',spd:'slow',swap:0, dur:30,sets:1,names:false,beep:true}},
+    {t:'数字の形・2秒ごとに左右入れ替え',  say:'左右で違う形をまねします、カチッという音で左右を入れ替えます', cfg:{set:'num',show:'art',spd:'s58',swap:2,  dur:30,sets:1,names:false,beep:true}},
+    {t:'数字の形・1.5秒ごとに入れ替え',    say:'左右で違う形をまねします、カチッという音で左右を入れ替えます', cfg:{set:'num',show:'art',spd:'s46',swap:1.5,dur:30,sets:1,names:false,beep:true}},
+    {t:'いろんなポーズ・入れ替えなし',     say:'左右で違う形をまねします', cfg:{set:'all',show:'art',spd:'s46',swap:0,  dur:30,sets:1,names:true, beep:true}},
+    {t:'いろんなポーズ・2秒ごとに入れ替え',say:'左右で違う形をまねします、カチッという音で左右を入れ替えます', cfg:{set:'all',show:'art',spd:'s46',swap:2,  dur:30,sets:1,names:true, beep:true}},
+    {t:'数字で出す・1.5秒ごとに入れ替え',  say:'左右で違う形をまねします、カチッという音で左右を入れ替えます', cfg:{set:'num',show:'num',spd:'s46',swap:1.5,dur:30,sets:1,names:false,beep:true}},
+    {t:'絵と数字をまぜる・1秒ごと',        say:'左右で違う形をまねします、カチッという音で左右を入れ替えます', cfg:{set:'all',show:'mix',spd:'s46',swap:1,  dur:30,sets:1,names:false,beep:true}},
+    {t:'いろんなポーズ・1秒ごと・お題も速く',say:'左右で違う形をまねします、カチッという音で左右を入れ替えます', cfg:{set:'all',show:'art',spd:'mid',swap:1,  dur:30,sets:1,names:false,beep:true}},
+    {t:'絵と数字・1秒ごと・お題がどんどん変わる',say:'左右で違う形をまねします、カチッという音で左右を入れ替えます', cfg:{set:'all',show:'mix',spd:'fast',swap:1, dur:30,sets:1,names:false,beep:true}}
+  ],
+  mem:[
+    {t:'3個・マス小・白い四角', say:'数字の場所を覚えて1から順に押します', cfg:{count:3, grid:'s',after:'square',total:10}},
+    {t:'4個・マス小',           say:'数字の場所を覚えて1から順に押します', cfg:{count:4, grid:'s',after:'square',total:10}},
+    {t:'5個・マス中',           say:'数字の場所を覚えて1から順に押します', cfg:{count:5, grid:'m',after:'square',total:10}},
+    {t:'6個・マス中',           say:'数字の場所を覚えて1から順に押します', cfg:{count:6, grid:'m',after:'square',total:10}},
+    {t:'6個・枠だけ（四角なし）',say:'数字の場所を覚えて1から順に押します', cfg:{count:6, grid:'m',after:'blank', total:10}},
+    {t:'7個・マス中',           say:'数字の場所を覚えて1から順に押します', cfg:{count:7, grid:'m',after:'square',total:10}},
+    {t:'8個・マス大',           say:'数字の場所を覚えて1から順に押します', cfg:{count:8, grid:'l',after:'square',total:10}},
+    {t:'9個・マス大',           say:'数字の場所を覚えて1から順に押します', cfg:{count:9, grid:'l',after:'square',total:10}},
+    {t:'10個・枠だけ',          say:'数字の場所を覚えて1から順に押します', cfg:{count:10,grid:'l',after:'blank', total:10}},
+    {t:'12個・マス大・枠だけ',  say:'数字の場所を覚えて1から順に押します', cfg:{count:12,grid:'l',after:'blank', total:10}}
+  ],
+  card:[
+    {t:'カラー4色・3秒ごと',               say:'画面の色が変わるのを見ていましょう', cfg:{kind:'color',timing:'fixed',iv:3,rand:'r15',dur:30,beep:false,wallColors:['red','yellow','green','blue']}},
+    {t:'カラー4色・2秒ごと',               say:'画面の色が変わるのを見ていましょう', cfg:{kind:'color',timing:'fixed',iv:2,rand:'r15',dur:30,beep:false,wallColors:['red','yellow','green','blue']}},
+    {t:'トランプ・「ハートは何回？」',     say:'お題の数を数えながら見ます', cfg:{...CARD_BASE, qk:['suit']}},
+    {t:'トランプ・「赤いスペードは何回？」',say:'お題の数を数えながら見ます', cfg:{...CARD_BASE, iv:2, qk:['colsuit']}},
+    {t:'トランプ・2つを別々に数える',      say:'お題の数を数えながら見ます', cfg:{...CARD_BASE, timing:'rand', dur:60, qk:['sep','colsuit2']}},
+    {t:'数字・暗算「ぜんぶ足す」5個',      say:'数字を頭の中で計算します', cfg:{...FNUM_BASE}},
+    {t:'数字・暗算「1色だけ足す」10個',    say:'数字を頭の中で計算します', cfg:{...FNUM_BASE, rule:'add_one', mathQ:10, iv:2}},
+    {t:'トランプ＋数字・「偶数は何回？」など',say:'お題の数を数えながら見ます', cfg:{...CARD_BASE, iv:2, dur:60, change:['suit','num','scol'], num:true, numCol:'same', qk:['even','fake','gt']}},
+    {t:'数字・暗算「足す色・引く色」10個',  say:'数字を頭の中で計算します', cfg:{...FNUM_BASE, rule:'add_sub', mathQ:10, iv:1.5}},
+    {t:'数字・暗算（全部計算）1〜13・15個',say:'数字を頭の中で計算します', cfg:{...FNUM_BASE, rule:'auto', ignore:false, nrange:'n13', mathQ:15, timing:'rand', rand:'r1'}}
+  ]
+};
+var LVNOW=null;   // いまレベルで遊んでいるか（{t,lv}）。自分で設定・おまかせで始めたら null
+const lvName=n=>n===10?'レベル10（難問）':`レベル${n}`;
+function levelStart(t,lv){
+  const L=LEVELS[t]&&LEVELS[t][lv-1]; if(!L) return;
+  stopAll(); stopProg(); audioOn();
+  LVNOW={t,lv};
+  const cfg=JSON.parse(JSON.stringify(L.cfg)); cfg.lv=lv; cfg.lvT=t;
+  if(t==='arrow') runArrow(cfg);
+  else if(t==='num'){                               // 数字記憶は説明画面が無いので、レベルのときだけ用意する
+    show('playNum','数字記憶',`${cfg.dig}桁 ・ ${cfg.rev?'逆から':'そのまま'}`);
+    $('nProg').textContent=`1/${cfg.total}`; $('nHits').textContent='0'; $('nMode').textContent=cfg.rev?'逆唱':'通常'; $('nBelow').innerHTML='';
+    $('nField').innerHTML='<div class="veil" id="nVeil"></div>';
+    veilPrepare($('nVeil'),{title:cfg.rev?'逆から答える':'そのまま答える',
+      sub:`${cfg.dig}桁の数字が ${cfg.t}秒 出ます。消えたら${cfg.rev?'<b>逆から</b>':'そのまま'}入力します。全${cfg.total}問・${Math.ceil(cfg.total*2/3)}問正解でクリア。`},()=>{ if(LVNOW) runNum(cfg); });
+  }
+  else if(t==='stroop') (L.grid?runGrid:runStroop)(cfg);
+  else if(t==='move') runMove(cfg);
+  else if(t==='hands') runHands(cfg);
+  else if(t==='mem') runMem(cfg);
+  else if(t==='card') runCard(cfg);
+  // 始める前の説明に「レベル○」を大きく出し、説明を読み上げる
+  const prep=document.querySelector('.screen.on .veil .prep');
+  if(prep){
+    const k=prep.querySelector('.prep-k'); if(k){ k.textContent=lvName(lv); k.classList.add('lvk'); }
+    const tt=prep.querySelector('.prep-t'); if(tt && !prep.querySelector('.lvsay')) tt.insertAdjacentHTML('afterend',`<div class="lvsay">${L.say.replace(/、/g,'。<br>')}</div>`);
+  }
+  say([`レベル${lv}`, ...(lv===10?['難問です']:[]), ...L.say.split('、')].join('、'),true);
+}
+// クリアしたか（正解のあるものは合格ライン、ないものは最後までやり切ったら）
+function levelPass(r){
+  const c=r.cfg||{}, log=r.log||[];
+  if(c.lvT==='num'){ const h=log.filter(l=>l.ok).length; return h>=Math.ceil((c.total||3)*2/3); }
+  if(c.lvT==='mem'){ const cb=r.celebrate; return !!cb && cb.hits>=Math.ceil(cb.total*0.8); }
+  if(c.lvT==='arrow' && c.math){ const h=log.filter(l=>l.ok).length; return log.length>0 && h>=Math.ceil(log.length/2); }
+  if(c.lvT==='move') return log.every(l=>l.ok);
+  if(c.lvT==='card') return r.title==='正解！'||r.title==='完了';
+  return r.title!=='途中で終了';
+}
+function levelResult(r){
+  const box=$('lvBox'); if(!box) return;
+  const c=r.cfg||{};
+  if(!c.lv || r.type==='breath'){ box.style.display='none'; box.innerHTML=''; $('rAgain').textContent='もう一度'; return; }
+  const ok=levelPass(r), lv=c.lv, t=c.lvT, nx=lv+1;
+  box.style.display='block';
+  box.innerHTML=`<div class="lvres ${ok?'ok':''}">
+      <div class="lvres-k">${lvName(lv)}</div>
+      <div class="lvres-t">${ok?(lv===10?'難問クリア！':'クリア！'):'もう一度チャレンジしましょう'}</div>
+      ${ok&&lv<10?`<div class="lvres-s">次は <b>レベル${nx}</b> にチャレンジしましょう</div>
+        <button class="btn lvnext" id="lvNext">レベル${nx}にチャレンジ</button>`:''}
+    </div>`;
+  $('rAgain').textContent=`もう一度（レベル${lv}）`;
+  const b=$('lvNext'); if(b) b.onclick=()=>levelStart(t,nx);
+  say(ok?(lv===10?'難問クリアです、おつかれさまでした':`クリアです、次は、レベル${nx}、チャレンジしましょう`):'もう一度チャレンジしましょう',true);
+}
+// ホーム・各トレーニングの画面
+function levelHubRender(t){
+  const lv=$('hubLevels'), isL=LEVEL_TRAININGS.includes(t);
+  $('hubLevelsWrap').style.display=isL?'block':'none';
+  $('trainerHead').style.display=isL?'flex':'none';
+  $('customLbl').style.display=isL?'none':'block';
+  if(!isL){ trainerOpen(true,t); return; }
+  $('quickTitle').textContent='設定なしで始める';
+  $('quickDesc').textContent='はじめての方はここから。レベル1から始めます。';
+  $('quickStart').textContent='はじめる（レベル1）';
+  const bp=setPref('breath-first','1')==='1';
+  $('quickExtra').innerHTML=`<div class="row" style="border:none;padding:0 0 var(--s3)"><span class="lbl">最初に呼吸で整える（1分）</span><button class="toggle${bp?' on':''}" id="breathFirst"></button></div>`;
+  $('breathFirst').onclick=()=>{ const on=!$('breathFirst').classList.contains('on'); $('breathFirst').classList.toggle('on',on); setSave('breath-first',on?'1':'0'); };
+  lv.innerHTML=LEVELS[t].map((L,i)=>`<button class="lvbtn${i===9?' hard':''}" data-lv="${i+1}">
+      <span class="lvn">${i===9?'難問':'Lv.'+(i+1)}</span><span class="lvt">${L.t}</span></button>`).join('');
+  lv.querySelectorAll('.lvbtn').forEach(b=>b.onclick=()=>levelStart(t,+b.dataset.lv));
+  trainerOpen(false,t);
+}
+function trainerOpen(on,t){
+  t=t||curTrain;
+  $('hubCustom').style.display=on?'block':'none';
+  $('hubFoot').style.display=on?'':'none';
+  if(t==='card') $('hubTop').style.display=on?'block':'none'; else $('hubTop').style.display='block';
+  const h=$('trainerHead'); if(h) h.classList.toggle('open',on);
+}
+
 function openSettings(){
   stopAll(); curTrain=null;
   const box=$('setList');
@@ -1034,16 +1247,20 @@ $('setBtn').innerHTML=ICON.gear+'<span>設定</span>';
 $('setBtn').onclick=openSettings;
 function goHome(){
   const box=$('homeList'); box.innerHTML='';
-  Object.keys(TRAININGS).forEach(t=>{
+  const lbl=txt=>{ const d=document.createElement('div'); d.className='seclbl homelbl'; d.textContent=txt; box.appendChild(d); };
+  const item=(t,badge,cls)=>{
     const T=TRAININGS[t];
     const b=document.createElement('button');
-    b.className='menu';
+    b.className='menu'+(cls?' '+cls:'');
     b.innerHTML=`<span class="ico">${ICON[T.icon]}</span>
-      <span class="t"><h2>${T.name}</h2><p>${T.desc}</p></span>
+      <span class="t"><h2>${T.name}${badge?`<span class="lvbadge">${badge}</span>`:''}</h2><p>${T.desc}</p></span>
       <span class="chev">${ICON.chev}</span>`;
     b.onclick=()=>openHub(t);
     box.appendChild(b);
-  });
+  };
+  lbl('まずはウォーミングアップ'); item('breath','','warm');
+  lbl('トレーニング'); LEVEL_TRAININGS.forEach(t=>item(t,'Lv.1〜10'));
+  lbl('開発中'); ['spot','step'].forEach(t=>item(t,'','dev'));
   show('home','NoTore','脳のトレーニング');
   curTrain=null;
 }
@@ -1064,13 +1281,25 @@ const QUICK_DESC={
   move  :'メトロノーム（4拍で1周・周の変わり目でテンポが変わる）と、秒数（4〜12秒のランダムを3セット連続）を交互に全6ラウンド。動きも毎回ランダム。同じテンポは1〜3周続いてから変わり、最後は1周の拍数もランダムになります。'
 };
 function openHub(t){
-  curTrain=t; const T=TRAININGS[t];
+  LVNOW=null; curTrain=t; const T=TRAININGS[t];
   renderCustom(t);
   $('quickDesc').textContent=QUICK_DESC[t];
   if(t==='card') flashKindUI(flashKindPref());
+  if(LEVEL_TRAININGS.includes(t)){ const qe=$('quickExtra').firstElementChild; if(qe && t==='mem') $('hubCustom').prepend(qe); }
+  else { $('quickTitle').textContent='設定なしではじめる'; $('quickStart').textContent='トレーニング開始'; }
+  levelHubRender(t);
   show('hub',T.name,T.desc);
 }
-$('quickStart').onclick=()=>{ if(curTrain) startAuto(curTrain); };
+$('quickStart').onclick=()=>{
+  if(!curTrain) return;
+  if(LEVEL_TRAININGS.includes(curTrain)){                        // はじめての方：呼吸（1分）→ レベル1
+    if(setPref('breath-first','1')==='1'){ LVNOW=null; runBreath({min:1,out:5,hold:5,in:5,count:'up',snd:'clock',minute:false,thenLv:{t:curTrain,lv:1}}); }
+    else levelStart(curTrain,1);
+    return;
+  }
+  LVNOW=null; startAuto(curTrain);
+};
+$('trainerHead').onclick=()=>trainerOpen($('hubCustom').style.display==='none');
 
 /* ============================================================
    Auto program — no setup, gets harder as it goes
@@ -1533,10 +1762,11 @@ function renderCustom(t){
   if(t==='move') moveModeUI(segVal('mMode'));
 }
 $('customStart').onclick=()=>{
+  LVNOW=null;
   if(curTrain==='arrow') runArrow({
     rule:segVal('aRule'), dirs:+segVal('aDirs'), cols:+segVal('aCols'),
     iv:+$('aIv').value, dur:+$('aDur').value, sets:+segVal('aSets'),
-    math:$('aMath').classList.contains('on'), rule:segVal('aMRule'), ignore:segVal('aMIgnore')!=='no',
+    math:$('aMath').classList.contains('on'), mrule:segVal('aMRule'), ignore:segVal('aMIgnore')!=='no',
     nrange:segVal('aMRange'), every:+segVal('aMEvery'), ncolors:cfgUI.aMColors.slice()
   });
   if(curTrain==='num') runNum({
@@ -1699,7 +1929,7 @@ function arrowSet(first){
   $('aClock').textContent=c.dur;
   if(c.math){                                       // このセットの暗算（数字の数＝矢印の数 ÷ 何回に1回）
     const arrows=Math.floor(c.dur/c.iv)+1;
-    A.m=mathBuild({ncolors:c.ncolors, mathQ:Math.max(2,Math.ceil(arrows/c.every)), nrange:c.nrange, rule:c.rule, ignore:c.ignore});
+    A.m=mathBuild({ncolors:c.ncolors, mathQ:Math.max(2,Math.ceil(arrows/c.every)), nrange:c.nrange, rule:c.mrule||'auto', ignore:c.ignore});
     A.ai=0; $('aNum').textContent='';
     $('aTag').innerHTML=A.baseTag+'　｜　'+A.m.tag;
   }
@@ -2286,8 +2516,8 @@ const SND={
 /* ---- voice ----
    まずは録音した声（voice/*.mp3）を Web Audio で鳴らす。ブラウザの読み上げ機能は
    ブラウザによって鳴らない（Brave など）ので、録音が読めないときだけ代わりに使う。 */
-const VOX_MAP={'はじめます':'hajime','吐きます':'haku','止めます':'tomeru','吸います':'suu','おわりです。ふつうの呼吸に戻しましょう':'owari','休憩':'kyukei','逆回し':'gyaku','おつかれさまでした':'otsukare','足首回し':'ankle','肩回し':'shoulder','手首回し':'wrist','腕回し':'arm','股関節回し':'hip','腰回し':'waist','ひざ回し':'knee','いち':'n1','に':'n2','さん':'n3','よん':'n4','ご':'n5','ろく':'n6','なな':'n7','はち':'n8','きゅう':'n9','じゅう':'n10','11':'n11','12':'n12','13':'n13','14':'n14','15':'n15','16':'n16','17':'n17','18':'n18','19':'n19','20':'n20','21':'n21','22':'n22','23':'n23','24':'n24','25':'n25','26':'n26','27':'n27','28':'n28','29':'n29','30':'n30','5秒':'s5','10秒':'s10','15秒':'s15','20秒':'s20','30秒':'s30','40秒':'s40','50秒':'s50','60秒':'s60','70秒':'s70','80秒':'s80','90秒':'s90','1拍で1周':'b1','2拍で1周':'b2','3拍で1周':'b3','4拍で1周':'b4','5拍で1周':'b5','6拍で1周':'b6','7拍で1周':'b7','8拍で1周':'b8','9拍で1周':'b9','10拍で1周':'b10','11拍で1周':'b11','12拍で1周':'b12','この呼吸で終わりです':'konokokyu','1分経過':'m1','2分経過':'m2','3分経過':'m3','4分経過':'m4','5分経過':'m5','6分経過':'m6','7分経過':'m7','8分経過':'m8','9分経過':'m9','10分経過':'m10','残り1分です':'r1','残り2分です':'r2','残り3分です':'r3','残り4分です':'r4','残り5分です':'r5','残り6分です':'r6','残り7分です':'r7','残り8分です':'r8','残り9分です':'r9','あか':'c_red','きいろ':'c_yellow','みどり':'c_green','あお':'c_blue','しろ':'c_white','オレンジ':'c_orange','むらさき':'c_purple','ピンク':'c_pink','みずいろ':'c_sky','おわりです':'owari2','1秒':'s1','2秒':'s2','3秒':'s3','4秒':'s4','6秒':'s6','7秒':'s7','8秒':'s8','9秒':'s9','11秒':'s11','12秒':'s12','13秒':'s13','14秒':'s14','16秒':'s16','17秒':'s17','18秒':'s18','19秒':'s19','21秒':'s21','22秒':'s22','23秒':'s23','24秒':'s24','25秒':'s25','26秒':'s26','27秒':'s27','28秒':'s28','29秒':'s29','左右ジャンプ':'st_lr','前後ジャンプ':'st_fb','右足ケンケン':'st_hopR','左足ケンケン':'st_hopL','グーパー':'st_gupa','開く・クロス':'st_cross','イン・イン・アウト・アウト':'st_inout','右足2歩・戻る':'st_walk2','シンコペーション':'st_sync','3拍子ステップ':'st_waltz','ランダム':'st_rand'};
-const VOICE_VER='kokoro5';   // 今の声（Kokoro）を作り直したら変える（古い声が残らないように）
+const VOX_MAP={'はじめます':'hajime','吐きます':'haku','止めます':'tomeru','吸います':'suu','おわりです。ふつうの呼吸に戻しましょう':'owari','休憩':'kyukei','逆回し':'gyaku','おつかれさまでした':'otsukare','足首回し':'ankle','肩回し':'shoulder','手首回し':'wrist','腕回し':'arm','股関節回し':'hip','腰回し':'waist','ひざ回し':'knee','いち':'n1','に':'n2','さん':'n3','よん':'n4','ご':'n5','ろく':'n6','なな':'n7','はち':'n8','きゅう':'n9','じゅう':'n10','11':'n11','12':'n12','13':'n13','14':'n14','15':'n15','16':'n16','17':'n17','18':'n18','19':'n19','20':'n20','21':'n21','22':'n22','23':'n23','24':'n24','25':'n25','26':'n26','27':'n27','28':'n28','29':'n29','30':'n30','5秒':'s5','10秒':'s10','15秒':'s15','20秒':'s20','30秒':'s30','40秒':'s40','50秒':'s50','60秒':'s60','70秒':'s70','80秒':'s80','90秒':'s90','1拍で1周':'b1','2拍で1周':'b2','3拍で1周':'b3','4拍で1周':'b4','5拍で1周':'b5','6拍で1周':'b6','7拍で1周':'b7','8拍で1周':'b8','9拍で1周':'b9','10拍で1周':'b10','11拍で1周':'b11','12拍で1周':'b12','この呼吸で終わりです':'konokokyu','1分経過':'m1','2分経過':'m2','3分経過':'m3','4分経過':'m4','5分経過':'m5','6分経過':'m6','7分経過':'m7','8分経過':'m8','9分経過':'m9','10分経過':'m10','残り1分です':'r1','残り2分です':'r2','残り3分です':'r3','残り4分です':'r4','残り5分です':'r5','残り6分です':'r6','残り7分です':'r7','残り8分です':'r8','残り9分です':'r9','あか':'c_red','きいろ':'c_yellow','みどり':'c_green','あお':'c_blue','しろ':'c_white','オレンジ':'c_orange','むらさき':'c_purple','ピンク':'c_pink','みずいろ':'c_sky','おわりです':'owari2','1秒':'s1','2秒':'s2','3秒':'s3','4秒':'s4','6秒':'s6','7秒':'s7','8秒':'s8','9秒':'s9','11秒':'s11','12秒':'s12','13秒':'s13','14秒':'s14','16秒':'s16','17秒':'s17','18秒':'s18','19秒':'s19','21秒':'s21','22秒':'s22','23秒':'s23','24秒':'s24','25秒':'s25','26秒':'s26','27秒':'s27','28秒':'s28','29秒':'s29','左右ジャンプ':'st_lr','前後ジャンプ':'st_fb','右足ケンケン':'st_hopR','左足ケンケン':'st_hopL','グーパー':'st_gupa','開く・クロス':'st_cross','イン・イン・アウト・アウト':'st_inout','右足2歩・戻る':'st_walk2','シンコペーション':'st_sync','3拍子ステップ':'st_waltz','ランダム':'st_rand','レベル1':'lv1','レベル2':'lv2','レベル3':'lv3','レベル4':'lv4','レベル5':'lv5','レベル6':'lv6','レベル7':'lv7','レベル8':'lv8','レベル9':'lv9','レベル10':'lv10','難問です':'nanmon','矢印と同じ方向を向きます':'r_ar_same','矢印と反対の方向を向きます':'r_ar_anti','矢印の色で向きが変わります':'r_ar_color','暗算もします':'r_math_too','数字を覚えてそのまま答えます':'r_num','数字を覚えて逆から答えます':'r_num_rev','文字を読みます':'r_st_read','インクの色を答えます':'r_st_color','一覧を順番にインクの色で答えます':'r_st_grid','背景の色でルールが変わります':'r_st_cell','音に合わせて大きく回します':'r_mv_metro','秒数のあいだ回し続けます':'r_mv_sec','音と秒数に合わせて回します':'r_mv_mix','左右で違う形をまねします':'r_hd','カチッという音で左右を入れ替えます':'r_hd_swap','数字の場所を覚えて1から順に押します':'r_mem','画面の色が変わるのを見ていましょう':'r_cd_color','お題の数を数えながら見ます':'r_cd_quiz','数字を頭の中で計算します':'r_cd_math','クリアです':'clear','難問クリアです':'clear10','次は':'tsugiwa','チャレンジしましょう':'challenge','もう一度チャレンジしましょう':'again'};
+const VOICE_VER='kokoro6';   // 今の声（Kokoro）を作り直したら変える（古い声が残らないように）
 // 声の種類。今の声は voice/ 直下、Gemini で作った声は voice/<id>/。どれだけ出来ているかは voice/voices.json（作る係が書く）
 const VOICE_SETS=[
   {id:'kokoro', n:'今の声', g:'',        dir:''},
@@ -3202,7 +3432,7 @@ function flashKindUI(k){
   show_('fCardBox',k==='card');
   const mathOn = k==='num' && $('fnMath') && $('fnMath').classList.contains('on');
   show_('cDurBox',!mathOn); show_('fCardHint',k==='card'); show_('fColorBox',k==='color'); show_('fNumBox',k==='num');
-  if(curTrain==='card') $('quickDesc').textContent=FLASH_QUICK[k];
+  if(curTrain==='card' && !LEVEL_TRAININGS.includes('card')) $('quickDesc').textContent=FLASH_QUICK[k];
 }
 const WALL_COLORS={
   red:{n:'赤',c:'#e53935'}, yellow:{n:'黄',c:'#fdd835'}, green:{n:'緑',c:'#43a047'}, blue:{n:'青',c:'#1e6fe0'},
@@ -3529,35 +3759,36 @@ function quizMake(c){
   const T=[];   // [重み, 作る関数]
   const two=a=>{ const x=pick(a); let y; do{ y=pick(a); }while(y===x); return [x,y]; };
   if(suits.length){
-    T.push([4,()=>{ const s=pick(suits); return {type:'count',q:`${qSuit(s)}は何回出る？`,t:x=>x.suit===s}; }]);
-    T.push([2,()=>{ const [a,b]=two(suits); return {type:'count',q:`${qSuit(a)}と${qSuit(b)}、あわせて何回？`,t:x=>x.suit===a||x.suit===b}; }]);
-    T.push([1,()=>{ const s=pick(suits); return {type:'count',q:`${qSuit(s)}<b>以外</b>は何回出る？`,t:x=>x.suit!==s}; }]);
-    T.push([2,()=>{ const [a,b]=two(suits); return {type:'count2',q:`${qSuit(a)}と${qSuit(b)}を、<b>別々に</b>数える`,labels:[qSuit(a),qSuit(b)],ts:[x=>x.suit===a,x=>x.suit===b]}; }]);
-    T.push([1,()=>({type:'count',q:'<b>同じ記号</b>が2回続いたのは何回？',t:(x,i,a)=>i>0&&a[i-1].suit===x.suit,streak:true})]);
-    T.push([1,()=>({type:'most',q:'いちばん多く出た<b>記号</b>はどれ？',key:'suit',opts:suits})]);
+    T.push(['suit',4,()=>{ const s=pick(suits); return {type:'count',q:`${qSuit(s)}は何回出る？`,t:x=>x.suit===s}; }]);
+    T.push(['suit2',2,()=>{ const [a,b]=two(suits); return {type:'count',q:`${qSuit(a)}と${qSuit(b)}、あわせて何回？`,t:x=>x.suit===a||x.suit===b}; }]);
+    T.push(['except',1,()=>{ const s=pick(suits); return {type:'count',q:`${qSuit(s)}<b>以外</b>は何回出る？`,t:x=>x.suit!==s}; }]);
+    T.push(['sep',2,()=>{ const [a,b]=two(suits); return {type:'count2',q:`${qSuit(a)}と${qSuit(b)}を、<b>別々に</b>数える`,labels:[qSuit(a),qSuit(b)],ts:[x=>x.suit===a,x=>x.suit===b]}; }]);
+    T.push(['streak',1,()=>({type:'count',q:'<b>同じ記号</b>が2回続いたのは何回？',t:(x,i,a)=>i>0&&a[i-1].suit===x.suit,streak:true})]);
+    T.push(['most',1,()=>({type:'most',q:'いちばん多く出た<b>記号</b>はどれ？',key:'suit',opts:suits})]);
   }
   if(colVary){
-    T.push([2,()=>{ const k=pick(cols); return {type:'count',q:`<b style="color:${CARD_COLORS[k].c}">${COL_ADJ[k]||CARD_COLORS[k].n+'の'}</b>記号は何回出る？`,t:x=>x.scol===k}; }]);
-    T.push([1,()=>({type:'count',q:'<b>同じ色</b>が2回続いたのは何回？',t:(x,i,a)=>i>0&&a[i-1].scol===x.scol,streak:true})]);
-    if(cols.length<=4) T.push([1,()=>({type:'most',q:'いちばん多く出た<b>色</b>はどれ？',key:'scol',opts:cols})]);
+    T.push(['col',2,()=>{ const k=pick(cols); return {type:'count',q:`<b style="color:${CARD_COLORS[k].c}">${COL_ADJ[k]||CARD_COLORS[k].n+'の'}</b>記号は何回出る？`,t:x=>x.scol===k}; }]);
+    T.push(['colstreak',1,()=>({type:'count',q:'<b>同じ色</b>が2回続いたのは何回？',t:(x,i,a)=>i>0&&a[i-1].scol===x.scol,streak:true})]);
+    if(cols.length<=4) T.push(['colmost',1,()=>({type:'most',q:'いちばん多く出た<b>色</b>はどれ？',key:'scol',opts:cols})]);
   }
   if(suits.length && colVary && !real){
-    T.push([4,()=>{ const k=pick(cols), s=pick(suits); return {type:'count',q:`${qColSuit(k,s)}は何回出る？`,t:x=>x.scol===k&&x.suit===s}; }]);
-    T.push([2,()=>{ const k=pick(cols); const [a,b]=two(suits); return {type:'count2',q:`${qColSuit(k,a)}と${qColSuit(k,b)}を、<b>別々に</b>数える`,labels:[qColSuit(k,a),qColSuit(k,b)],ts:[x=>x.scol===k&&x.suit===a,x=>x.scol===k&&x.suit===b]}; }]);
+    T.push(['colsuit',4,()=>{ const k=pick(cols), s=pick(suits); return {type:'count',q:`${qColSuit(k,s)}は何回出る？`,t:x=>x.scol===k&&x.suit===s}; }]);
+    T.push(['colsuit2',2,()=>{ const k=pick(cols); const [a,b]=two(suits); return {type:'count2',q:`${qColSuit(k,a)}と${qColSuit(k,b)}を、<b>別々に</b>数える`,labels:[qColSuit(k,a),qColSuit(k,b)],ts:[x=>x.scol===k&&x.suit===a,x=>x.scol===k&&x.suit===b]}; }]);
     if(cols.includes('red')||cols.includes('black'))
-      T.push([2,()=>({type:'count',q:'<b>本物のトランプと違う色</b>の記号は何回？<br><span style="font-size:.8em;opacity:.75">（本物はハート・ダイヤが赤、スペード・クラブが黒）</span>',t:x=>x.scol!==realCol(x.suit)})]);
+      T.push(['fake',2,()=>({type:'count',q:'<b>本物のトランプと違う色</b>の記号は何回？<br><span style="font-size:.8em;opacity:.75">（本物はハート・ダイヤが赤、スペード・クラブが黒）</span>',t:x=>x.scol!==realCol(x.suit)})]);
   }
   if(nums.length){
     const numeric=c.range!=='ak';
-    T.push([2,()=>({type:'count',q:'<b>偶数</b>のカードは何回出る？',t:x=>cardNumVal(x.num)%2===0})]);
-    T.push([1,()=>{ const v=pick(nums.slice(2,-2)); return {type:'count',q:`<b>${v}</b> より大きい数字は何回出る？`,t:x=>cardNumVal(x.num)>cardNumVal(v)}; }]);
-    if(!numeric) T.push([2,()=>({type:'count',q:'<b>絵札（J・Q・K）</b>は何回出る？',t:x=>['J','Q','K'].includes(x.num)})]);
-    if(suits.length) T.push([1,()=>{ const s=pick(suits); return {type:'count',q:`${qSuit(s)}の<b>偶数</b>は何回出る？`,t:x=>x.suit===s&&cardNumVal(x.num)%2===0}; }]);
+    T.push(['even',2,()=>({type:'count',q:'<b>偶数</b>のカードは何回出る？',t:x=>cardNumVal(x.num)%2===0})]);
+    T.push(['gt',1,()=>{ const v=pick(nums.slice(2,-2)); return {type:'count',q:`<b>${v}</b> より大きい数字は何回出る？`,t:x=>cardNumVal(x.num)>cardNumVal(v)}; }]);
+    if(!numeric) T.push(['face',2,()=>({type:'count',q:'<b>絵札（J・Q・K）</b>は何回出る？',t:x=>['J','Q','K'].includes(x.num)})]);
+    if(suits.length) T.push(['suiteven',1,()=>{ const s=pick(suits); return {type:'count',q:`${qSuit(s)}の<b>偶数</b>は何回出る？`,t:x=>x.suit===s&&cardNumVal(x.num)%2===0}; }]);
   }
-  if(!T.length) return null;
-  let r=Math.random()*T.reduce((a,x)=>a+x[0],0);
-  for(const [w,f] of T){ if((r-=w)<0) return f(); }
-  return T[T.length-1][1]();
+  let TT=c.qk?T.filter(x=>c.qk.includes(x[0])):T; if(!TT.length) TT=T;   // レベルでお題の型をしぼる
+  if(!TT.length) return null;
+  let r=Math.random()*TT.reduce((a,x)=>a+x[1],0);
+  for(const [k,w,f] of TT){ if((r-=w)<0) return f(); }
+  return TT[TT.length-1][2]();
 }
 const quizPlain=q=>q.q.replace(/<br>.*$/,'').replace(/<[^>]+>/g,'');
 function quizAnswer(q,seen){
@@ -4006,6 +4237,7 @@ const stepAutoCfg=()=>({drills:['lr','fb','hopR','hopL','gupa','cross','inout','
 let last=null;
 const TYPE_NAME={step:'リズムステップ',spot:'丸タッチ',arrow:'方向トレーニング',num:'数字記憶',stroop:'ストループ',voice:'ストループ（音声）',grid:'ストループ 一覧',move:'リズム運動',hands:'左右の手まね',breath:'呼吸調整',mem:'数字の位置記憶',card:'フラッシュ'};
 function finish(r){
+  if(r.type==='breath' && r.cfg && r.cfg.thenLv){ const x=r.cfg.thenLv; levelStart(x.t,x.lv); return; }   // 呼吸のあと、そのままレベル1へ
   last=r;
   if(r.celebrate){
     const cb=r.celebrate, R=58, C=2*Math.PI*R, o=C*(1-cb.hits/cb.total);
@@ -4032,10 +4264,13 @@ function finish(r){
         ${l.ok?'':`<span class="qb tnum">${l.ans||'—'}</span>`}</div>`).join('')
     : '';
   show('results','結果', TYPE_NAME[r.type]||'');
+  levelResult(r);
 }
 $('rHome').onclick=()=>{ stopAll(); stopProg(); goHome(); };
 $('rAgain').onclick=()=>{
   if(!last) return;
+  if(last.cfg && last.cfg.lv){ levelStart(last.cfg.lvT,last.cfg.lv); return; }
+  LVNOW=null;
   if(last.autoType) startAuto(last.autoType);   // build a fresh random program
   else rerun(last.type,last.cfg);
 };
@@ -4064,7 +4299,7 @@ goHome();
    Version check — 古い保存済みの画面が出ていたら、新しい版に切り替える
    （GitHub Pages は更新後しばらく古い版を返すことがあるため）
    ============================================================ */
-const APP_VER='2026-11-06 02:20';   // 更新のたびにこの日時を書き換える
+const APP_VER='2026-11-06 10:00';   // 更新のたびにこの日時を書き換える
 $('appVer').textContent='更新 '+APP_VER;
 (function checkVer(){
   if(location.protocol==='file:') return;
