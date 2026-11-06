@@ -562,6 +562,11 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 .fnum{display:none;font-size:min(62vw,52vh,340px);font-weight:700;line-height:1;letter-spacing:-.03em;font-family:-apple-system,"Helvetica Neue",Arial,sans-serif}
 .fnum.flip{animation:flip .14s ease-out}
 .fwall{position:fixed;inset:0;z-index:50}
+.fwall-ov{position:absolute;inset:0;display:grid;place-items:center;pointer-events:none;font-weight:800;line-height:1;text-align:center;
+  font-family:-apple-system,"Hiragino Sans","Helvetica Neue",Arial,sans-serif;letter-spacing:-.02em}
+.fwall-ov .wcard{height:min(64vh,560px);aspect-ratio:5/7;max-width:80vw;background:#fff;border-radius:6%/4.3%;box-shadow:0 10px 30px rgba(0,0,0,.28);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4%;container-type:size}
+.fwall-ov.flip>*{animation:flip .14s ease-out}
 .fwall-x{position:absolute;top:max(14px,env(safe-area-inset-top));left:14px;width:40px;height:40px;border-radius:50%;border:none;
   background:rgba(0,0,0,.28);color:#fff;font-size:22px;line-height:1;cursor:pointer}
 .fwall-hud{position:absolute;top:max(20px,env(safe-area-inset-top));right:16px;display:flex;gap:12px;padding:6px 12px;border-radius:999px;
@@ -878,6 +883,7 @@ body.proj .hud{font-size:15px}
     <!-- カラー：画面いっぱいに色だけを出す -->
     <div class="fwall" id="cWall" style="display:none">
       <button class="fwall-x" id="cWallX" aria-label="やめる">×</button>
+      <div class="fwall-ov" id="cWallOv"></div>
       <div class="fwall-hud"><span>残り <b class="tnum" id="cWallLeft">60</b>s</span><span><b class="tnum" id="cWallCount">0</b>枚</span></div>
     </div>
   </section>
@@ -1186,16 +1192,16 @@ const LEVELS={
     {t:'秒数ランダム4〜12秒を10セット連続', say:'秒数のあいだ回し続けます', cfg:{...MOVE_BASE, mode:'sec', secMode:'rand', secSets:10, count:'voice', rounds:3}},
     {t:'全部まぜる・8ラウンド',          say:'音と秒数に合わせて回します', cfg:{...MOVE_BASE, mode:'mix', range:'wide', bpmStep:30, gap:'every', rounds:8, flip:true, beatsRand:true, secMode:'rand'}}
   ],
-  hands:[
-    {t:'数字の形・入れ替えなし・ゆっくり', say:'左右で違う形をまねします', cfg:{set:'num',show:'art',spd:'s58',swap:0,  dur:30,sets:1,names:false,beep:true}},
-    {t:'数字の形・入れ替えなし',           say:'左右で違う形をまねします', cfg:{set:'num',show:'art',spd:'slow',swap:0, dur:30,sets:1,names:false,beep:true}},
-    {t:'数字の形・2秒ごとに左右入れ替え',  say:'左右で違う形をまねします、カチッという音で左右を入れ替えます', cfg:{set:'num',show:'art',spd:'s58',swap:2,  dur:30,sets:1,names:false,beep:true}},
-    {t:'数字の形・1.5秒ごとに入れ替え',    say:'左右で違う形をまねします、カチッという音で左右を入れ替えます', cfg:{set:'num',show:'art',spd:'s46',swap:1.5,dur:30,sets:1,names:false,beep:true}},
-    {t:'いろんなポーズ・入れ替えなし',     say:'左右で違う形をまねします', cfg:{set:'all',show:'art',spd:'s46',swap:0,  dur:30,sets:1,names:true, beep:true}},
-    {t:'いろんなポーズ・2秒ごとに入れ替え',say:'左右で違う形をまねします、カチッという音で左右を入れ替えます', cfg:{set:'all',show:'art',spd:'s46',swap:2,  dur:30,sets:1,names:true, beep:true}},
-    {t:'数字で出す・1.5秒ごとに入れ替え',  say:'左右で違う形をまねします、カチッという音で左右を入れ替えます', cfg:{set:'num',show:'num',spd:'s46',swap:1.5,dur:30,sets:1,names:false,beep:true}},
-    {t:'絵と数字をまぜる・1秒ごと',        say:'左右で違う形をまねします、カチッという音で左右を入れ替えます', cfg:{set:'all',show:'mix',spd:'s46',swap:1,  dur:30,sets:1,names:false,beep:true}},
-    {t:'いろんなポーズ・1秒ごと・お題も速く',say:'左右で違う形をまねします、カチッという音で左右を入れ替えます', cfg:{set:'all',show:'art',spd:'mid',swap:1,  dur:30,sets:1,names:false,beep:true}},
+  hands:[   // 2026-11-06：どのレベルも同じお題のあいだに左右の入れ替えがある（入れ替えなしだと「ずっと同じ」に見える・持ち主の指摘）
+    {t:'数字の形・2秒ごとに左右入れ替え',     say:'左右で違う形をまねします、カチッという音で左右を入れ替えます', cfg:{set:'num',show:'art',spd:'s58',swap:2,  dur:30,sets:1,names:false,beep:true}},
+    {t:'数字の形・2秒ごと・お題4〜6秒',       say:'左右で違う形をまねします、カチッという音で左右を入れ替えます', cfg:{set:'num',show:'art',spd:'s46',swap:2,  dur:30,sets:1,names:false,beep:true}},
+    {t:'数字の形・1.5秒ごとに入れ替え',       say:'左右で違う形をまねします、カチッという音で左右を入れ替えます', cfg:{set:'num',show:'art',spd:'s58',swap:1.5,dur:30,sets:1,names:false,beep:true}},
+    {t:'数字の形・1.5秒ごと・お題4〜6秒',     say:'左右で違う形をまねします、カチッという音で左右を入れ替えます', cfg:{set:'num',show:'art',spd:'s46',swap:1.5,dur:30,sets:1,names:false,beep:true}},
+    {t:'いろんなポーズ・2秒ごとに入れ替え',   say:'左右で違う形をまねします、カチッという音で左右を入れ替えます', cfg:{set:'all',show:'art',spd:'s58',swap:2,  dur:30,sets:1,names:true, beep:true}},
+    {t:'いろんなポーズ・1.5秒ごと',           say:'左右で違う形をまねします、カチッという音で左右を入れ替えます', cfg:{set:'all',show:'art',spd:'s46',swap:1.5,dur:30,sets:1,names:true, beep:true}},
+    {t:'数字で出す・1.5秒ごとに入れ替え',     say:'左右で違う形をまねします、カチッという音で左右を入れ替えます', cfg:{set:'num',show:'num',spd:'s46',swap:1.5,dur:30,sets:1,names:false,beep:true}},
+    {t:'絵と数字をまぜる・1秒ごと',           say:'左右で違う形をまねします、カチッという音で左右を入れ替えます', cfg:{set:'all',show:'mix',spd:'s46',swap:1,  dur:30,sets:1,names:false,beep:true}},
+    {t:'いろんなポーズ・1秒ごと・お題も速く', say:'左右で違う形をまねします、カチッという音で左右を入れ替えます', cfg:{set:'all',show:'art',spd:'mid',swap:1,  dur:30,sets:1,names:false,beep:true}},
     {t:'絵と数字・1秒ごと・お題がどんどん変わる',say:'左右で違う形をまねします、カチッという音で左右を入れ替えます', cfg:{set:'all',show:'mix',spd:'fast',swap:1, dur:30,sets:1,names:false,beep:true}}
   ],
   mem:[
@@ -1732,6 +1738,7 @@ function renderCustom(t){
       </div>
       <div id="fColorBox">
         <div class="row"><span class="lbl">使う色</span>${chips('fwColors',WALL_COLOR_CHIPS(),['red','yellow','green','blue'])}</div>
+        <div class="row"><span class="lbl">色の上に出すもの</span>${chips('fwOver',Object.keys(WALL_OVER).map(k=>({v:k,l:WALL_OVER[k]})),['none'])}</div>
         <div class="hint">画面いっぱいが、選んだ色の中からランダムに切り替わります（同じ色は続けて出ません）。左上の × でやめられます。</div>
       </div>
       <div id="fNumBox">
@@ -1910,7 +1917,7 @@ $('customStart').onclick=()=>{
     speedup:$('jSpeed').classList.contains('on'), voice:$('jVoice').classList.contains('on'), stepSound:$('jStepSnd').classList.contains('on')
   });
   if(curTrain==='card') runCard({
-    kind:segVal('fKind')||flashKindPref(), wallColors:cfgUI.fwColors.slice(), nrange:segVal('fnRange'),
+    kind:segVal('fKind')||flashKindPref(), wallColors:cfgUI.fwColors.slice(), wallOver:(cfgUI.fwOver||['none']).slice(), nrange:segVal('fnRange'),
     nchange:cfgUI.fnChange.slice(), ncolors:cfgUI.fnColors.slice(),
     math:$('fnMath').classList.contains('on'), rule:segVal('fnRule'), mathQ:+segVal('fnQ'), ignore:segVal('fnIgnore')!=='no',
     timing:segVal('cTiming'), iv:+segVal('cIv'), rand:segVal('cRand'), change:cfgUI.cChange.slice(),
@@ -3049,7 +3056,7 @@ const HAND_POSES={
 // 外で作った絵（Codex など）に差し替えるときは「ポーズ記号: 画像の場所」を書く。
 // 右手の絵を用意すれば、左手は左右反転して使う。 例: g:'hands/g.png'
 // 2026-11-06：12ポーズとも Codex（ChatGPT の画像生成）で描いた右手の甲の絵に差し替え（img/hands/）
-const HAND_IMG_VER='2';
+const HAND_IMG_VER='3';   // 3：「3」「グッド」に誤ったガンマ値(2.2)が入っていて白っぽく出ていたので、全部の絵から色の付帯情報を外した
 const HAND_IMAGES=Object.fromEntries(Object.keys(HAND_POSES).map(k=>[k,`img/hands/${k}.png?v=${HAND_IMG_VER}`]));
 // 絵は手まねを始めたときに先に読んでおく（出た瞬間に白くならないように）
 let HAND_PRELOADED=false;
@@ -3094,6 +3101,7 @@ function handArt(key,side){
 }
 const HAND_SPEED={fast:[1.5,3], mid:[2,4], slow:[3,5], s46:[4,6], s58:[5,8]};
 const HAND_SPEED_JP={fast:'1.5〜3秒', mid:'2〜4秒', slow:'3〜5秒', s46:'4〜6秒', s58:'5〜8秒'};
+const HAND_EASY=new Set(['g','p4','p5']);   // グー・4・5（パー）
 const handPool=set=>Object.keys(HAND_POSES).filter(k=>set==='all'||HAND_POSES[k].num);
 
 /* ============================================================
@@ -3164,8 +3172,9 @@ function handsRender(pop){
 function handsNext(){
   if(!H) return;
   const p=H.pool, c=H.cfg; let L,R,n=0;
+  // グー・パー（4と5）だけの組み合わせは作りやすいので、出る回数を減らす（3割だけ通す）
   do{ L=p[rnd(p.length)]; R=p[rnd(p.length)]; n++; }
-  while((L===R || (L===H.L && R===H.R)) && n<100);
+  while((L===R || (L===H.L && R===H.R) || (HAND_EASY.has(L) && HAND_EASY.has(R) && Math.random()>0.3)) && n<100);
   const chL=L!==H.L, chR=R!==H.R;
   H.L=L; H.R=R; H.count++; H.flip=false;
   H.numL = c.show==='num' || (c.show==='mix' && Math.random()<0.5);
@@ -4165,6 +4174,33 @@ const WALL_COLORS={
   white:{n:'白',c:'#ffffff'}, black:{n:'黒',c:'#111111'}, orange:{n:'橙',c:'#fb8c00'}, purple:{n:'紫',c:'#8e24aa'},
   pink:{n:'桃',c:'#f48fb1'}, sky:{n:'水色',c:'#4fc3f7'}
 };
+// カラーの上に重ねるもの（2026-11-06 持ち主の依頼：色・方向の字・体の部位・数字・トランプをまぜる）
+const WALL_OVER={none:'色だけ', dir:'方向', body:'体の部位', num:'数字', card:'トランプ'};
+const WALL_DIRS=['右','左','上','下','斜め上','斜め下'];
+const WALL_BODY=['頭','顔','右手','左手','右足','左足'];
+const WALL_DARK=['black','blue','purple','green','red'];
+const wallOverKinds=c=>{ const k=(c.wallOver||[]).filter(x=>WALL_OVER[x]); return k.length?k:['none']; };
+function wallOverPick(c,prev){
+  const ks=wallOverKinds(c); let o,n=0;
+  do{
+    const k=pick(ks);
+    if(k==='dir') o={k,t:pick(WALL_DIRS)};
+    else if(k==='body') o={k,t:pick(WALL_BODY)};
+    else if(k==='num') o={k,t:String(1+rnd(10))};
+    else if(k==='card'){ const su=pick(Object.keys(SUITS)); o={k,t:pick(CARD_RANGE.ak.v)+su,su,num:null}; o.num=o.t.slice(0,-su.length); }
+    else o={k:'none',t:''};
+    n++;
+  }while(prev && o.t && o.t===prev.t && n<30);   // 同じ字は続けて出さない
+  return o;
+}
+function wallOverHtml(o,wall){
+  const fg=WALL_DARK.includes(wall)?'#fff':'#111';
+  if(o.k==='card'){ const col=SUITS[o.su].red?CARD_COLORS.red.c:CARD_COLORS.black.c;
+    return `<div class="wcard"><div class="cnum tnum" style="color:${col}">${o.num}</div>${suitSvg(o.su,col,'csuit')}</div>`; }
+  if(o.k==='none') return '';
+  const L=o.t.length, fs=L<=1?'min(58vw,62vh)':L===2?'min(40vw,48vh)':'min(28vw,38vh)';
+  return `<div class="${o.k==='num'?'tnum':''}" style="font-size:${fs};color:${fg}">${o.t}</div>`;
+}
 const WALL_COLOR_CHIPS=()=>Object.keys(WALL_COLORS).map(k=>({v:k,l:`<span class="cdot" style="background:${WALL_COLORS[k].c}"></span>${WALL_COLORS[k].n}`}));
 function numOnlyValues(r){
   if(r==='d9') return [...Array(10)].map((_,i)=>String(i));
@@ -4188,7 +4224,7 @@ function runCard(cfg){
   stopAll(); if(cfg.beep) audioOn();
   C={cfg, count:0, cur:null, stops:[], to:null, clock:null, seen:[], quiz:null};
   $('cLeft').textContent=cfg.dur; $('cCount').textContent='0'; $('cIvLbl').textContent=cardIvTxt(cfg);
-  $('cCard').innerHTML=''; $('cCard').style.visibility='hidden'; $('cNumOnly').textContent='';
+  $('cCard').innerHTML=''; $('cCard').style.visibility='hidden'; $('cNumOnly').textContent=''; $('cWallOv').innerHTML='';
   const kind=flashKindOf(cfg);
   $('cField').className='field mode-'+kind;
   show('playCard','フラッシュ', FLASH_KINDS[flashKindOf(cfg)]+' ・ '+cardIvTxt(cfg)+' ・ '+cfg.dur+'秒');
@@ -4200,6 +4236,7 @@ function runCard(cfg){
       title:'画面の色がパッと切り替わる',
       sub:`${cardIvTxt(cfg)}に、画面いっぱいの色が変わります（${cfg.wallColors.length}色）。左上の × でやめられます。`,
       ex:`<div class="prep-ex">${cfg.wallColors.map(k=>`<span class="cdot" style="width:22px;height:22px;margin:0;background:${WALL_COLORS[k].c}"></span>`).join('')}</div>`
+        +(wallOverKinds(cfg).some(k=>k!=='none')?`<div class="prep-ex" style="font-size:26px;font-weight:800;gap:14px">${wallOverKinds(cfg).filter(k=>k!=='none').map(k=>`<span>${({dir:'右',body:'右手',num:'7',card:'♠'})[k]}</span>`).join('')}</div>`:'')
     } : kind==='num' ? {
       title:'数字がパッと切り替わる',
       sub:`${cardIvTxt(cfg)}に、${cfg.nchange.map(x=>x==='num'?'数字':'色').join('と')}が変わります。`,
@@ -4427,6 +4464,9 @@ function flashNext(){
   if(kind==='color'){
     do{ st.wall=pick(c.wallColors); n++; }while(c.wallColors.length>1 && st.wall===prev.wall && n<30);
     $('cWall').style.background=WALL_COLORS[st.wall].c;
+    st.ov=wallOverPick(c,prev.ov);
+    const ov=$('cWallOv'); ov.innerHTML=wallOverHtml(st.ov,st.wall);
+    ov.classList.remove('flip'); void ov.offsetWidth; ov.classList.add('flip');
     const dark=['black','blue','purple','green','red'].includes(st.wall);
     $('cWallX').style.background=$('cWall').querySelector('.fwall-hud').style.background=dark?'rgba(255,255,255,.22)':'rgba(0,0,0,.28)';
   }else{
@@ -4589,7 +4629,7 @@ function cardDone(early){
     quizAsk(); return;
   }
   const c=C.cfg, n=C.count, kind=flashKindOf(c); stopCard();
-  const what = kind==='color' ? ['色',c.wallColors.length+'色'] : kind==='num' ? ['変わったもの',c.nchange.map(x=>x==='num'?'数字':'色').join('・')] : ['変わったもの',cardChangeTxt(c)];
+  const what = kind==='color' ? ['色',c.wallColors.length+'色'+(wallOverKinds(c).some(k=>k!=='none')?'・'+wallOverKinds(c).map(k=>WALL_OVER[k]).join('・'):'')] : kind==='num' ? ['変わったもの',c.nchange.map(x=>x==='num'?'数字':'色').join('・')] : ['変わったもの',cardChangeTxt(c)];
   finish({ type:'card', cfg:c, title:early?'途中で終了':'完了', note:'おつかれさまでした',
     stats:[[kind==='color'?'見た色':kind==='num'?'見た数字':'見たカード',n+'枚'],['種類',FLASH_KINDS[kind]],['切り替え',cardIvTxt(c)],what] });
 }
@@ -5028,7 +5068,7 @@ goHome();
    Version check — 古い保存済みの画面が出ていたら、新しい版に切り替える
    （GitHub Pages は更新後しばらく古い版を返すことがあるため）
    ============================================================ */
-const APP_VER='2026-11-06 19:00';   // 更新のたびにこの日時を書き換える
+const APP_VER='2026-11-06 16:55';   // 更新のたびにこの日時を書き換える
 $('appVer').textContent='更新 '+APP_VER;
 (function checkVer(){
   if(location.protocol==='file:') return;
