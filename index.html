@@ -1108,16 +1108,16 @@ const LEVELS={
     {t:'絵と数字・1秒ごと・お題がどんどん変わる',say:'左右で違う形をまねします、カチッという音で左右を入れ替えます', cfg:{set:'all',show:'mix',spd:'fast',swap:1, dur:30,sets:1,names:false,beep:true}}
   ],
   mem:[
-    {t:'3個・マス小・白い四角', say:'数字の場所を覚えて1から順に押します', cfg:{count:3, grid:'s',after:'square',total:10}},
-    {t:'4個・マス小',           say:'数字の場所を覚えて1から順に押します', cfg:{count:4, grid:'s',after:'square',total:10}},
-    {t:'5個・マス中',           say:'数字の場所を覚えて1から順に押します', cfg:{count:5, grid:'m',after:'square',total:10}},
-    {t:'6個・マス中',           say:'数字の場所を覚えて1から順に押します', cfg:{count:6, grid:'m',after:'square',total:10}},
-    {t:'6個・枠だけ（四角なし）',say:'数字の場所を覚えて1から順に押します', cfg:{count:6, grid:'m',after:'blank', total:10}},
-    {t:'7個・マス中',           say:'数字の場所を覚えて1から順に押します', cfg:{count:7, grid:'m',after:'square',total:10}},
-    {t:'8個・マス大',           say:'数字の場所を覚えて1から順に押します', cfg:{count:8, grid:'l',after:'square',total:10}},
-    {t:'9個・マス大',           say:'数字の場所を覚えて1から順に押します', cfg:{count:9, grid:'l',after:'square',total:10}},
-    {t:'10個・枠だけ',          say:'数字の場所を覚えて1から順に押します', cfg:{count:10,grid:'l',after:'blank', total:10}},
-    {t:'12個・マス大・枠だけ',  say:'数字の場所を覚えて1から順に押します', cfg:{count:12,grid:'l',after:'blank', total:10}}
+    {t:'5個・マス中', say:'数字の場所を覚えて1から順に押します', cfg:{count:5, grid:'m',after:'square',total:10}},
+    {t:'6個・マス中', say:'数字の場所を覚えて1から順に押します', cfg:{count:6, grid:'m',after:'square',total:10}},
+    {t:'7個・マス中', say:'数字の場所を覚えて1から順に押します', cfg:{count:7, grid:'m',after:'square',total:10}},
+    {t:'7個・枠だけ', say:'数字の場所を覚えて1から順に押します', cfg:{count:7, grid:'m',after:'blank',total:10}},
+    {t:'8個・マス大', say:'数字の場所を覚えて1から順に押します', cfg:{count:8, grid:'l',after:'square',total:10}},
+    {t:'8個・マス大・枠だけ', say:'数字の場所を覚えて1から順に押します', cfg:{count:8, grid:'l',after:'blank',total:10}},
+    {t:'9個・枠だけ', say:'数字の場所を覚えて1から順に押します', cfg:{count:9, grid:'l',after:'blank',total:10}},
+    {t:'10個・枠だけ', say:'数字の場所を覚えて1から順に押します', cfg:{count:10, grid:'l',after:'blank',total:10}},
+    {t:'12個・枠だけ', say:'数字の場所を覚えて1から順に押します', cfg:{count:12, grid:'l',after:'blank',total:10}},
+    {t:'14個・枠だけ', say:'数字の場所を覚えて1から順に押します', cfg:{count:14, grid:'l',after:'blank',total:10}}
   ],
   card:[
     {t:'カラー4色・3秒ごと',               say:'画面の色が変わるのを見ていましょう', cfg:{kind:'color',timing:'fixed',iv:3,rand:'r15',dur:30,beep:false,wallColors:['red','yellow','green','blue']}},
@@ -4292,7 +4292,7 @@ goHome();
    Version check — 古い保存済みの画面が出ていたら、新しい版に切り替える
    （GitHub Pages は更新後しばらく古い版を返すことがあるため）
    ============================================================ */
-const APP_VER='2026-11-06 14:30';   // 更新のたびにこの日時を書き換える
+const APP_VER='2026-11-06 14:45';   // 更新のたびにこの日時を書き換える
 $('appVer').textContent='更新 '+APP_VER;
 (function checkVer(){
   if(location.protocol==='file:') return;
