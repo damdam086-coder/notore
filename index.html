@@ -147,7 +147,7 @@ button{font-family:inherit;color:inherit}
 .row:last-child{border-bottom:none}
 .row .lbl{font-size:16px;font-weight:500;white-space:nowrap}
 .row .val{font-size:15px;font-weight:650;color:var(--accent)}
-.hint{font-size:14.5px;color:var(--text-3);line-height:1.6;margin-top:var(--s2)}
+.hint{display:none!important;font-size:14.5px;color:var(--text-3);line-height:1.6;margin-top:var(--s2)}
 
 .seg{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;flex:1 1 auto}
 .seg button{
@@ -329,12 +329,13 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 /* quick-start (auto program) card */
 .quick{margin-bottom:var(--s4)}
 /* レベル */
-.lvgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin-bottom:var(--s4)}
-.lvbtn{display:flex;flex-direction:column;align-items:flex-start;gap:3px;padding:12px 14px;border-radius:var(--r2);border:1px solid var(--line-2);background:var(--surface);text-align:left;cursor:pointer;color:var(--text)}
+.lvgrid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:var(--s4)}
+@media (max-width:520px){.lvgrid{grid-template-columns:repeat(3,1fr)}}
+.lvbtn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-height:68px;padding:10px 6px;border-top:5px solid var(--lc)!important;border-radius:var(--r2);border:1px solid var(--line-2);background:var(--surface);text-align:left;cursor:pointer;color:var(--text)}
 .lvbtn:active{transform:scale(.98)}
-.lvn{font-size:21px;font-weight:800;color:var(--accent);line-height:1.1}
+.lvn{font-size:22px;font-weight:800;color:var(--lc);line-height:1.1}
 .lvt{font-size:14px;line-height:1.4;color:var(--text-2)}
-.lvbtn.hard{border-color:var(--gold)} .lvbtn.hard .lvn{color:var(--gold)}
+.lvbtn.hard{border-color:var(--gold);--lc:var(--gold);grid-column:span 1} .lvbtn.hard .lvn{color:var(--gold)}
 .lvbadge{font-size:12px;font-weight:700;color:var(--accent);background:var(--accent-soft);padding:2px 8px;border-radius:999px;margin-left:8px;vertical-align:2px;white-space:nowrap}
 .trainerhead{display:flex;align-items:center;gap:10px;width:100%;padding:14px 16px;margin:4px 0 var(--s3);border-radius:var(--r2);border:1px dashed var(--line-2);background:none;color:var(--text-2);font-size:16px;font-weight:700;cursor:pointer;text-align:left}
 .trainerhead .th-sub{font-size:13px;font-weight:500;color:var(--text-3)}
@@ -356,9 +357,9 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 .lvres-s b{color:var(--accent)}
 .lvnext{margin-top:var(--s4)}
 
-.quick .qk{font-size:11px;font-weight:700;letter-spacing:.14em;color:var(--accent)}
-.quick .qt{margin:6px 0 0;font-size:23px;font-weight:700;letter-spacing:.01em}
-.quick .qp{margin:8px 0 var(--s4);font-size:15.5px;color:var(--text-3);line-height:1.65}
+.quick .qk{display:none;font-size:11px;font-weight:700;letter-spacing:.14em;color:var(--accent)}
+.quick .qt{margin:0 0 var(--s4);font-size:23px;font-weight:700;letter-spacing:.01em}
+.quick .qp{display:none;margin:8px 0 var(--s4);font-size:15.5px;color:var(--text-3);line-height:1.65}
 .seclbl{font-size:13px;font-weight:700;letter-spacing:.1em;color:var(--text-2);margin:0 0 var(--s2) 2px}
 
 /* stage break */
@@ -670,7 +671,7 @@ body.proj .hud{font-size:15px}
         <div class="seclbl">レベルを選んでチャレンジ</div>
         <div class="lvgrid" id="hubLevels"></div>
       </div>
-      <button class="trainerhead" id="trainerHead" style="display:none"><span>トレーナーが設定する</span><span class="th-sub">細かい設定</span><span class="chev"></span></button>
+      <button class="trainerhead" id="trainerHead" style="display:none"><span>トレーナーが設定する</span><span class="chev"></span></button>
       <div class="seclbl" id="customLbl">自分で設定する</div>
       <div id="hubCustom"></div>
     </div>
@@ -1143,7 +1144,7 @@ function levelStart(t,lv){
     $('nProg').textContent=`1/${cfg.total}`; $('nHits').textContent='0'; $('nMode').textContent=cfg.rev?'逆唱':'通常'; $('nBelow').innerHTML='';
     $('nField').innerHTML='<div class="veil" id="nVeil"></div>';
     veilPrepare($('nVeil'),{title:cfg.rev?'逆から答える':'そのまま答える',
-      sub:`${cfg.dig}桁の数字が ${cfg.t}秒 出ます。消えたら${cfg.rev?'<b>逆から</b>':'そのまま'}入力します。全${cfg.total}問・${Math.ceil(cfg.total*2/3)}問正解でクリア。`},()=>{ if(LVNOW) runNum(cfg); });
+      ex:`<div class="qtext" style="margin-top:8px">${cfg.dig}桁</div>`},()=>{ if(LVNOW) runNum(cfg); });
   }
   else if(t==='stroop') (L.grid?runGrid:runStroop)(cfg);
   else if(t==='move') runMove(cfg);
@@ -1154,7 +1155,6 @@ function levelStart(t,lv){
   const prep=document.querySelector('.screen.on .veil .prep');
   if(prep){
     const k=prep.querySelector('.prep-k'); if(k){ k.textContent=lvName(lv); k.classList.add('lvk'); }
-    const tt=prep.querySelector('.prep-t'); if(tt && !prep.querySelector('.lvsay')) tt.insertAdjacentHTML('afterend',`<div class="lvsay">${L.say.replace(/、/g,'。<br>')}</div>`);
   }
   say([`レベル${lv}`, ...(lv===10?['難問です']:[]), ...L.say.split('、')].join('、'),true);
 }
@@ -1177,8 +1177,7 @@ function levelResult(r){
   box.innerHTML=`<div class="lvres ${ok?'ok':''}">
       <div class="lvres-k">${lvName(lv)}</div>
       <div class="lvres-t">${ok?(lv===10?'難問クリア！':'クリア！'):'もう一度チャレンジしましょう'}</div>
-      ${ok&&lv<10?`<div class="lvres-s">次は <b>レベル${nx}</b> にチャレンジしましょう</div>
-        <button class="btn lvnext" id="lvNext">レベル${nx}にチャレンジ</button>`:''}
+      ${ok&&lv<10?`<button class="btn lvnext" id="lvNext">レベル${nx}にチャレンジ</button>`:''}
     </div>`;
   $('rAgain').textContent=`もう一度（レベル${lv}）`;
   const b=$('lvNext'); if(b) b.onclick=()=>levelStart(t,nx);
@@ -1192,13 +1191,10 @@ function levelHubRender(t){
   $('customLbl').style.display=isL?'none':'block';
   if(!isL){ trainerOpen(true,t); return; }
   $('quickTitle').textContent='設定なしで始める';
-  $('quickDesc').textContent='はじめての方はここから。レベル1から始めます。';
-  $('quickStart').textContent='はじめる（レベル1）';
-  const bp=setPref('breath-first','1')==='1';
-  $('quickExtra').innerHTML=`<div class="row" style="border:none;padding:0 0 var(--s3)"><span class="lbl">最初に呼吸で整える（1分）</span><button class="toggle${bp?' on':''}" id="breathFirst"></button></div>`;
-  $('breathFirst').onclick=()=>{ const on=!$('breathFirst').classList.contains('on'); $('breathFirst').classList.toggle('on',on); setSave('breath-first',on?'1':'0'); };
-  lv.innerHTML=LEVELS[t].map((L,i)=>`<button class="lvbtn${i===9?' hard':''}" data-lv="${i+1}">
-      <span class="lvn">${i===9?'難問':'Lv.'+(i+1)}</span><span class="lvt">${L.t}</span></button>`).join('');
+  $('quickStart').textContent='トレーニング開始';
+  $('quickExtra').innerHTML='';
+  lv.innerHTML=LEVELS[t].map((L,i)=>`<button class="lvbtn${i===9?' hard':''}" data-lv="${i+1}" style="--lc:hsl(${215-i*24},70%,44%)" title="${L.t}">
+      <span class="lvn">${i===9?'難問':'Lv.'+(i+1)}</span></button>`).join('');
   lv.querySelectorAll('.lvbtn').forEach(b=>b.onclick=()=>levelStart(t,+b.dataset.lv));
   trainerOpen(false,t);
 }
@@ -1217,7 +1213,7 @@ function openSettings(){
   const vol=Object.keys(VOL_STEPS).map(k=>({v:k,l:VOL_STEPS[k].n}));
   box.innerHTML=`
     <div class="card pad vsel">
-      <div class="seclbl" style="margin:0 0 var(--s2) 2px">声（押すと試しに鳴ります）</div>
+      <div class="seclbl" style="margin:0 0 var(--s2) 2px">声</div>
       <div class="seg vseg" id="vSel"></div>
       <div class="hint" style="margin-top:8px">呼吸調整・リズム運動・丸タッチ・リズムステップの声が、ぜんぶこの声になります。</div>
     </div>
@@ -1241,7 +1237,7 @@ function openSettings(){
   pickSeg('sTheme',v=>{ setSave('theme',v); themeApply(v); });
   $('projToggle').onclick=()=>projSet(!document.body.classList.contains('proj'),true);
   voiceRowRender(); voxManifest();
-  show('settings','設定','声・音の大きさ・画面');
+  show('settings','設定','');
 }
 $('setBtn').innerHTML=ICON.gear+'<span>設定</span>';
 $('setBtn').onclick=openSettings;
@@ -1253,7 +1249,7 @@ function goHome(){
     const b=document.createElement('button');
     b.className='menu'+(cls?' '+cls:'');
     b.innerHTML=`<span class="ico">${ICON[T.icon]}</span>
-      <span class="t"><h2>${T.name}${badge?`<span class="lvbadge">${badge}</span>`:''}</h2><p>${T.desc}</p></span>
+      <span class="t"><h2>${T.name}${badge?`<span class="lvbadge">${badge}</span>`:''}</h2></span>
       <span class="chev">${ICON.chev}</span>`;
     b.onclick=()=>openHub(t);
     box.appendChild(b);
@@ -1286,15 +1282,14 @@ function openHub(t){
   $('quickDesc').textContent=QUICK_DESC[t];
   if(t==='card') flashKindUI(flashKindPref());
   if(LEVEL_TRAININGS.includes(t)){ const qe=$('quickExtra').firstElementChild; if(qe && t==='mem') $('hubCustom').prepend(qe); }
-  else { $('quickTitle').textContent='設定なしではじめる'; $('quickStart').textContent='トレーニング開始'; }
+  else { $('quickTitle').textContent='設定なしで始める'; $('quickStart').textContent='トレーニング開始'; }
   levelHubRender(t);
-  show('hub',T.name,T.desc);
+  show('hub',T.name,'');
 }
 $('quickStart').onclick=()=>{
   if(!curTrain) return;
   if(LEVEL_TRAININGS.includes(curTrain)){                        // はじめての方：呼吸（1分）→ レベル1
-    if(setPref('breath-first','1')==='1'){ LVNOW=null; runBreath({min:1,out:5,hold:5,in:5,count:'up',snd:'clock',minute:false,thenLv:{t:curTrain,lv:1}}); }
-    else levelStart(curTrain,1);
+    levelStart(curTrain,1);
     return;
   }
   LVNOW=null; startAuto(curTrain);
@@ -1845,7 +1840,7 @@ function veilPrepare(el,info,cb){
   veilShow(el,`<div class="prep">
       <div class="prep-k">ルール</div>
       <div class="prep-t">${info.title}</div>
-      ${info.sub?`<div class="prep-s">${info.sub}</div>`:''}
+      ${info.sub&&info.keepSub?`<div class="prep-s">${info.sub}</div>`:''}
       ${info.ex||''}
       <button class="btn prep-b" id="prepGo">はじめる</button>
     </div>`);
@@ -1945,7 +1940,7 @@ function arrowSet(first){
     A.tick=setInterval(arrowNext, Math.round(c.iv*1000));
   };
   const info=arrowRuleInfo(c,A.go,A.anti);
-  if(c.math) info.ex=(info.ex||'')+`<div class="prep-s" style="font-size:14.5px;color:var(--text);margin-top:14px">＋ 暗算：${A.m.html}</div>`;
+  if(c.math) info.ex=(info.ex||'')+`<div class="qtext" style="font-size:18px;margin-top:14px">＋ 暗算：${A.m.html}</div>`;
   A.stops.push(first
     ? veilPrepare($('aVeil'), info, begin)
     : veilCountdown($('aVeil'), c.math?`暗算：${A.m.html}`:$('aTag').textContent, begin));
@@ -2563,8 +2558,8 @@ function voiceRowRender(){
   const eff=voiceReady(VOX.cur)?VOX.cur:'kokoro';     // 選んだ声がまだ準備中なら、今の声で話している
   el.innerHTML=VOICE_SETS.map(v=>{
     const ok=voiceReady(v.id), m=VOX.man&&VOX.man.voices&&VOX.man.voices[v.id];
-    const sub=ok?((m&&!m.ready)?`${v.g} ${m.count}/${m.total}`:(v.g||'Kokoro')):(m&&m.count?`準備中 ${m.count}/${m.total}`:'準備中');
-    return `<button data-v="${v.id}" class="${v.id===eff?'on':''}"${ok?'':' disabled'}>${v.n}<small>${sub}</small></button>`;
+    const sub=ok?'':'準備中';
+    return `<button data-v="${v.id}" class="${v.id===eff?'on':''}"${ok?'':' disabled'}>${v.n}${sub?`<small>${sub}</small>`:''}</button>`;
   }).join('');
   el.querySelectorAll('button').forEach(b=>b.onclick=()=>voiceSelect(b.dataset.v));
 }
@@ -2719,9 +2714,7 @@ function runMove(cfg){
   veilShow($('mVeil'),`<div class="prep">
       <div class="prep-k">ルール</div>
       <div class="prep-t">音に合わせて大きく回す</div>
-      <div class="prep-s">${sub}</div>
-      <div class="prep-ex" style="font-size:14px;line-height:1.6">${names}</div>
-      <div class="prep-s">音が出るので、音量を上げてください。痛みが出たら無理をせず止めましょう。</div>
+      <div class="prep-ex" style="font-size:16px;line-height:1.6">${names}</div>
       <button class="btn prep-b" id="mGo">はじめる</button>
     </div>`);
   $('mGo').onclick=()=>{
@@ -2989,7 +2982,7 @@ function handsRuleInfo(cfg){
   const num=cfg.show==='num';
   const face=(k,sd)=>num?`<div class="hnum tnum" style="font-size:64px">${HAND_POSES[k].d}</div>`:handArt(k,sd);
   const ex=`<div class="prep-ex hands-ex"><div><div class="hl">左手</div>${face(num?'p5':'p2','L')}</div><div><div class="hl">右手</div>${face(num?'p1':'p4','R')}</div></div>`
-    +(num?`<div class="prep-s">左 5 → パー、右 1 → 人差し指。0 はグーです。</div>`:'');
+    ;
   return {
     title:'左右の手をまねする',
     sub:`${num?'左右に出た数字の形':cfg.show==='mix'?'絵か数字で出た形':'左手と右手の絵と同じ形'}を、すぐに自分の両手で作ります。`
@@ -3159,9 +3152,7 @@ function runBreath(cfg){
   veilShow($('bVeil'),`<div class="prep">
       <div class="prep-k">ルール</div>
       <div class="prep-t">${breathPat(cfg)} の呼吸を ${cfg.min}分</div>
-      <div class="prep-s">はじまりに「吐きます・止めます・吸います」と声で知らせます。${breathCountTxt(cfg)}${cfg.minute===false?'':'1分ごとに「◯分経過」、最後の2分は「残り◯分です」とお知らせします。'}</div>
       <div class="prep-list">${rows}</div>
-      <div class="prep-s">苦しくなったら無理をせず、ふつうの呼吸に戻してください。</div>
       <button class="btn prep-b" id="bGo">はじめる</button>
     </div>`);
   $('bGo').onclick=()=>{
@@ -3487,7 +3478,7 @@ function runCard(cfg){
   C.quiz = kind==='card' && cfg.quiz ? quizMake(cfg) : null;
   if(C.quiz){
     info.title='数えるお題';
-    info.sub=`<span class="qtext" style="display:block;margin:6px 0 10px">${C.quiz.q}</span>${cardIvTxt(cfg)}に、${cardChangeTxt(cfg)}が変わります。数えながら見て、${cfg.dur}秒たったら答えを入れます。`;
+    info.sub=`<span class="qtext" style="display:block;margin:6px 0 4px">${C.quiz.q}</span>`; info.keepSub=true;
   }
   const math = kind==='num' && cfg.math;
   C.math = math ? mathBuild(cfg) : null;
@@ -3496,7 +3487,7 @@ function runCard(cfg){
   if(math){
     show('playCard','フラッシュ', `暗算 ・ ${mathRuleName(C.math)} ・ ${cfg.mathQ}個`);
     info.title='暗算のルール';
-    info.sub=`<span style="font-size:16px;color:var(--text)">${C.math.html}</span><br>数字が${cfg.mathQ}個、${cardIvTxt(cfg)}に出ます。全部出たら答えを入れます。`;
+    info.sub=`<span class="qtext" style="display:block;font-size:19px">${C.math.html}</span>`; info.keepSub=true;
     info.ex='';
   }
   C.stops.push(veilPrepare($('cVeil'),info,cardBegin));
@@ -4300,7 +4291,7 @@ goHome();
    Version check — 古い保存済みの画面が出ていたら、新しい版に切り替える
    （GitHub Pages は更新後しばらく古い版を返すことがあるため）
    ============================================================ */
-const APP_VER='2026-11-06 10:20';   // 更新のたびにこの日時を書き換える
+const APP_VER='2026-11-06 11:00';   // 更新のたびにこの日時を書き換える
 $('appVer').textContent='更新 '+APP_VER;
 (function checkVer(){
   if(location.protocol==='file:') return;
