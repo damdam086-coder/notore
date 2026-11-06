@@ -1,0 +1,9 @@
+このフォルダの mp3 は Salamander Grand Piano V3 のサンプルです（音感トレーニングの出題音・伴奏・鍵盤の音）。
+
+制作: Alexander Holm
+ライセンス: Creative Commons Attribution 3.0 (CC-BY 3.0)
+入手元: https://tonejs.github.io/audio/salamander/
+
+短3度ごと（C / D# / F# / A）に1音ずつ、C2〜D#6 の18音を置いています。
+間の音は再生速度をずらして鳴らしています。MIDI番号は C4 = 60（中央ド）。
+（2026-09-03 実測：A4.mp3 の基音 440.0Hz、C4.mp3 261.4Hz。ボイトレアプリ KoeNote から流用）

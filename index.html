@@ -498,6 +498,32 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 .mc.show{background:var(--surface-2);border:1px solid var(--line-2);color:var(--text-3)}
 .mc.want{border:2px solid var(--accent);color:var(--accent)}
 .mc.ng{background:var(--ng);border-color:var(--ng);color:#fff}
+/* 音感トレーニング */
+.ear-field{display:flex;flex-direction:column;align-items:stretch;justify-content:flex-end;padding:12px}
+.ear-top{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;position:relative;min-height:150px}
+.eslots{display:flex;gap:14px;flex-wrap:wrap;justify-content:center;align-items:center;min-height:64px}
+.es{font-size:clamp(34px,8vw,52px);font-weight:750;color:var(--text-3);min-width:1.1em;text-align:center;line-height:1.1}
+.es.on{color:var(--text)}
+.es.ans{color:var(--ng);font-size:clamp(28px,6.4vw,44px);letter-spacing:.02em}
+.emark{position:absolute;inset:0;pointer-events:none;display:grid;place-items:center;font-size:120px;font-weight:800;opacity:0}
+.emark.ok{color:var(--ok);opacity:.85;animation:pop .2s}
+.emark.ok::after{content:'○'}
+.emark.ng{color:var(--ng);opacity:.6;animation:pop .2s}
+.emark.ng::after{content:'×'}
+.ereplay{position:absolute;right:0;top:0;width:52px;height:52px;border-radius:50%;border:1px solid var(--line-2);background:var(--surface-2);color:var(--accent);font-size:24px;cursor:pointer}
+.ekeys{flex:none;user-select:none;-webkit-user-select:none;touch-action:none;display:flex;flex-direction:column;gap:10px}
+.ekrow{position:relative;height:clamp(150px,30vh,230px)}
+.ekeys.two .ekrow{height:clamp(120px,19vh,170px)}
+.ek-w{display:flex;height:100%;gap:2px}
+.ek{padding:0;margin:0;border:none;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.ek.w{flex:1;background:#fff;border:1px solid #c9ccd3;border-radius:0 0 8px 8px;display:flex;align-items:flex-end;justify-content:center;padding-bottom:10px;color:#3a3f4a;font-size:clamp(11px,2.6vw,17px);font-weight:650}
+.ek-b{position:absolute;inset:0 0 auto 0;height:60%;pointer-events:none}
+.ek.b{position:absolute;top:0;height:100%;width:calc(100% / var(--nw) * 0.6);background:#23262d;border-radius:0 0 6px 6px;pointer-events:auto;display:flex;align-items:flex-end;justify-content:center;padding-bottom:6px;color:#e8e8ee;font-size:clamp(9px,2vw,13px);font-weight:650}
+.ek span{pointer-events:none;white-space:nowrap}
+.ek.down{background:#9db7ff!important}
+.ek.ans{background:var(--ng)!important;color:#fff}
+.ear-ex{font-size:30px;font-weight:750;gap:12px}
+.qrow .qplay{flex:none;width:34px;height:34px;border-radius:50%;border:1px solid var(--line-2);background:var(--surface-2);color:var(--accent);font-size:16px;cursor:pointer}
 
 /* ============================================================
    Card flash
@@ -854,6 +880,26 @@ body.proj .hud{font-size:15px}
     </div>
   </section>
 
+  <!-- ============ PLAY: EAR ============ -->
+  <section class="screen" id="playEar">
+    <div class="stage">
+      <div class="hud">
+        <span>残り <b class="tnum" id="eLeft">60</b>s</span>
+        <span>正解 <b class="tnum" id="eHits">0</b></span>
+        <span>コンボ <b class="tnum" id="eCombo">0</b></span>
+      </div>
+      <div class="field ear-field" id="eField">
+        <div class="ear-top">
+          <div class="eslots" id="eSlots"></div>
+          <div class="emark" id="eMark"></div>
+          <button class="ereplay" id="eReplay" aria-label="もう一度聴く">♪</button>
+        </div>
+        <div class="ekeys" id="eKeys"></div>
+        <div class="veil" id="eVeil" style="display:none"></div>
+      </div>
+    </div>
+  </section>
+
   <!-- ============ PLAY: BREATH ============ -->
   <section class="screen" id="playBreath">
     <div class="stage">
@@ -957,6 +1003,7 @@ const ICON={
   target: svg('<circle cx="6.5" cy="7" r="3.25"/><circle cx="17.5" cy="7" r="3.25"/><circle cx="12" cy="17" r="3.25"/>'),
   spade : svg('<path d="M12 3.5c1.6 3 6.5 5.6 6.5 9.4a3.2 3.2 0 0 1-5.6 2.1c.2 1.9.9 3.2 2.4 4.5H8.7c1.5-1.3 2.2-2.6 2.4-4.5a3.2 3.2 0 0 1-5.6-2.1c0-3.8 4.9-6.4 6.5-9.4z"/>'),
   grid  : svg('<rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.5"/><path d="M15.6 5.2l1.4-1v6.3"/><path d="M5.2 15.2a1.9 1.9 0 0 1 3.6.8c0 1.3-3.7 3.3-3.7 4.5h3.9"/>'),
+  note  : svg('<path d="M9 18.5V5.5l11-2v13"/><circle cx="6.5" cy="18.5" r="2.5"/><circle cx="17.5" cy="16.5" r="2.5"/>'),
   wind  : svg('<path d="M3 8.5h10.5a3 3 0 1 0-3-3"/><path d="M3 12.5h15a3 3 0 1 1-3 3"/><path d="M3 16.5h6"/>'),
   metro : svg('<path d="M9.5 3h5l4 18h-13z"/><path d="M7 16.5h10"/><path d="M12 16.5l4.5-9.5"/>')
 };
@@ -1009,6 +1056,7 @@ const TRAININGS={
   breath:{icon:'wind', name:'呼吸調整',        desc:'吐く・止める・吸うを秒数どおりに'},
   mem   :{icon:'grid', name:'数字の位置記憶',  desc:'数字の場所を覚えて、1から順に押す'},
   card  :{icon:'spade',name:'フラッシュ',      desc:'トランプ・色・数字がパッと切り替わる'},
+  ear   :{icon:'note', name:'音感トレーニング',desc:'伴奏の上で鳴るフレーズを聴いて、鍵盤で答える'},
   step  :{icon:'steps', name:'リズムステップ', desc:'床の線や枠で、リズムに合わせて足でステップ'},
   spot  :{icon:'target',name:'丸タッチ',       desc:'壁や床に映した丸を、言われたとおりに触る・飛び移る'}
 };
@@ -1028,7 +1076,7 @@ function show(id,title,sub){
 }
 $('back').innerHTML=ICON.back;
 $('back').onclick=()=>{ stopAll(); stopProg(); if(['hub','results'].includes(document.querySelector('.screen.on').id)) goHome(); else if(curTrain) openHub(curTrain); else goHome(); };
-function stopAll(){ stopArrow(); stopNum(); stopStroop(); stopVoice(); stopGrid(); stopMove(); stopHands(); stopBreath(); stopMem(); stopCard(); stopSpot(); stopStep(); }
+function stopAll(){ stopArrow(); stopNum(); stopStroop(); stopVoice(); stopGrid(); stopMove(); stopHands(); stopBreath(); stopMem(); stopCard(); stopSpot(); stopStep(); stopEar(); }
 
 /* ============================================================
    Home
@@ -1036,7 +1084,7 @@ function stopAll(){ stopArrow(); stopNum(); stopStroop(); stopVoice(); stopGrid(
 /* ============================================================
    LEVELS — 7つのトレーニングのレベル1〜10（鍵・記録なし。選んでチャレンジ）
    ============================================================ */
-const LEVEL_TRAININGS=['arrow','num','stroop','move','hands','mem','card'];
+const LEVEL_TRAININGS=['arrow','num','stroop','move','hands','mem','card','ear'];
 const MOVE_BASE={mode:'metro', moves:['ankle','shoulder','wrist','arm','hip'], rounds:3, rest:5, range:'slow', bpmStep:20, gap:'rare', dur:30,
   flip:false, beats:4, beatsRand:false, snd:'click', secs:[5,10,15], count:'beep', secMode:'list', secMin:4, secMax:12, secSets:3};
 const CARD_BASE={kind:'card', timing:'fixed', iv:2.5, rand:'r15', change:['suit','scol'], num:false, range:'n10', colorMode:'random',
@@ -1119,6 +1167,18 @@ const LEVELS={
     {t:'12個・枠だけ', say:'数字の場所を覚えて1から順に押します', cfg:{count:12, grid:'l',after:'blank',total:10}},
     {t:'14個・枠だけ', say:'数字の場所を覚えて1から順に押します', cfg:{count:14, grid:'l',after:'blank',total:10}}
   ],
+  ear:[
+    {t:'ドに向かう2音',       say:'音を聴いて鍵盤で答えます', cfg:{stage:'s1', dur:60,bgm:true}},
+    {t:'3音のまとまり',       say:'音を聴いて鍵盤で答えます', cfg:{stage:'s2', dur:60,bgm:true}},
+    {t:'上がって下がる',      say:'音を聴いて鍵盤で答えます', cfg:{stage:'s3', dur:60,bgm:true}},
+    {t:'ペンタトニック',      say:'音を聴いて鍵盤で答えます', cfg:{stage:'s4', dur:60,bgm:true}},
+    {t:'和音の形',            say:'音を聴いて鍵盤で答えます', cfg:{stage:'s5', dur:60,bgm:true}},
+    {t:'4度・5度',            say:'音を聴いて鍵盤で答えます', cfg:{stage:'s6', dur:60,bgm:true}},
+    {t:'6度・7度',            say:'音を聴いて鍵盤で答えます', cfg:{stage:'s7', dur:60,bgm:true}},
+    {t:'オクターブ',          say:'音を聴いて鍵盤で答えます', cfg:{stage:'s8', dur:60,bgm:true}},
+    {t:'跳躍が続く',          say:'音を聴いて鍵盤で答えます', cfg:{stage:'s9', dur:60,bgm:true}},
+    {t:'調の外の音（デ・リ・フィ・サ・チ）', say:'音を聴いて鍵盤で答えます、ドレミ以外の音も出ます', cfg:{stage:'s10',dur:60,bgm:true}}
+  ],
   card:[
     {t:'カラー4色・3秒ごと',               say:'画面の色が変わるのを見ていましょう', cfg:{kind:'color',timing:'fixed',iv:3,rand:'r15',dur:30,beep:false,wallColors:['red','yellow','green','blue']}},
     {t:'カラー4色・2秒ごと',               say:'画面の色が変わるのを見ていましょう', cfg:{kind:'color',timing:'fixed',iv:2,rand:'r15',dur:30,beep:false,wallColors:['red','yellow','green','blue']}},
@@ -1152,6 +1212,7 @@ function levelStart(t,lv){
   else if(t==='hands') runHands(cfg);
   else if(t==='mem') runMem(cfg);
   else if(t==='card') runCard(cfg);
+  else if(t==='ear') runEar(cfg);
   // 始める前の説明に「レベル○」を大きく出し、説明を読み上げる
   const prep=document.querySelector('.screen.on .veil .prep');
   if(prep){
@@ -1167,6 +1228,7 @@ function levelPass(r){
   if(c.lvT==='arrow' && c.math){ const h=log.filter(l=>l.ok).length; return log.length>0 && h>=Math.ceil(log.length/2); }
   if(c.lvT==='move') return log.every(l=>l.ok);
   if(c.lvT==='card') return r.title==='正解！'||r.title==='完了';
+  if(c.lvT==='ear') return !!r.earPass;
   return r.title!=='途中で終了';
 }
 function levelResult(r){
@@ -1272,6 +1334,7 @@ const QUICK_DESC={
   step  :'左右ジャンプ・ケンケン・グーパー・イン＆アウト・シンコペーションなどから6種目をランダムに。BPM 80 から始めて、種目ごとに 5 ずつ速くなります。1種目8小節。床に線を1本置いて使います。',
   spot  :'3×3の丸（番号と色つき）が映ります。「あか」「さん」などの声と光の合図で、その丸に触る・飛び移る。合図は2〜4秒のランダムな間隔で60秒。プロジェクターで壁や床に映して使います（ふつうの画面でもできます）。',
   card  :'記号（スペード・ハート・ダイヤ・クラブ）と色（赤・黒）が、1.5〜3秒のランダムな間隔でパッと切り替わります。はじめに「赤いスペードは何回？」のような数えるお題が出るので、数えながら見て、最後に答えます。60秒。',
+  ear   :'',
   mem   :'1回目は見ながら 1 から順に押し、2回目は場所を思い出して 1 から順に押します（白い四角を出すか、枠だけにするかを下で選べます）。4個からスタートし、正解で1個増え、まちがえで1個減ります（3〜10個）。全10問。',
   breath:'8-8-8（8秒で吐く・8秒止める・8秒で吸う）を5分。はじまりの声と「いち・に・さん…はち」の数に合わせるだけです。1分ごとに残り時間をお知らせします。',
   hands :'お題が出たら、カチッという音ごとに左右の形を入れ替えます。数字（グー〜5）・1.5秒ごとの入れ替えから始めて、1秒ごと、キツネやグッドなどのポーズも混ざり、最後はお題が3〜5秒で変わります。1ステージ30秒×4本。',
@@ -1285,6 +1348,7 @@ function openHub(t){
   if(LEVEL_TRAININGS.includes(t)){ const qe=$('quickExtra').firstElementChild; if(qe && t==='mem') $('hubCustom').prepend(qe); }
   else { $('quickTitle').textContent='設定なしで始める'; $('quickStart').textContent='トレーニング開始'; }
   levelHubRender(t);
+  if(t==='ear') pianoLoad();
   show('hub',T.name,'');
 }
 $('quickStart').onclick=()=>{
@@ -1649,6 +1713,15 @@ function renderCustom(t){
       <div class="hint">ちがう場所を押すと、その問題は終わりです。正しい場所が表示されます。</div>
     </div>`;
   }
+  if(t==='ear'){
+    box.innerHTML=`<div class="card pad">
+      ${rowSeg('ステージ','eStage',Object.keys(EAR_STAGES).map((k,i)=>({v:k,l:(i+1)+' '+EAR_STAGES[k]})),'s1')}
+      ${rowSeg('時間','eDur',[{v:'60',l:'60秒'},{v:'90',l:'90秒'},{v:'120',l:'120秒'}],'60')}
+      ${rowSeg('速さ','eFast',[{v:'0',l:'ふつう'},{v:'1',l:'速い'}],'0')}
+      ${rowToggle('伴奏','eBgm',true)}
+      ${rowSeg('鍵盤の文字','eLab',[{v:'sol',l:'ドレミ'},{v:'none',l:'なし'}],'sol')}
+    </div>`;
+  }
   if(t==='breath'){
     box.innerHTML=`<div class="card pad">
       ${rowRange('時間','bMin',3,10,1,5,v=>v+'分')}
@@ -1781,6 +1854,9 @@ $('customStart').onclick=()=>{
     timing:segVal('cTiming'), iv:+segVal('cIv'), rand:segVal('cRand'), change:cfgUI.cChange.slice(),
     num:$('cNum').classList.contains('on'), range:segVal('cRange'), colorMode:segVal('cColorMode'),
     colors:cfgUI.cColors.slice(), numCol:segVal('cNumCol'), dur:+$('cDur').value, beep:$('cBeep').classList.contains('on'), quiz:$('cQuiz').classList.contains('on')
+  });
+  if(curTrain==='ear') runEar({
+    stage:segVal('eStage'), dur:+segVal('eDur'), fast:segVal('eFast')==='1', bgm:$('eBgm').classList.contains('on'), labels:segVal('eLab')
   });
   if(curTrain==='mem') runMem({
     count:+$('wCount').value, grid:segVal('wGridSel'), after:segVal('wAfterQ')||memAfterPref(), total:+segVal('wQ')
@@ -2512,7 +2588,7 @@ const SND={
 /* ---- voice ----
    まずは録音した声（voice/*.mp3）を Web Audio で鳴らす。ブラウザの読み上げ機能は
    ブラウザによって鳴らない（Brave など）ので、録音が読めないときだけ代わりに使う。 */
-const VOX_MAP={'はじめます':'hajime','吐きます':'haku','止めます':'tomeru','吸います':'suu','おわりです。ふつうの呼吸に戻しましょう':'owari','休憩':'kyukei','逆回し':'gyaku','おつかれさまでした':'otsukare','足首回し':'ankle','肩回し':'shoulder','手首回し':'wrist','腕回し':'arm','股関節回し':'hip','腰回し':'waist','ひざ回し':'knee','いち':'n1','に':'n2','さん':'n3','よん':'n4','ご':'n5','ろく':'n6','なな':'n7','はち':'n8','きゅう':'n9','じゅう':'n10','11':'n11','12':'n12','13':'n13','14':'n14','15':'n15','16':'n16','17':'n17','18':'n18','19':'n19','20':'n20','21':'n21','22':'n22','23':'n23','24':'n24','25':'n25','26':'n26','27':'n27','28':'n28','29':'n29','30':'n30','5秒':'s5','10秒':'s10','15秒':'s15','20秒':'s20','30秒':'s30','40秒':'s40','50秒':'s50','60秒':'s60','70秒':'s70','80秒':'s80','90秒':'s90','1拍で1周':'b1','2拍で1周':'b2','3拍で1周':'b3','4拍で1周':'b4','5拍で1周':'b5','6拍で1周':'b6','7拍で1周':'b7','8拍で1周':'b8','9拍で1周':'b9','10拍で1周':'b10','11拍で1周':'b11','12拍で1周':'b12','この呼吸で終わりです':'konokokyu','1分経過':'m1','2分経過':'m2','3分経過':'m3','4分経過':'m4','5分経過':'m5','6分経過':'m6','7分経過':'m7','8分経過':'m8','9分経過':'m9','10分経過':'m10','残り1分です':'r1','残り2分です':'r2','残り3分です':'r3','残り4分です':'r4','残り5分です':'r5','残り6分です':'r6','残り7分です':'r7','残り8分です':'r8','残り9分です':'r9','あか':'c_red','きいろ':'c_yellow','みどり':'c_green','あお':'c_blue','しろ':'c_white','オレンジ':'c_orange','むらさき':'c_purple','ピンク':'c_pink','みずいろ':'c_sky','おわりです':'owari2','1秒':'s1','2秒':'s2','3秒':'s3','4秒':'s4','6秒':'s6','7秒':'s7','8秒':'s8','9秒':'s9','11秒':'s11','12秒':'s12','13秒':'s13','14秒':'s14','16秒':'s16','17秒':'s17','18秒':'s18','19秒':'s19','21秒':'s21','22秒':'s22','23秒':'s23','24秒':'s24','25秒':'s25','26秒':'s26','27秒':'s27','28秒':'s28','29秒':'s29','左右ジャンプ':'st_lr','前後ジャンプ':'st_fb','右足ケンケン':'st_hopR','左足ケンケン':'st_hopL','グーパー':'st_gupa','開く・クロス':'st_cross','イン・イン・アウト・アウト':'st_inout','右足2歩・戻る':'st_walk2','シンコペーション':'st_sync','3拍子ステップ':'st_waltz','ランダム':'st_rand','レベル1':'lv1','レベル2':'lv2','レベル3':'lv3','レベル4':'lv4','レベル5':'lv5','レベル6':'lv6','レベル7':'lv7','レベル8':'lv8','レベル9':'lv9','レベル10':'lv10','難問です':'nanmon','矢印と同じ方向を向きます':'r_ar_same','矢印と反対の方向を向きます':'r_ar_anti','矢印の色で向きが変わります':'r_ar_color','暗算もします':'r_math_too','数字を覚えてそのまま答えます':'r_num','数字を覚えて逆から答えます':'r_num_rev','文字を読みます':'r_st_read','インクの色を答えます':'r_st_color','一覧を順番にインクの色で答えます':'r_st_grid','背景の色でルールが変わります':'r_st_cell','音に合わせて大きく回します':'r_mv_metro','秒数のあいだ回し続けます':'r_mv_sec','音と秒数に合わせて回します':'r_mv_mix','左右で違う形をまねします':'r_hd','カチッという音で左右を入れ替えます':'r_hd_swap','数字の場所を覚えて1から順に押します':'r_mem','画面の色が変わるのを見ていましょう':'r_cd_color','お題の数を数えながら見ます':'r_cd_quiz','数字を頭の中で計算します':'r_cd_math','クリアです':'clear','難問クリアです':'clear10','次は':'tsugiwa','チャレンジしましょう':'challenge','もう一度チャレンジしましょう':'again'};
+const VOX_MAP={'はじめます':'hajime','吐きます':'haku','止めます':'tomeru','吸います':'suu','おわりです。ふつうの呼吸に戻しましょう':'owari','休憩':'kyukei','逆回し':'gyaku','おつかれさまでした':'otsukare','足首回し':'ankle','肩回し':'shoulder','手首回し':'wrist','腕回し':'arm','股関節回し':'hip','腰回し':'waist','ひざ回し':'knee','いち':'n1','に':'n2','さん':'n3','よん':'n4','ご':'n5','ろく':'n6','なな':'n7','はち':'n8','きゅう':'n9','じゅう':'n10','11':'n11','12':'n12','13':'n13','14':'n14','15':'n15','16':'n16','17':'n17','18':'n18','19':'n19','20':'n20','21':'n21','22':'n22','23':'n23','24':'n24','25':'n25','26':'n26','27':'n27','28':'n28','29':'n29','30':'n30','5秒':'s5','10秒':'s10','15秒':'s15','20秒':'s20','30秒':'s30','40秒':'s40','50秒':'s50','60秒':'s60','70秒':'s70','80秒':'s80','90秒':'s90','1拍で1周':'b1','2拍で1周':'b2','3拍で1周':'b3','4拍で1周':'b4','5拍で1周':'b5','6拍で1周':'b6','7拍で1周':'b7','8拍で1周':'b8','9拍で1周':'b9','10拍で1周':'b10','11拍で1周':'b11','12拍で1周':'b12','この呼吸で終わりです':'konokokyu','1分経過':'m1','2分経過':'m2','3分経過':'m3','4分経過':'m4','5分経過':'m5','6分経過':'m6','7分経過':'m7','8分経過':'m8','9分経過':'m9','10分経過':'m10','残り1分です':'r1','残り2分です':'r2','残り3分です':'r3','残り4分です':'r4','残り5分です':'r5','残り6分です':'r6','残り7分です':'r7','残り8分です':'r8','残り9分です':'r9','あか':'c_red','きいろ':'c_yellow','みどり':'c_green','あお':'c_blue','しろ':'c_white','オレンジ':'c_orange','むらさき':'c_purple','ピンク':'c_pink','みずいろ':'c_sky','おわりです':'owari2','1秒':'s1','2秒':'s2','3秒':'s3','4秒':'s4','6秒':'s6','7秒':'s7','8秒':'s8','9秒':'s9','11秒':'s11','12秒':'s12','13秒':'s13','14秒':'s14','16秒':'s16','17秒':'s17','18秒':'s18','19秒':'s19','21秒':'s21','22秒':'s22','23秒':'s23','24秒':'s24','25秒':'s25','26秒':'s26','27秒':'s27','28秒':'s28','29秒':'s29','左右ジャンプ':'st_lr','前後ジャンプ':'st_fb','右足ケンケン':'st_hopR','左足ケンケン':'st_hopL','グーパー':'st_gupa','開く・クロス':'st_cross','イン・イン・アウト・アウト':'st_inout','右足2歩・戻る':'st_walk2','シンコペーション':'st_sync','3拍子ステップ':'st_waltz','ランダム':'st_rand','レベル1':'lv1','レベル2':'lv2','レベル3':'lv3','レベル4':'lv4','レベル5':'lv5','レベル6':'lv6','レベル7':'lv7','レベル8':'lv8','レベル9':'lv9','レベル10':'lv10','難問です':'nanmon','矢印と同じ方向を向きます':'r_ar_same','矢印と反対の方向を向きます':'r_ar_anti','矢印の色で向きが変わります':'r_ar_color','暗算もします':'r_math_too','数字を覚えてそのまま答えます':'r_num','数字を覚えて逆から答えます':'r_num_rev','文字を読みます':'r_st_read','インクの色を答えます':'r_st_color','一覧を順番にインクの色で答えます':'r_st_grid','背景の色でルールが変わります':'r_st_cell','音に合わせて大きく回します':'r_mv_metro','秒数のあいだ回し続けます':'r_mv_sec','音と秒数に合わせて回します':'r_mv_mix','左右で違う形をまねします':'r_hd','カチッという音で左右を入れ替えます':'r_hd_swap','数字の場所を覚えて1から順に押します':'r_mem','画面の色が変わるのを見ていましょう':'r_cd_color','お題の数を数えながら見ます':'r_cd_quiz','数字を頭の中で計算します':'r_cd_math','クリアです':'clear','難問クリアです':'clear10','次は':'tsugiwa','チャレンジしましょう':'challenge','もう一度チャレンジしましょう':'again','音を聴いて鍵盤で答えます':'r_ear','ドレミ以外の音も出ます':'r_ear_chr'};
 const VOICE_VER='kokoro6';   // 今の声（Kokoro）を作り直したら変える（古い声が残らないように）
 // 声の種類。今の声は voice/ 直下、Gemini で作った声は voice/<id>/。どれだけ出来ているかは voice/voices.json（作る係が書く）
 const VOICE_SETS=[
@@ -3384,6 +3460,271 @@ function memDone(){
 }
 
 /* ============================================================
+   EAR engine — 音感トレーニング（伴奏で調を耳に置き、フレーズを聴いて鍵盤で答える）
+   ハ長調で出題。答えはオクターブ違いでも正解、ただし上がる／下がるは区別する
+   ============================================================ */
+const EAR_SOL=['ド','デ','レ','リ','ミ','ファ','フィ','ソ','サ','ラ','チ','シ'];   // 調の外は西塚式（デ・リ・フィ・サ・チ）
+const EAR_DIA=[0,2,4,5,7,9,11], EAR_PENTA=[0,2,4,7,9];
+const EAR_LO=60, EAR_HI=84;                                    // 鍵盤 C4〜C6（2オクターブ）
+const EAR_STAGES={
+  s1:'ドへ', s2:'3音', s3:'上下', s4:'ペンタ', s5:'和音', s6:'4度5度', s7:'6度7度', s8:'オクターブ', s9:'跳躍', s10:'調の外'
+};
+const earPc=m=>((m%12)+12)%12;
+const earName=m=>EAR_SOL[earPc(m)];
+const earIn=(set,m)=>set.includes(earPc(m));
+const earNotes=(set,lo,hi)=>{ const a=[]; for(let m=lo;m<=hi;m++) if(earIn(set,m)) a.push(m); return a; };
+// 音階の中で k 段ずらした音
+function earStep(set,m,k){
+  const ns=earNotes(set,m-30,m+30), i=ns.indexOf(m);
+  return i<0?null:ns[i+k];
+}
+const earSpanOk=q=>Math.max(...q)-Math.min(...q)<=12 && Math.min(...q)>=55 && Math.max(...q)<=81;
+// ステージごとのフレーズの作り方（ハ長調・MIDI番号の列）
+const EAR_GEN={
+  s1(){ const t=pick([60,72]); const c=earNotes(EAR_DIA,t-7,t+7).filter(m=>m!==t); return [pick(c),t]; },
+  s2(){ const st=pick(earNotes(EAR_DIA,57,77)), d=pick([1,-1]); return [st,earStep(EAR_DIA,st,d),earStep(EAR_DIA,st,2*d)]; },
+  s3(){
+    const n=3+rnd(2); let q;
+    do{ q=[pick(earNotes(EAR_DIA,57,77))];
+      for(let i=1;i<n;i++) q.push(earStep(EAR_DIA,q[i-1],pick([1,-1])));
+    }while(!q.slice(2).some((m,i)=>Math.sign(q[i+1]-q[i])!==Math.sign(m-q[i+1])) || new Set(q).size<2);
+    return q;
+  },
+  s4(){
+    const n=3+rnd(2), q=[pick(earNotes(EAR_PENTA,57,77))];
+    for(let i=1;i<n;i++) q.push(earStep(EAR_PENTA,q[i-1],pick([1,-1,1,-1,2,-2])));
+    return q;
+  },
+  s5(){
+    const root=pick([60,62,64,65,67,69]);                      // Ⅰ・Ⅱm・Ⅲm・Ⅳ・Ⅴ・Ⅵm（Ⅶは外す）
+    const tri=[root,earStep(EAR_DIA,root,2),earStep(EAR_DIA,root,4)];
+    const inv=rnd(3); for(let i=0;i<inv;i++) tri.push(tri.shift()+12);
+    const q=tri.map(m=>m-(Math.max(...tri)>79?12:0));
+    return Math.random()<0.5?q:q.reverse();
+  },
+  s6(){ return earLeaps([5,7],2+rnd(2)); },
+  s7(){ return earLeaps([8,9,10,11],2); },
+  s8(){
+    const a=pick(earNotes(EAR_DIA,57,69)), up=Math.random()<0.5;
+    const q=up?[a,a+12]:[a+12,a];
+    if(Math.random()<0.5) q.push(earStep(EAR_DIA,q[1],up?-1:1));
+    return q;
+  },
+  s9(){ return earLeaps([3,4,5,7,8,9],3+rnd(2)); },
+  s10(){
+    const c=pick([61,63,66,68,70]);                            // デ・リ・フィ・サ・チ
+    const res={61:[60,62],63:[62,64],66:[65,67],68:[67,69],70:[69,71]}[c];
+    const to=pick(res), from=earStep(EAR_DIA,to,pick([1,-1,2,-2]));
+    const q=[from,c,to];
+    if(Math.random()<0.4) q.push(earStep(EAR_DIA,to,pick([1,-1])));
+    return q;
+  }
+};
+// 跳躍だけでつなぐ（着地は音階の中・範囲は1オクターブまで）
+function earLeaps(ivs,n){
+  for(let t=0;t<200;t++){
+    const q=[pick(earNotes(EAR_DIA,57,77))];
+    for(let i=1;i<n;i++){
+      const c=ivs.flatMap(v=>[q[i-1]+v,q[i-1]-v]).filter(m=>earIn(EAR_DIA,m));
+      if(!c.length) break; q.push(pick(c));
+    }
+    if(q.length===n && earSpanOk(q)) return q;
+  }
+  return [60,67];
+}
+function earMake(stage,prev){
+  const g=EAR_GEN[stage]||EAR_GEN.s1;
+  for(let t=0;t<300;t++){
+    const q=g();
+    if(q.some(m=>m==null) || !earSpanOk(q)) continue;
+    if(prev && q.join()===prev.join()) continue;
+    return q;
+  }
+  return [67,72];
+}
+const earArrow=(a,b)=>b>a?'↗':b<a?'↘':'→';
+const earText=q=>q.map((m,i)=>(i?earArrow(q[i-1],m)+' ':'')+earName(m)).join(' ');
+
+/* ---- ピアノの音（Salamander Grand Piano・CC-BY 3.0／piano/NOTICE.txt）---- */
+const PIANO={raw:{}, buf:{}, ctx:null, loading:null};
+const PIANO_FILES=['C2','Ds2','Fs2','A2','C3','Ds3','Fs3','A3','C4','Ds4','Fs4','A4','C5','Ds5','Fs5','A5','C6','Ds6'];
+const pianoMidi=f=>{ const m=f.match(/^(C|Ds|Fs|A)(\d)$/); return 12*(+m[2]+1)+{C:0,Ds:3,Fs:6,A:9}[m[1]]; };
+function pianoLoad(){
+  if(!PIANO.loading) PIANO.loading=Promise.all(PIANO_FILES.map(f=>fetch(`piano/${f}.mp3`).then(r=>r.ok?r.arrayBuffer():null).then(b=>{ if(b) PIANO.raw[pianoMidi(f)]=b; }).catch(()=>{})));
+  return PIANO.loading.then(()=>pianoDecode());
+}
+function pianoDecode(){
+  const c=AU.ctx; if(!c) return Promise.resolve();
+  if(PIANO.ctx!==c){ PIANO.ctx=c; PIANO.buf={}; }
+  // decodeAudioData は渡した中身を空にするので、毎回コピーを渡す
+  return Promise.all(Object.keys(PIANO.raw).filter(k=>!PIANO.buf[k]).map(k=>
+    new Promise(res=>c.decodeAudioData(PIANO.raw[k].slice(0),b=>{ PIANO.buf[k]=b; res(); },()=>res()))));
+}
+// 1音鳴らす。戻り値は止める関数
+function pianoPlay(m,t,vol,dur,dest){
+  const c=AU.ctx; if(!c||!AU.out) return null;
+  const ks=Object.keys(PIANO.buf).map(Number);
+  const g=c.createGain(); g.connect(dest||AU.out);
+  const v=vol*sfxGain();
+  if(!ks.length){                                             // 音源が読めないときは合成音
+    const o=c.createOscillator(); o.type='triangle'; o.frequency.value=440*Math.pow(2,(m-69)/12);
+    g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(v*0.5,t+0.01); g.gain.setTargetAtTime(0.0001,t+dur,0.08);
+    o.connect(g); o.start(t); o.stop(t+dur+0.6); return ()=>{ try{o.stop();}catch(e){} };
+  }
+  const k=ks.reduce((a,b)=>Math.abs(b-m)<Math.abs(a-m)?b:a);
+  const s=c.createBufferSource(); s.buffer=PIANO.buf[k]; s.playbackRate.value=Math.pow(2,(m-k)/12);
+  g.gain.setValueAtTime(v,t); g.gain.setTargetAtTime(0.0001,t+dur,0.12);
+  s.connect(g); s.start(t); s.stop(t+dur+1.2);
+  return ()=>{ try{ g.gain.cancelScheduledValues(0); g.gain.setTargetAtTime(0.0001,c.currentTime,0.03); }catch(e){} };
+}
+
+/* ---- 調をキープする伴奏（Ⅰ−Ⅵm−Ⅳ−Ⅴ）---- */
+const EAR_PROG=[[36,[48,52,55]],[45,[48,52,57]],[41,[48,53,57]],[43,[47,50,55]]];
+function earBgmTick(){
+  if(!E||!E.bgm||!AU.ctx) return;
+  const bar=E.bar;
+  while(E.bgmT<now()+0.6){
+    const [b,ch]=EAR_PROG[E.bgmI%4], t=E.bgmT;
+    pianoPlay(b,t,0.20,bar*0.9,E.bus);
+    [0,0.5].forEach(h=>ch.forEach(m=>pianoPlay(m,t+h*bar,0.075,bar*0.45,E.bus)));
+    E.bgmI++; E.bgmT+=bar;
+  }
+}
+
+/* ---- 進行 ---- */
+let E=null;
+function stopEar(){
+  if(!E) return;
+  clearInterval(E.clock); clearInterval(E.bgmTimer); E.to.forEach(clearTimeout);
+  E.stops.forEach(f=>f&&f());
+  if(E.bus){ try{ E.bus.disconnect(); }catch(e){} }
+  document.removeEventListener('keydown',earKey);
+  E=null;
+}
+function earBuildKeys(cfg){
+  const kb=$('eKeys'), lab=cfg.labels!=='none';
+  // 広い画面は C4〜C6 を1段。狭い画面は上の段＝高いオクターブ（C5〜C6）、下の段＝C4〜C5 の2段
+  const two=kb.clientWidth>0 && kb.clientWidth<560;
+  const rows=two?[[72,84],[60,72]]:[[60,84]];
+  kb.classList.toggle('two',two);
+  kb.innerHTML=rows.map(([lo,hi])=>{
+    const whites=[], blacks=[];
+    for(let m=lo;m<=hi;m++) (earIn(EAR_DIA,m)?whites:blacks).push(m);
+    const nw=whites.length;
+    return `<div class="ekrow" style="--nw:${nw}"><div class="ek-w">${whites.map(m=>`<button class="ek w" data-m="${m}"><span>${lab?earName(m):''}</span></button>`).join('')}</div>
+      <div class="ek-b">${blacks.map(m=>{
+        const i=whites.filter(w=>w<m).length;                   // 左にある白鍵の数＝黒鍵の位置
+        return `<button class="ek b" data-m="${m}" style="left:calc(${i}*100%/${nw} - 100%/${nw}*0.3)"><span>${lab&&cfg.stage==='s10'?earName(m):''}</span></button>`;
+      }).join('')}</div></div>`;
+  }).join('');
+  kb.querySelectorAll('.ek').forEach(b=>b.addEventListener('pointerdown',e=>{ e.preventDefault(); earPress(+b.dataset.m); }));
+}
+function earFlash(m,cls,ms){
+  $('eKeys').querySelectorAll(`.ek[data-m="${m}"]`).forEach(b=>{ b.classList.add(cls); E.to.push(setTimeout(()=>b.classList.remove(cls),ms)); });
+}
+function runEar(cfg){
+  stopAll(); audioOn();
+  const c=AU.ctx;
+  E={cfg, q:null, got:[], n:0, hits:0, combo:0, best:0, score:0, left:cfg.dur||60, log:[], to:[], stops:[], clock:null,
+     bar:cfg.fast?1.6:2.0, gap:cfg.fast?0.34:0.5, bgm:cfg.bgm!==false, bgmT:0, bgmI:0, bgmTimer:null, busy:true, tEnd:0};
+  if(c){ E.bus=c.createGain(); E.bus.connect(AU.out||AU.master); }
+  $('eLeft').textContent=E.left; $('eHits').textContent='0'; $('eCombo').textContent='0';
+  $('eSlots').innerHTML=''; $('eMark').className='emark';
+  show('playEar','音感トレーニング',EAR_STAGES[cfg.stage]||'');
+  earBuildKeys(cfg);
+  pianoLoad();
+  const begin=()=>{
+    if(!E) return;
+    audioOn(); pianoLoad().then(()=>{
+      if(!E) return;
+      document.addEventListener('keydown',earKey);
+      if(E.bgm){ E.bgmT=now()+0.1; earBgmTick(); E.bgmTimer=setInterval(earBgmTick,150); }
+      E.to.push(setTimeout(()=>{                                // 伴奏を1小節聴いてから出題
+        if(!E) return;
+        E.clock=setInterval(()=>{ if(!E) return; E.left--; $('eLeft').textContent=Math.max(0,E.left); if(E.left<=0) earEnd(); },1000);
+        earNext();
+      }, E.bgm?E.bar*1000:300));
+    });
+  };
+  E.stops.push(veilPrepare($('eVeil'),{title:'音を聴いて鍵盤で答える',
+    ex:`<div class="prep-ex ear-ex"><span>♪</span><span class="ar">→</span><span>${(cfg.stage==='s10'?'ソ フィ ソ':cfg.stage==='s1'?'シ ド':'ド レ ミ').split(' ').join('&ensp;')}</span></div>`},begin));
+}
+function earSlots(){
+  const q=E.q, g=E.got;
+  $('eSlots').innerHTML=q.map((m,i)=>`<span class="es${i<g.length?' on':''}">${i<g.length?earName(g[i]):'?'}</span>`).join('');
+}
+function earPlay(q,show){
+  const t0=now()+0.08;
+  q.forEach((m,i)=>{
+    const t=t0+i*E.gap;
+    E.stops.push(pianoPlay(m,t,0.62,E.gap*1.6));
+    if(show) E.to.push(setTimeout(()=>{ if(E) earFlash(m,'ans',E.gap*1000*0.95); },(t-now())*1000));
+  });
+  return t0+(q.length-1)*E.gap+0.4;
+}
+function earNext(){
+  if(!E) return;
+  E.q=earMake(E.cfg.stage,E.q); E.got=[]; E.n++; E.busy=false;
+  $('eMark').className='emark'; earSlots();
+  E.tEnd=earPlay(E.q,false);
+}
+function earReplay(){ if(E&&E.q&&!E.busy) earPlay(E.q,false); }
+function earPress(m){
+  if(!E) return;
+  E.stops.push(pianoPlay(m,now()+0.005,0.62,0.5));
+  earFlash(m,'down',180);
+  if(!E.q||E.busy) return;
+  const i=E.got.length, q=E.q, g=E.got;
+  const ok = earPc(m)===earPc(q[i]) && (i===0 || Math.sign(m-g[i-1])===Math.sign(q[i]-q[i-1]));
+  g.push(m); earSlots();
+  if(!ok){                                                     // 間違えたら、その問題は終わり。答えを見せて鳴らす
+    E.busy=true; E.combo=0; $('eCombo').textContent='0';
+    $('eMark').className='emark ng';
+    E.log.push({ok:false, exp:earText(q), ans:earText(g), q:q.slice()});
+    E.to.push(setTimeout(()=>{
+      if(!E) return;
+      $('eSlots').innerHTML=`<span class="es ans">${earText(q)}</span>`;
+      const end=earPlay(q,true);
+      E.to.push(setTimeout(earNext,(end-now())*1000+700));
+    },650));
+    return;
+  }
+  if(g.length<q.length) return;
+  E.busy=true; E.hits++; E.combo++; E.best=Math.max(E.best,E.combo);
+  const sec=Math.max(0,now()-E.tEnd);
+  E.score+=Math.round(100*q.length*(1+Math.max(0,3-sec)/3)*(1+Math.min(E.combo,10)*0.1));
+  $('eHits').textContent=E.hits; $('eCombo').textContent=E.combo;
+  $('eMark').className='emark ok';
+  E.log.push({ok:true, exp:earText(q), q:q.slice()});
+  E.to.push(setTimeout(earNext,650));
+}
+// パソコンのキーボードでも答えられる（A=ド … K=上のド）
+const EAR_KEYMAP={a:60,w:61,s:62,e:63,d:64,f:65,t:66,g:67,y:68,h:69,u:70,j:71,k:72,o:73,l:74,p:75,';':76};
+function earKey(e){
+  if(!E||e.repeat||e.metaKey||e.ctrlKey) return;
+  const m=EAR_KEYMAP[e.key.toLowerCase()];
+  if(m!=null){ e.preventDefault(); earPress(m); }
+  else if(e.key===' '){ e.preventDefault(); earReplay(); }
+}
+function earEnd(){
+  if(!E) return;
+  const c=E.cfg, hits=E.hits, log=E.log.slice(), n=log.length, score=E.score, best=E.best;
+  stopEar();
+  const pass=hits>=6 && n && hits/n>=0.7;
+  finish({ type:'ear', cfg:c, log,
+    stats:[['スコア',score.toLocaleString()],['正答率',n?Math.round(hits/n*100)+'%':'—'],['最大コンボ',best],['問題数',n]],
+    earPass:pass,
+    celebrate:{hits, total:Math.max(n,1), title:n&&hits===n?'パーフェクト':pass?'クリア':'コンプリート',
+      note:'おつかれさまでした', tier:n&&hits===n?'perfect':pass?'good':''} });
+}
+$('eReplay').onclick=earReplay;
+window.addEventListener('resize',()=>{ if(E){ const two=$('eKeys').clientWidth<560; if(two!==$('eKeys').classList.contains('two')) earBuildKeys(E.cfg); } });
+// 結果画面の ♪：そのフレーズをもう一度聴く
+function earReview(q){
+  audioOn(); pianoLoad().then(()=>{ const t0=now()+0.05; q.forEach((m,i)=>pianoPlay(m,t0+i*0.5,0.62,0.8)); });
+}
+
+/* ============================================================
    CARD FLASH engine — トランプの記号・数字・色がパッと切り替わる
    ============================================================ */
 const SUITS={
@@ -4228,7 +4569,7 @@ const stepAutoCfg=()=>({drills:['lr','fb','hopR','hopL','gupa','cross','inout','
    Results
    ============================================================ */
 let last=null;
-const TYPE_NAME={step:'リズムステップ',spot:'丸タッチ',arrow:'方向トレーニング',num:'数字記憶',stroop:'ストループ',voice:'ストループ（音声）',grid:'ストループ 一覧',move:'リズム運動',hands:'左右の手まね',breath:'呼吸調整',mem:'数字の位置記憶',card:'フラッシュ'};
+const TYPE_NAME={step:'リズムステップ',spot:'丸タッチ',arrow:'方向トレーニング',num:'数字記憶',stroop:'ストループ',voice:'ストループ（音声）',grid:'ストループ 一覧',move:'リズム運動',hands:'左右の手まね',breath:'呼吸調整',mem:'数字の位置記憶',card:'フラッシュ',ear:'音感トレーニング'};
 function finish(r){
   if(r.type==='breath' && r.cfg && r.cfg.thenLv){ const x=r.cfg.thenLv; levelStart(x.t,x.lv); return; }   // 呼吸のあと、そのままレベル1へ
   last=r;
@@ -4254,8 +4595,9 @@ function finish(r){
     ? r.log.map((l,i)=>`<div class="qrow"><span class="qi">${i+1}</span>
         <span class="qm ${l.ok?'ok':'ng'}">${l.ok?ICON.check:ICON.cross}</span>
         <span class="qa tnum">${l.exp}</span>
-        ${l.ok?'':`<span class="qb tnum">${l.ans||'—'}</span>`}</div>`).join('')
+        ${l.ok?'':`<span class="qb tnum">${l.ans||'—'}</span>`}${l.q?`<button class="qplay" data-i="${i}" aria-label="聴く">♪</button>`:''}</div>`).join('')
     : '';
+  $('qlist').querySelectorAll('.qplay').forEach(b=>b.onclick=()=>earReview(r.log[+b.dataset.i].q));
   show('results','結果', TYPE_NAME[r.type]||'');
   levelResult(r);
 }
@@ -4277,6 +4619,7 @@ function rerun(type,cfg){
   else if(type==='breath') runBreath(cfg);
   else if(type==='mem') runMem(cfg);
   else if(type==='card') runCard(cfg);
+  else if(type==='ear') runEar(cfg);
   else if(type==='spot') runSpot(cfg);
   else if(type==='step') runStep(cfg);
   else runVoice(cfg);
@@ -4292,7 +4635,7 @@ goHome();
    Version check — 古い保存済みの画面が出ていたら、新しい版に切り替える
    （GitHub Pages は更新後しばらく古い版を返すことがあるため）
    ============================================================ */
-const APP_VER='2026-11-06 15:00';   // 更新のたびにこの日時を書き換える
+const APP_VER='2026-11-06 16:30';   // 更新のたびにこの日時を書き換える
 $('appVer').textContent='更新 '+APP_VER;
 (function checkVer(){
   if(location.protocol==='file:') return;
