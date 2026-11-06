@@ -443,7 +443,8 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 .hcol{display:flex;flex-direction:column;align-items:center;min-width:0}
 .hl{font-size:16px;font-weight:720;color:var(--text-2);letter-spacing:.06em;margin-bottom:6px}
 .hbox{width:100%;display:grid;place-items:center}
-.hbox.pop{animation:pop .2s cubic-bezier(.2,.8,.3,1)}
+.hbox.pop{animation:hpop .2s cubic-bezier(.2,.8,.3,1)}
+@keyframes hpop{from{transform:scale(.86)}to{transform:scale(1)}}   /* 手の絵は薄くしない（薄い手に意味があるように見えるため） */
 .hand{width:100%;max-width:210px;display:block}
 .hbox{max-width:280px;aspect-ratio:210/256}
 .hnum{font-size:min(34vw,170px);font-weight:760;line-height:1;color:var(--text);letter-spacing:-.02em}
@@ -4291,7 +4292,7 @@ goHome();
    Version check — 古い保存済みの画面が出ていたら、新しい版に切り替える
    （GitHub Pages は更新後しばらく古い版を返すことがあるため）
    ============================================================ */
-const APP_VER='2026-11-06 11:00';   // 更新のたびにこの日時を書き換える
+const APP_VER='2026-11-06 14:30';   // 更新のたびにこの日時を書き換える
 $('appVer').textContent='更新 '+APP_VER;
 (function checkVer(){
   if(location.protocol==='file:') return;
