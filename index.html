@@ -1049,14 +1049,14 @@ const AR_MATH={math:true, nrange:'n10', ncolors:['red','green','blue','yellow'],
 const LEVELS={
   arrow:[
     {t:'同じ方向・4方向・ゆっくり', say:'矢印と同じ方向を向きます', cfg:AR('same',4,2.0)},
-    {t:'同じ方向・4方向・少し速く', say:'矢印と同じ方向を向きます', cfg:AR('same',4,1.5)},
     {t:'同じ方向・8方向',           say:'矢印と同じ方向を向きます', cfg:AR('same',8,1.5)},
-    {t:'反対を向く・4方向・ゆっくり',say:'矢印と反対の方向を向きます', cfg:AR('anti',4,2.0)},
     {t:'反対を向く・4方向',         say:'矢印と反対の方向を向きます', cfg:AR('anti',4,1.5)},
     {t:'反対を向く・8方向',         say:'矢印と反対の方向を向きます', cfg:AR('anti',8,1.5)},
     {t:'色で判断・4方向',           say:'矢印の色で向きが変わります', cfg:AR('color',4,1.5,{cols:2})},
-    {t:'色で判断・8方向・速く',     say:'矢印の色で向きが変わります', cfg:AR('color',8,1.2,{cols:4})},
-    {t:'反対・8方向・速く＋暗算',   say:'矢印と反対の方向を向きます、暗算もします', cfg:AR('anti',8,1.0,{...AR_MATH, every:3, mrule:'add_all'})},
+    {t:'同じ方向＋暗算（ぜんぶ足す）', say:'矢印と同じ方向を向きます、暗算もします', cfg:AR('same',4,1.5,{...AR_MATH, every:3, mrule:'add_all'})},
+    {t:'反対を向く＋暗算（ぜんぶ足す）', say:'矢印と反対の方向を向きます、暗算もします', cfg:AR('anti',4,1.5,{...AR_MATH, every:3, mrule:'add_all'})},
+    {t:'反対・8方向＋暗算（1色だけ足す）', say:'矢印と反対の方向を向きます、暗算もします', cfg:AR('anti',8,1.2,{...AR_MATH, every:2, mrule:'add_one'})},
+    {t:'色で判断・8方向＋暗算（足す色・引く色）', say:'矢印の色で向きが変わります、暗算もします', cfg:AR('color',8,1.2,{...AR_MATH, cols:4, every:2, mrule:'add_sub'})},
     {t:'色で判断・とても速く＋暗算（全部計算）', say:'矢印の色で向きが変わります、暗算もします', cfg:AR('color',8,0.8,{...AR_MATH, cols:4, every:1, nrange:'d9', mrule:'auto', ignore:false})}
   ],
   num:[
@@ -4292,7 +4292,7 @@ goHome();
    Version check — 古い保存済みの画面が出ていたら、新しい版に切り替える
    （GitHub Pages は更新後しばらく古い版を返すことがあるため）
    ============================================================ */
-const APP_VER='2026-11-06 14:45';   // 更新のたびにこの日時を書き換える
+const APP_VER='2026-11-06 15:00';   // 更新のたびにこの日時を書き換える
 $('appVer').textContent='更新 '+APP_VER;
 (function checkVer(){
   if(location.protocol==='file:') return;
