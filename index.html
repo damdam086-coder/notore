@@ -1121,7 +1121,7 @@ function show(id,title,sub){
   $('back').style.display = id==='home'?'none':'grid';
   $('setBtn').style.display = id==='home'?'flex':'none';
   if(title!==undefined) $('ttl').textContent=title;
-  if(sub!==undefined) $('sub').textContent=(LVNOW&&id.startsWith('play')?lvName(LVNOW.lv)+' ・ ':'')+sub;
+  if(sub!==undefined) $('sub').textContent=(LVNOW&&id.startsWith('play')?lvName(LVNOW.lv,LVNOW.t)+' ・ ':'')+sub;
 }
 $('back').innerHTML=ICON.back;
 $('back').onclick=()=>{ stopAll(); stopProg(); if(['hub','results'].includes(document.querySelector('.screen.on').id)) goHome(); else if(curTrain) openHub(curTrain); else goHome(); };
@@ -1192,17 +1192,12 @@ const LEVELS={
     {t:'秒数ランダム4〜12秒を10セット連続', say:'秒数のあいだ回し続けます', cfg:{...MOVE_BASE, mode:'sec', secMode:'rand', secSets:10, count:'voice', rounds:3}},
     {t:'全部まぜる・8ラウンド',          say:'音と秒数に合わせて回します', cfg:{...MOVE_BASE, mode:'mix', range:'wide', bpmStep:30, gap:'every', rounds:8, flip:true, beatsRand:true, secMode:'rand'}}
   ],
-  hands:[   // 2026-11-06：どのレベルも同じお題のあいだに左右の入れ替えがある（入れ替えなしだと「ずっと同じ」に見える・持ち主の指摘）
+  hands:[   // 2026-11-07 持ち主の指示：5段に。お題は全部5〜8秒（短くしても難しくはならない）。Lv1〜3は数字の形（グー〜5の全部）で入れ替えを速く、Lv4・5でいろんなポーズ
     {t:'数字の形・2秒ごとに左右入れ替え',     say:'左右で違う形をまねします、カチッという音で左右を入れ替えます', cfg:{set:'num',show:'art',spd:'s58',swap:2,  dur:30,sets:1,names:false,beep:true}},
-    {t:'数字の形・2秒ごと・お題4〜6秒',       say:'左右で違う形をまねします、カチッという音で左右を入れ替えます', cfg:{set:'num',show:'art',spd:'s46',swap:2,  dur:30,sets:1,names:false,beep:true}},
     {t:'数字の形・1.5秒ごとに入れ替え',       say:'左右で違う形をまねします、カチッという音で左右を入れ替えます', cfg:{set:'num',show:'art',spd:'s58',swap:1.5,dur:30,sets:1,names:false,beep:true}},
-    {t:'数字の形・1.5秒ごと・お題4〜6秒',     say:'左右で違う形をまねします、カチッという音で左右を入れ替えます', cfg:{set:'num',show:'art',spd:'s46',swap:1.5,dur:30,sets:1,names:false,beep:true}},
-    {t:'いろんなポーズ・2秒ごとに入れ替え',   say:'左右で違う形をまねします、カチッという音で左右を入れ替えます', cfg:{set:'all',show:'art',spd:'s58',swap:2,  dur:30,sets:1,names:true, beep:true}},
-    {t:'いろんなポーズ・1.5秒ごと',           say:'左右で違う形をまねします、カチッという音で左右を入れ替えます', cfg:{set:'all',show:'art',spd:'s46',swap:1.5,dur:30,sets:1,names:true, beep:true}},
-    {t:'数字で出す・1.5秒ごとに入れ替え',     say:'左右で違う形をまねします、カチッという音で左右を入れ替えます', cfg:{set:'num',show:'num',spd:'s46',swap:1.5,dur:30,sets:1,names:false,beep:true}},
-    {t:'絵と数字をまぜる・1秒ごと',           say:'左右で違う形をまねします、カチッという音で左右を入れ替えます', cfg:{set:'all',show:'mix',spd:'s46',swap:1,  dur:30,sets:1,names:false,beep:true}},
-    {t:'いろんなポーズ・1秒ごと・お題も速く', say:'左右で違う形をまねします、カチッという音で左右を入れ替えます', cfg:{set:'all',show:'art',spd:'mid',swap:1,  dur:30,sets:1,names:false,beep:true}},
-    {t:'絵と数字・1秒ごと・お題がどんどん変わる',say:'左右で違う形をまねします、カチッという音で左右を入れ替えます', cfg:{set:'all',show:'mix',spd:'fast',swap:1, dur:30,sets:1,names:false,beep:true}}
+    {t:'数字の形・1秒ごとに入れ替え',         say:'左右で違う形をまねします、カチッという音で左右を入れ替えます', cfg:{set:'num',show:'art',spd:'s58',swap:1,  dur:30,sets:1,names:false,beep:true}},
+    {t:'いろんなポーズ（名前つき）・1.5秒ごと',say:'左右で違う形をまねします、カチッという音で左右を入れ替えます', cfg:{set:'all',show:'art',spd:'s58',swap:1.5,dur:30,sets:1,names:true, beep:true}},
+    {t:'いろんなポーズ・1秒ごと',             say:'左右で違う形をまねします、カチッという音で左右を入れ替えます', cfg:{set:'all',show:'art',spd:'s58',swap:1,  dur:30,sets:1,names:false,beep:true}}
   ],
   mem:[
     {t:'5個・マス中', say:'数字の場所を覚えて1から順に押します', cfg:{count:5, grid:'m',after:'square',total:10}},
@@ -1243,7 +1238,8 @@ const LEVELS={
   ]
 };
 var LVNOW=null;   // いまレベルで遊んでいるか（{t,lv}）。自分で設定・おまかせで始めたら null
-const lvName=n=>n===10?'レベル10（難問）':`レベル${n}`;
+const lvMax=t=>(LEVELS[t]||[]).length||10;   // 難問＝その種目の最後のレベル（手まねは5段・ほかは10段）
+const lvName=(n,t)=>n===lvMax(t)?`レベル${n}（難問）`:`レベル${n}`;
 function levelStart(t,lv){
   const L=LEVELS[t]&&LEVELS[t][lv-1]; if(!L) return;
   stopAll(); stopProg(); audioOn();
@@ -1267,9 +1263,9 @@ function levelStart(t,lv){
   // 始める前の説明に「レベル○」を大きく出し、説明を読み上げる
   const prep=document.querySelector('.screen.on .veil .prep');
   if(prep){
-    const k=prep.querySelector('.prep-k'); if(k){ k.textContent=lvName(lv); k.classList.add('lvk'); }
+    const k=prep.querySelector('.prep-k'); if(k){ k.textContent=lvName(lv,t); k.classList.add('lvk'); }
   }
-  say([`レベル${lv}`, ...(lv===10?['難問です']:[]), ...L.say.split('、')].join('、'),true);
+  say([`レベル${lv}`, ...(lv===lvMax(t)?['難問です']:[]), ...L.say.split('、')].join('、'),true);
 }
 // クリアしたか（正解のあるものは合格ライン、ないものは最後までやり切ったら）
 function levelPass(r){
@@ -1287,16 +1283,16 @@ function levelResult(r){
   const box=$('lvBox'); if(!box) return;
   const c=r.cfg||{};
   if(!c.lv || r.type==='breath'){ box.style.display='none'; box.innerHTML=''; $('rAgain').textContent='もう一度'; return; }
-  const ok=levelPass(r), lv=c.lv, t=c.lvT, nx=lv+1;
+  const ok=levelPass(r), lv=c.lv, t=c.lvT, nx=lv+1, last=lv>=lvMax(t);
   box.style.display='block';
   box.innerHTML=`<div class="lvres ${ok?'ok':''}">
-      <div class="lvres-k">${lvName(lv)}</div>
-      <div class="lvres-t">${ok?(lv===10?'難問クリア！':'クリア！'):'もう一度チャレンジしましょう'}</div>
-      ${ok&&lv<10?`<button class="btn lvnext" id="lvNext">レベル${nx}にチャレンジ</button>`:''}
+      <div class="lvres-k">${lvName(lv,t)}</div>
+      <div class="lvres-t">${ok?(last?'難問クリア！':'クリア！'):'もう一度チャレンジしましょう'}</div>
+      ${ok&&!last?`<button class="btn lvnext" id="lvNext">レベル${nx}にチャレンジ</button>`:''}
     </div>`;
   $('rAgain').textContent=`もう一度（レベル${lv}）`;
   const b=$('lvNext'); if(b) b.onclick=()=>levelStart(t,nx);
-  say(ok?(lv===10?'難問クリアです、おつかれさまでした':`クリアです、次は、レベル${nx}、チャレンジしましょう`):'もう一度チャレンジしましょう',true);
+  say(ok?(last?'難問クリアです、おつかれさまでした':`クリアです、次は、レベル${nx}、チャレンジしましょう`):'もう一度チャレンジしましょう',true);
 }
 // ホーム・各トレーニングの画面
 function levelHubRender(t){
@@ -1311,8 +1307,9 @@ function levelHubRender(t){
   const sx=$('hubLevelsSex');
   sx.innerHTML = t==='sing' ? `<div class="seg singsex">${Object.keys(SING_SEX).map(k=>`<button data-v="${k}" class="${singSexPref()===k?'on':''}">${SING_SEX[k]}</button>`).join('')}</div>` : '';
   sx.querySelectorAll('button').forEach(b=>b.onclick=()=>{ singSexSet(b.dataset.v); sx.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b)); });
-  lv.innerHTML=LEVELS[t].map((L,i)=>`<button class="lvbtn${i===9?' hard':''}" data-lv="${i+1}" style="--lc:hsl(${215-i*24},70%,44%)" title="${L.t}">
-      <span class="lvn">${i===9?'難問':'Lv.'+(i+1)}</span></button>`).join('');
+  const N=LEVELS[t].length;
+  lv.innerHTML=LEVELS[t].map((L,i)=>`<button class="lvbtn${i===N-1?' hard':''}" data-lv="${i+1}" style="--lc:hsl(${215-Math.round(i*216/(N-1))},70%,44%)" title="${L.t}">
+      <span class="lvn">${i===N-1?'難問':'Lv.'+(i+1)}</span></button>`).join('');
   lv.querySelectorAll('.lvbtn').forEach(b=>b.onclick=()=>levelStart(t,+b.dataset.lv));
   trainerOpen(false,t);
 }
@@ -1373,7 +1370,7 @@ function goHome(){
     box.appendChild(b);
   };
   lbl('まずはウォーミングアップ'); item('breath','','warm');
-  lbl('トレーニング'); LEVEL_TRAININGS.forEach(t=>item(t,'Lv.1〜10'));
+  lbl('トレーニング'); LEVEL_TRAININGS.forEach(t=>item(t,`Lv.1〜${lvMax(t)}`));
   lbl('開発中'); ['spot','step'].forEach(t=>item(t,'','dev'));
   show('home','NoTore','脳のトレーニング');
   curTrain=null;
@@ -1393,7 +1390,7 @@ const QUICK_DESC={
   sing  :'',
   mem   :'1回目は見ながら 1 から順に押し、2回目は場所を思い出して 1 から順に押します（白い四角を出すか、枠だけにするかを下で選べます）。4個からスタートし、正解で1個増え、まちがえで1個減ります（3〜10個）。全10問。',
   breath:'8-8-8（8秒で吐く・8秒止める・8秒で吸う）を5分。はじまりの声と「いち・に・さん…はち」の数に合わせるだけです。1分ごとに残り時間をお知らせします。',
-  hands :'お題が出たら、カチッという音ごとに左右の形を入れ替えます。数字（グー〜5）・1.5秒ごとの入れ替えから始めて、1秒ごと、キツネやグッドなどのポーズも混ざり、最後はお題が3〜5秒で変わります。1ステージ30秒×4本。',
+  hands :'お題が出たら、カチッという音ごとに左右の形を入れ替えます。数字（グー〜5）・1.5秒ごとの入れ替えから始めて、1秒ごと、キツネやグッドなどのポーズも混ざり、お題はどれも5〜8秒で変わります。1ステージ30秒×4本。',
   move  :'メトロノーム（4拍で1周・周の変わり目でテンポが変わる）と、秒数（4〜12秒のランダムを3セット連続）を交互に全6ラウンド。動きも毎回ランダム。同じテンポは1〜3周続いてから変わり、最後は1周の拍数もランダムになります。'
 };
 function openHub(t){
@@ -1830,7 +1827,7 @@ function renderCustom(t){
       })}
       <div class="hint" id="hShowHint" style="margin-top:0;padding-bottom:var(--s2)">手の絵を見て、同じ形を作ります。</div>
       ${rowSeg('左右の入れ替え','hSwap',[{v:'1',l:'1秒ごと'},{v:'1.5',l:'1.5秒ごと'},{v:'2',l:'2秒ごと'},{v:'0',l:'なし'}],'1')}
-      ${rowSeg('お題が変わる','hSpd',[{v:'s46',l:'4〜6秒'},{v:'s58',l:'5〜8秒'},{v:'slow',l:'3〜5秒'},{v:'mid',l:'2〜4秒'},{v:'fast',l:'1.5〜3秒'}],'s46')}
+      ${rowSeg('お題が変わる','hSpd',[{v:'s58',l:'5〜8秒'},{v:'s46',l:'4〜6秒'},{v:'slow',l:'3〜5秒'},{v:'mid',l:'2〜4秒'},{v:'fast',l:'1.5〜3秒'}],'s58')}
       <div class="hint" style="margin-top:0;padding-bottom:var(--s2)">お題が出たら、カチッという音ごとに左右の形を入れ替えます（左手で右の形、右手で左の形…）。ピポンで次のお題です。</div>
       ${rowRange('1セットの時間','hDur',20,60,10,30,v=>v+'秒')}
       ${rowSeg('セット数','hSets',[{v:'1',l:'1'},{v:'2',l:'2'},{v:'3',l:'3'}],'1')}
@@ -3214,9 +3211,9 @@ function handsDone(){
 function buildHandsProgram(){
   return [
     {set:'num',spd:'s58',swap:1.5,dur:30,sets:1,names:false,beep:true},
-    {set:'num',spd:'s46',swap:1,dur:30,sets:1,names:false,beep:true},
-    {set:'all',spd:'s46',swap:1,dur:30,sets:1,names:false,beep:true},
-    {set:'all',spd:'slow',swap:1,dur:30,sets:1,names:false,beep:true}
+    {set:'num',spd:'s58',swap:1,dur:30,sets:1,names:false,beep:true},
+    {set:'all',spd:'s58',swap:1.5,dur:30,sets:1,names:false,beep:true},
+    {set:'all',spd:'s58',swap:1,dur:30,sets:1,names:false,beep:true}
   ];
 }
 
@@ -5068,7 +5065,7 @@ goHome();
    Version check — 古い保存済みの画面が出ていたら、新しい版に切り替える
    （GitHub Pages は更新後しばらく古い版を返すことがあるため）
    ============================================================ */
-const APP_VER='2026-11-06 16:55';   // 更新のたびにこの日時を書き換える
+const APP_VER='2026-11-07 11:45';   // 更新のたびにこの日時を書き換える
 $('appVer').textContent='更新 '+APP_VER;
 (function checkVer(){
   if(location.protocol==='file:') return;
