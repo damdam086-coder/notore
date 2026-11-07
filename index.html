@@ -1308,7 +1308,7 @@ function levelResult(r){
 // ホーム・各トレーニングの画面
 function levelHubRender(t){
   const lv=$('hubLevels'), isL=LEVEL_TRAININGS.includes(t);
-  document.querySelector('#hub .quick').style.display = (t==='hands'||t==='breath') ? 'none' : '';   // 手まね・呼吸は「設定なしで始める」を出さない（2026-11-07 持ち主の指示）
+  document.querySelector('#hub .quick').style.display = (t==='hands'||t==='breath'||t==='card') ? 'none' : '';   // 手まね・呼吸・フラッシュは「設定なしで始める」を出さない（2026-11-07 持ち主の指示）
   $('hubLevelsLbl').textContent = t==='breath' ? 'リズムを選んではじめる' : 'レベルを選んでチャレンジ';
   lv.classList.toggle('brgrid', t==='breath');
   if(t==='breath'){
@@ -1759,6 +1759,7 @@ function renderCustom(t){
         <div class="row"><span class="lbl">色の上に出すもの</span>${chips('fwOver',Object.keys(WALL_OVER).map(k=>({v:k,l:WALL_OVER[k]})),['none'])}</div>
         <div class="row" id="fwDirRow" style="display:none"><span class="lbl">方向</span>${chips('fwDirs',WALL_DIRS.map(x=>({v:x,l:x})),WALL_DIRS)}</div>
         <div class="row" id="fwBodyRow" style="display:none"><span class="lbl">体の部位</span>${chips('fwBody',WALL_BODY.map(x=>({v:x,l:x})),WALL_BODY_DEF)}</div>
+        ${rowSeg('ルール変更の合図','fwRule',Object.keys(RULE_GAP_JP).map(k=>({v:k,l:RULE_GAP_JP[k]})),'off',ruleChimePreview)}
         ${(binds.push(()=>{ const c=$('ch_fwOver'); if(!c) return; const sync=()=>{ const on=cfgUI.fwOver||[]; $('fwDirRow').style.display=on.includes('dir')?'flex':'none'; $('fwBodyRow').style.display=on.includes('body')?'flex':'none'; }; c.querySelectorAll('button').forEach(b=>b.addEventListener('click',sync)); sync(); }),'')}
         <div class="hint">画面いっぱいが、選んだ色の中からランダムに切り替わります（同じ色は続けて出ません）。左上の × でやめられます。</div>
       </div>
@@ -1935,7 +1936,7 @@ $('customStart').onclick=()=>{
     speedup:$('jSpeed').classList.contains('on'), voice:$('jVoice').classList.contains('on'), stepSound:$('jStepSnd').classList.contains('on')
   });
   if(curTrain==='card') runCard({
-    kind:segVal('fKind')||flashKindPref(), wallColors:cfgUI.fwColors.slice(), wallOver:(cfgUI.fwOver||['none']).slice(), wallDirs:(cfgUI.fwDirs||WALL_DIRS).slice(), wallBody:(cfgUI.fwBody||WALL_BODY_DEF).slice(), nrange:segVal('fnRange'),
+    kind:segVal('fKind')||flashKindPref(), wallColors:cfgUI.fwColors.slice(), wallOver:(cfgUI.fwOver||['none']).slice(), wallDirs:(cfgUI.fwDirs||WALL_DIRS).slice(), wallBody:(cfgUI.fwBody||WALL_BODY_DEF).slice(), ruleCue:segVal('fwRule')||'off', nrange:segVal('fnRange'),
     nchange:cfgUI.fnChange.slice(), ncolors:cfgUI.fnColors.slice(),
     math:$('fnMath').classList.contains('on'), rule:segVal('fnRule'), mathQ:+segVal('fnQ'), ignore:segVal('fnIgnore')!=='no',
     timing:segVal('cTiming'), iv:+segVal('cIv'), rand:segVal('cRand'), change:cfgUI.cChange.slice(),
@@ -4246,6 +4247,18 @@ const WALL_DIRS=['右','左','上','下','斜め上','斜め下'];
 const WALL_BODY=['右手','左手','右足','左足','頭','顔'];
 const WALL_BODY_DEF=['右手','左手','右足','左足'];
 const WALL_DARK=['black','blue','purple','green','red'];
+// ルール変更の合図（2026-11-07 持ち主の指示）：カラーの途中、ランダムな間隔でやわらかいチャイムが鳴る。鳴ったらトレーナーがルールを変える
+const RULE_GAP={r1015:[10,15], r1520:[15,20], r2030:[20,30]};
+const RULE_GAP_JP={off:'なし', r1015:'10〜15秒ごと', r1520:'15〜20秒ごと', r2030:'20〜30秒ごと'};
+function ruleChime(t){   // ド・ミ・ソ・ド を軽く重ねる（耳ざわりにならないよう正弦波・小さめ・余韻長め）
+  [1046.5,1318.5,1568,2093].forEach((f,i)=>{ tone(t+i*0.09,f,1.3,0.3); tone(t+i*0.09,f/2,0.9,0.08); });
+}
+function ruleChimePreview(v){ if(v==='off') return; audioOn(); ruleChime(now()+0.03); }
+function ruleCueNext(){
+  if(!C) return; const g=RULE_GAP[C.cfg.ruleCue]; if(!g) return;
+  const [a,b]=g, wait=a+Math.random()*(b-a);
+  C.to3=setTimeout(()=>{ if(!C) return; ruleChime(now()+0.01); C.cues=(C.cues||0)+1; ruleCueNext(); }, Math.round(wait*1000));
+}
 const wallOverKinds=c=>{ const k=(c.wallOver||[]).filter(x=>WALL_OVER[x]); return k.length?k:['none']; };
 function wallOverPick(c,prev){
   const ks=wallOverKinds(c); let o,n=0;
@@ -4285,10 +4298,10 @@ const cardAutoCfg=()=>({timing:'rand',iv:2.5,rand:'r15',change:['suit','scol'],n
   colorMode:'random',colors:['black','red'],numCol:'own',dur:60,beep:false,quiz:true});
 
 let C=null;
-function stopCard(){ $('cWall').style.display='none'; if(C){ C.stops.forEach(f=>f&&f()); clearTimeout(C.to); clearTimeout(C.to2); clearInterval(C.clock); C=null; } }
+function stopCard(){ $('cWall').style.display='none'; if(C){ C.stops.forEach(f=>f&&f()); clearTimeout(C.to); clearTimeout(C.to2); clearTimeout(C.to3); clearInterval(C.clock); C=null; } }
 $('cWallX').onclick=()=>{ if(C) cardDone(true); };
 function runCard(cfg){
-  stopAll(); if(cfg.beep) audioOn();
+  stopAll(); if(cfg.beep || RULE_GAP[cfg.ruleCue]) audioOn();
   C={cfg, count:0, cur:null, stops:[], to:null, clock:null, seen:[], quiz:null};
   $('cLeft').textContent=cfg.dur; $('cCount').textContent='0'; $('cIvLbl').textContent=cardIvTxt(cfg);
   $('cCard').innerHTML=''; $('cCard').style.visibility='hidden'; $('cNumOnly').textContent=''; $('cWallOv').innerHTML='';
@@ -4301,7 +4314,7 @@ function runCard(cfg){
   }).join('');
   let info = kind==='color' ? {
       title:'画面の色がパッと切り替わる',
-      sub:`${cardIvTxt(cfg)}に、画面いっぱいの色が変わります（${cfg.wallColors.length}色）。左上の × でやめられます。`,
+      sub:`${cardIvTxt(cfg)}に、画面いっぱいの色が変わります（${cfg.wallColors.length}色）。${RULE_GAP[cfg.ruleCue]?'<b>チャイムが鳴ったらルール変更</b>です。':''}左上の × でやめられます。`,
       ex:`<div class="prep-ex">${cfg.wallColors.map(k=>`<span class="cdot" style="width:22px;height:22px;margin:0;background:${WALL_COLORS[k].c}"></span>`).join('')}</div>`
         +(wallOverKinds(cfg).some(k=>k!=='none')?`<div class="prep-ex" style="font-size:26px;font-weight:800;gap:14px">${wallOverKinds(cfg).filter(k=>k!=='none').map(k=>`<span>${({dir:'右',body:'右手',num:'7',card:'♠'})[k]}</span>`).join('')}</div>`:'')
     } : kind==='num' ? {
@@ -4510,7 +4523,7 @@ function cardBegin(){
   if(C.math){ cardNext(); return; }                // 暗算は時間ではなく数字の数で終わる
   let left=C.cfg.dur; $('cLeft').textContent=left;
   $('cCard').style.visibility='visible';
-  if(flashKindOf(C.cfg)==='color'){ $('cWall').style.display='block'; $('cWallLeft').textContent=left; }
+  if(flashKindOf(C.cfg)==='color'){ $('cWall').style.display='block'; $('cWallLeft').textContent=left; C.cues=0; ruleCueNext(); }
   C.clock=setInterval(()=>{ left--; $('cLeft').textContent=Math.max(0,left); $('cWallLeft').textContent=Math.max(0,left); if(left<=0) cardDone(); },1000);
   cardNext();
 }
@@ -4692,13 +4705,13 @@ function quizReveal(user){
 }
 function cardDone(early){
   if(C && C.quiz && !early){                      // お題があるときは、止めて答えを聞く
-    clearTimeout(C.to); clearTimeout(C.to2); clearInterval(C.clock); C.to=C.to2=C.clock=null;
+    clearTimeout(C.to); clearTimeout(C.to2); clearTimeout(C.to3); clearInterval(C.clock); C.to=C.to2=C.clock=null;
     quizAsk(); return;
   }
-  const c=C.cfg, n=C.count, kind=flashKindOf(c); stopCard();
+  const c=C.cfg, n=C.count, kind=flashKindOf(c), cues=C.cues||0; stopCard();
   const what = kind==='color' ? ['色',c.wallColors.length+'色'+(wallOverKinds(c).some(k=>k!=='none')?'・'+wallOverKinds(c).map(k=>WALL_OVER[k]).join('・'):'')] : kind==='num' ? ['変わったもの',c.nchange.map(x=>x==='num'?'数字':'色').join('・')] : ['変わったもの',cardChangeTxt(c)];
   finish({ type:'card', cfg:c, title:early?'途中で終了':'完了', note:'おつかれさまでした',
-    stats:[[kind==='color'?'見た色':kind==='num'?'見た数字':'見たカード',n+'枚'],['種類',FLASH_KINDS[kind]],['切り替え',cardIvTxt(c)],what] });
+    stats:[[kind==='color'?'見た色':kind==='num'?'見た数字':'見たカード',n+'枚'],['種類',FLASH_KINDS[kind]],['切り替え',cardIvTxt(c)],what,...(kind==='color'&&RULE_GAP[c.ruleCue]?[['ルール変更の合図',cues+'回']]:[])] });
 }
 
 /* ============================================================
@@ -5135,7 +5148,7 @@ goHome();
    Version check — 古い保存済みの画面が出ていたら、新しい版に切り替える
    （GitHub Pages は更新後しばらく古い版を返すことがあるため）
    ============================================================ */
-const APP_VER='2026-11-07 14:30';   // 更新のたびにこの日時を書き換える
+const APP_VER='2026-11-07 15:20';   // 更新のたびにこの日時を書き換える
 $('appVer').textContent='更新 '+APP_VER;
 (function checkVer(){
   if(location.protocol==='file:') return;
