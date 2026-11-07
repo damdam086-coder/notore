@@ -1757,6 +1757,9 @@ function renderCustom(t){
       <div id="fColorBox">
         <div class="row"><span class="lbl">使う色</span>${chips('fwColors',WALL_COLOR_CHIPS(),['red','yellow','green','blue'])}</div>
         <div class="row"><span class="lbl">色の上に出すもの</span>${chips('fwOver',Object.keys(WALL_OVER).map(k=>({v:k,l:WALL_OVER[k]})),['none'])}</div>
+        <div class="row" id="fwDirRow" style="display:none"><span class="lbl">方向</span>${chips('fwDirs',WALL_DIRS.map(x=>({v:x,l:x})),WALL_DIRS)}</div>
+        <div class="row" id="fwBodyRow" style="display:none"><span class="lbl">体の部位</span>${chips('fwBody',WALL_BODY.map(x=>({v:x,l:x})),WALL_BODY_DEF)}</div>
+        ${(binds.push(()=>{ const c=$('ch_fwOver'); if(!c) return; const sync=()=>{ const on=cfgUI.fwOver||[]; $('fwDirRow').style.display=on.includes('dir')?'flex':'none'; $('fwBodyRow').style.display=on.includes('body')?'flex':'none'; }; c.querySelectorAll('button').forEach(b=>b.addEventListener('click',sync)); sync(); }),'')}
         <div class="hint">画面いっぱいが、選んだ色の中からランダムに切り替わります（同じ色は続けて出ません）。左上の × でやめられます。</div>
       </div>
       <div id="fNumBox">
@@ -1932,7 +1935,7 @@ $('customStart').onclick=()=>{
     speedup:$('jSpeed').classList.contains('on'), voice:$('jVoice').classList.contains('on'), stepSound:$('jStepSnd').classList.contains('on')
   });
   if(curTrain==='card') runCard({
-    kind:segVal('fKind')||flashKindPref(), wallColors:cfgUI.fwColors.slice(), wallOver:(cfgUI.fwOver||['none']).slice(), nrange:segVal('fnRange'),
+    kind:segVal('fKind')||flashKindPref(), wallColors:cfgUI.fwColors.slice(), wallOver:(cfgUI.fwOver||['none']).slice(), wallDirs:(cfgUI.fwDirs||WALL_DIRS).slice(), wallBody:(cfgUI.fwBody||WALL_BODY_DEF).slice(), nrange:segVal('fnRange'),
     nchange:cfgUI.fnChange.slice(), ncolors:cfgUI.fnColors.slice(),
     math:$('fnMath').classList.contains('on'), rule:segVal('fnRule'), mathQ:+segVal('fnQ'), ignore:segVal('fnIgnore')!=='no',
     timing:segVal('cTiming'), iv:+segVal('cIv'), rand:segVal('cRand'), change:cfgUI.cChange.slice(),
@@ -4238,16 +4241,18 @@ const WALL_COLORS={
 };
 // カラーの上に重ねるもの（2026-11-06 持ち主の依頼：色・方向の字・体の部位・数字・トランプをまぜる）
 const WALL_OVER={none:'色だけ', dir:'方向', body:'体の部位', num:'数字', card:'トランプ'};
+// 2026-11-07 持ち主の指示：方向・体の部位は1つずつ選べる（外せる）。体は右手・左手・右足・左足を必ず置き、最初はこの4つ
 const WALL_DIRS=['右','左','上','下','斜め上','斜め下'];
-const WALL_BODY=['頭','顔','右手','左手','右足','左足'];
+const WALL_BODY=['右手','左手','右足','左足','頭','顔'];
+const WALL_BODY_DEF=['右手','左手','右足','左足'];
 const WALL_DARK=['black','blue','purple','green','red'];
 const wallOverKinds=c=>{ const k=(c.wallOver||[]).filter(x=>WALL_OVER[x]); return k.length?k:['none']; };
 function wallOverPick(c,prev){
   const ks=wallOverKinds(c); let o,n=0;
   do{
     const k=pick(ks);
-    if(k==='dir') o={k,t:pick(WALL_DIRS)};
-    else if(k==='body') o={k,t:pick(WALL_BODY)};
+    if(k==='dir') o={k,t:pick(c.wallDirs&&c.wallDirs.length?c.wallDirs:WALL_DIRS)};
+    else if(k==='body') o={k,t:pick(c.wallBody&&c.wallBody.length?c.wallBody:WALL_BODY_DEF)};
     else if(k==='num') o={k,t:String(1+rnd(10))};
     else if(k==='card'){ const su=pick(Object.keys(SUITS)); o={k,t:pick(CARD_RANGE.ak.v)+su,su,num:null}; o.num=o.t.slice(0,-su.length); }
     else o={k:'none',t:''};
@@ -5130,7 +5135,7 @@ goHome();
    Version check — 古い保存済みの画面が出ていたら、新しい版に切り替える
    （GitHub Pages は更新後しばらく古い版を返すことがあるため）
    ============================================================ */
-const APP_VER='2026-11-07 14:20';   // 更新のたびにこの日時を書き換える
+const APP_VER='2026-11-07 14:30';   // 更新のたびにこの日時を書き換える
 $('appVer').textContent='更新 '+APP_VER;
 (function checkVer(){
   if(location.protocol==='file:') return;
