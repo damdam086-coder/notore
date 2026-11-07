@@ -1200,11 +1200,11 @@ const LEVELS={
     {t:'全部まぜる・8ラウンド',          say:'音と秒数に合わせて回します', cfg:{...MOVE_BASE, mode:'mix', range:'wide', bpmStep:30, gap:'every', rounds:8, flip:true, beatsRand:true, secMode:'rand'}}
   ],
   hands:[   // 2026-11-07 持ち主の指示：5段に。お題ごとに先に「覚える時間」（バー）→ そのあと入れ替え。覚える時間も短いほど難しい（5→4→3→3→2秒）。お題は全部5〜8秒（短くしても難しくはならない）。Lv1〜3は数字の形（グー〜5の全部）で入れ替えを速く、Lv4・5でいろんなポーズ
-    {t:'数字の形・2秒ごとに左右入れ替え',     say:'左右で違う形をまねします、カチッという音で左右を入れ替えます', cfg:{set:'num',show:'art',spd:'s58',memo:5,swap:2,  dur:30,sets:1,names:false,beep:true}},
-    {t:'数字の形・1.5秒ごとに入れ替え',       say:'左右で違う形をまねします、カチッという音で左右を入れ替えます', cfg:{set:'num',show:'art',spd:'s58',memo:4,swap:1.5,dur:30,sets:1,names:false,beep:true}},
-    {t:'数字の形・1秒ごとに入れ替え',         say:'左右で違う形をまねします、カチッという音で左右を入れ替えます', cfg:{set:'num',show:'art',spd:'s58',memo:3,swap:1,  dur:30,sets:1,names:false,beep:true}},
-    {t:'いろんなポーズ（名前つき）・1.5秒ごと',say:'左右で違う形をまねします、カチッという音で左右を入れ替えます', cfg:{set:'all',show:'art',spd:'s58',memo:3,swap:1.5,dur:30,sets:1,names:true, beep:true}},
-    {t:'いろんなポーズ・1秒ごと',             say:'左右で違う形をまねします、カチッという音で左右を入れ替えます', cfg:{set:'all',show:'art',spd:'s58',memo:2,swap:1,  dur:30,sets:1,names:false,beep:true}}
+    {t:'数字の形・BPM60',     say:'左右で違う形をまねします、カチッという音で左右を入れ替えます', cfg:{set:'num',show:'art',spd:'s58',memo:5,swap:2,  dur:30,sets:1,names:false,beep:true}},
+    {t:'数字の形・BPM80',       say:'左右で違う形をまねします、カチッという音で左右を入れ替えます', cfg:{set:'num',show:'art',spd:'s58',memo:4,swap:1.5,dur:30,sets:1,names:false,beep:true}},
+    {t:'数字の形・BPM120',       say:'左右で違う形をまねします、カチッという音で左右を入れ替えます', cfg:{set:'num',show:'art',spd:'s58',memo:3,swap:1,  dur:30,sets:1,names:false,beep:true}},
+    {t:'いろんなポーズ（名前つき）・BPM80',say:'左右で違う形をまねします、カチッという音で左右を入れ替えます', cfg:{set:'all',show:'art',spd:'s58',memo:3,swap:1.5,dur:30,sets:1,names:true, beep:true}},
+    {t:'いろんなポーズ・BPM120',       say:'左右で違う形をまねします、カチッという音で左右を入れ替えます', cfg:{set:'all',show:'art',spd:'s58',memo:2,swap:1,  dur:30,sets:1,names:false,beep:true}}
   ],
   mem:[
     {t:'5個・マス中', say:'数字の場所を覚えて1から順に押します', cfg:{count:5, grid:'m',after:'square',total:10}},
@@ -1304,6 +1304,7 @@ function levelResult(r){
 // ホーム・各トレーニングの画面
 function levelHubRender(t){
   const lv=$('hubLevels'), isL=LEVEL_TRAININGS.includes(t);
+  document.querySelector('#hub .quick').style.display = t==='hands' ? 'none' : '';   // 手まねはレベルを選んで始める（2026-11-07 持ち主の指示）
   $('hubLevelsWrap').style.display=isL?'block':'none';
   $('trainerHead').style.display=isL?'flex':'none';
   $('customLbl').style.display=isL?'none':'block';
@@ -1397,7 +1398,7 @@ const QUICK_DESC={
   sing  :'',
   mem   :'1回目は見ながら 1 から順に押し、2回目は場所を思い出して 1 から順に押します（白い四角を出すか、枠だけにするかを下で選べます）。4個からスタートし、正解で1個増え、まちがえで1個減ります（3〜10個）。全10問。',
   breath:'8-8-8（8秒で吐く・8秒止める・8秒で吸う）を5分。はじまりの声と「いち・に・さん…はち」の数に合わせるだけです。1分ごとに残り時間をお知らせします。',
-  hands :'お題が出たら、バーが消えるまでに覚えてから、カチッという音ごとに左右の形を入れ替えます。数字（グー〜5）・1.5秒ごとの入れ替えから始めて、1秒ごと、キツネやグッドなどのポーズも混ざり、お題はどれも5〜8秒で変わります。1ステージ30秒×4本。',
+  hands :'お題が出たら、バーが消えるまでに覚えてから、テンポ（BPM）に合わせて2拍ごと（カチッ）に左右の形を入れ替えます。数字（グー〜5）・1.5秒ごとの入れ替えから始めて、1秒ごと、キツネやグッドなどのポーズも混ざり、お題はどれも5〜8秒で変わります。1ステージ30秒×4本。',
   move  :'メトロノーム（4拍で1周・周の変わり目でテンポが変わる）と、秒数（4〜12秒のランダムを3セット連続）を交互に全6ラウンド。動きも毎回ランダム。同じテンポは1〜3周続いてから変わり、最後は1周の拍数もランダムになります。'
 };
 function openHub(t){
@@ -1834,12 +1835,13 @@ function renderCustom(t){
       })}
       <div class="hint" id="hShowHint" style="margin-top:0;padding-bottom:var(--s2)">手の絵を見て、同じ形を作ります。</div>
       ${rowSeg('覚える時間','hMemoSec',[{v:'5',l:'5秒'},{v:'4',l:'4秒'},{v:'3',l:'3秒'},{v:'2',l:'2秒'},{v:'1',l:'1秒'},{v:'0',l:'なし'}],'3')}
-      ${rowSeg('左右の入れ替え','hSwap',[{v:'1',l:'1秒ごと'},{v:'1.5',l:'1.5秒ごと'},{v:'2',l:'2秒ごと'},{v:'0',l:'なし'}],'1')}
+      ${rowSeg('左右の入れ替え','hSwap',[{v:'2',l:'BPM 60'},{v:'1.5',l:'BPM 80'},{v:'1',l:'BPM 120'},{v:'0',l:'なし'}],'1.5')}
       ${rowSeg('お題が変わる','hSpd',[{v:'s58',l:'5〜8秒'},{v:'s46',l:'4〜6秒'},{v:'slow',l:'3〜5秒'},{v:'mid',l:'2〜4秒'},{v:'fast',l:'1.5〜3秒'}],'s58')}
-      <div class="hint" style="margin-top:0;padding-bottom:var(--s2)">お題が出たら、カチッという音ごとに左右の形を入れ替えます（左手で右の形、右手で左の形…）。ピポンで次のお題です。</div>
+      <div class="hint" style="margin-top:0;padding-bottom:var(--s2)">お題が出たら、2拍ごと（カチッ）に左右の形を入れ替えます（左手で右の形、右手で左の形…）。ピポンで次のお題です。</div>
       ${rowRange('1セットの時間','hDur',20,60,10,30,v=>v+'秒')}
       ${rowSeg('セット数','hSets',[{v:'1',l:'1'},{v:'2',l:'2'},{v:'3',l:'3'}],'1')}
       ${rowToggle('ポーズ名も出す','hNames',false)}
+      ${rowToggle('テンポの音','hMetro',true)}
       ${rowToggle('切り替わりの音','hBeep',true)}
       <div class="hint" id="hHint">グー・1・2・3・4・5 の6種類。</div>
       <div class="hint">左右は毎回ちがう形になります。切り替わる間隔は毎回ランダムです。</div>
@@ -1947,7 +1949,7 @@ $('customStart').onclick=()=>{
   }
   if(curTrain==='hands') runHands({
     set:segVal('hSetSel'), show:segVal('hShow'), spd:segVal('hSpd'), memo:+segVal('hMemoSec'), swap:+segVal('hSwap'), dur:+$('hDur').value, sets:+segVal('hSets'),
-    names:$('hNames').classList.contains('on'), beep:$('hBeep').classList.contains('on')
+    names:$('hNames').classList.contains('on'), beep:$('hBeep').classList.contains('on'), metro:$('hMetro').classList.contains('on')
   });
   if(curTrain==='move') runMove({
     mode:segVal('mMode'), moves:cfgUI.mMoves.slice(), rounds:+segVal('mRounds'), rest:+segVal('mRest'),
@@ -3113,10 +3115,10 @@ const handPool=set=>Object.keys(HAND_POSES).filter(k=>set==='all'||HAND_POSES[k]
    HANDS engine — copy the left / right hand shapes at once
    ============================================================ */
 let H=null;
-function stopHands(){ if(H){ H.stops.forEach(f=>f&&f()); clearTimeout(H.next); clearInterval(H.clock); H=null; } }
+function stopHands(){ if(H){ H.stops.forEach(f=>f&&f()); handsHalt(); clearInterval(H.clock); H=null; } }
 function runHands(cfg){
   stopAll();
-  if(cfg.beep) audioOn();
+  if(cfg.beep||+cfg.swap) audioOn();
   handPreload();
   H={cfg, pool:handPool(cfg.set), set:1, count:0, L:null, R:null, stops:[]};
   $('hSetLbl').textContent='セット';
@@ -3124,7 +3126,7 @@ function runHands(cfg){
   $('hCount').textContent='0';
   $('hField').classList.toggle('named',!!cfg.names);
   $('hL').innerHTML=''; $('hR').innerHTML=''; $('hLn').textContent=''; $('hRn').textContent=''; $('hSwapTxt').textContent=''; $('hMemo').classList.remove('on');
-  show('playHands','左右の手まね', `${cfg.show==='num'?'数字で出す':cfg.show==='mix'?'絵と数字':'イラスト'} ・ ${cfg.set==='all'?'いろんなポーズ':'数字の形だけ'} ・ ${HAND_SPEED_JP[cfg.spd]}`);
+  show('playHands','左右の手まね', `${cfg.show==='num'?'数字で出す':cfg.show==='mix'?'絵と数字':'イラスト'} ・ ${cfg.set==='all'?'いろんなポーズ':'数字の形だけ'} ・ ${+cfg.swap?'BPM '+handsBpm(cfg):HAND_SPEED_JP[cfg.spd]}`);
   handsSet(true);
 }
 // 絵で出すか、数字で出すか（数字以外のポーズは名前を文字で出す）
@@ -3143,8 +3145,8 @@ function handsRuleInfo(cfg){
   return {
     title:'左右の手をまねする',
     sub:`${num?'左右に出た数字の形':cfg.show==='mix'?'絵か数字で出た形':'左手と右手の絵と同じ形'}を、すぐに自分の両手で作ります。`
-      +(+cfg.swap&&+cfg.memo?`お題が出たら<b>バーが消えるまでの${cfg.memo}秒で覚えて</b>から、`:'')
-      +(+cfg.swap?`<b>${cfg.swap}秒ごと（カチッ）に左右の形を入れ替え</b>、${HAND_SPEED_JP[cfg.spd]}で次のお題（ピポン）に変わります（${pool.length}種類）。`:`形は ${HAND_SPEED_JP[cfg.spd]} ごとに変わります（${pool.length}種類）。`),
+      +(+cfg.swap&&+cfg.memo?`お題が出たら<b>バーが消えるまでに覚えます</b>（その間にテンポのお手本が鳴ります）。合図のあと、`:'')
+      +(+cfg.swap?`<b>BPM ${handsBpm(cfg)}の2拍ごと（カチッ）に左右の形を入れ替え</b>、${HAND_SPEED_JP[cfg.spd]}で次のお題（ピポン）に変わります（${pool.length}種類）。`:`形は ${HAND_SPEED_JP[cfg.spd]} ごとに変わります（${pool.length}種類）。`),
     ex
   };
 }
@@ -3158,9 +3160,9 @@ function handsSet(first){
     H.clock=setInterval(()=>{
       if(!H||H.memo) return;   // 覚える時間は残り時間に数えない
       left--; $('hClock').textContent=Math.max(0,left);
-      if(left<=0){ clearInterval(H.clock); clearTimeout(H.next); handsEnd(); }
+      if(left<=0){ clearInterval(H.clock); handsHalt(); handsEnd(); }
     },1000);
-    handsNext();
+    if(+c.swap) handsMetroStart(); else handsNext();
   };
   H.stops.push(first
     ? veilPrepare($('hVeil'), handsRuleInfo(c), begin)
@@ -3176,50 +3178,76 @@ function handsRender(pop){
     if(pop[side]){ box.classList.remove('pop'); void box.offsetWidth; box.classList.add('pop'); }
   });
 }
-function handsNext(){
-  if(!H) return;
+// 新しいお題を選ぶ（同じ形を両手に出さない・直前と同じ組み合わせにしない）
+function handsPick(){
   const p=H.pool, c=H.cfg; let L,R,n=0;
   // グー・パー（4と5）だけの組み合わせは作りやすいので、出る回数を減らす（3割だけ通す）
   do{ L=p[rnd(p.length)]; R=p[rnd(p.length)]; n++; }
   while((L===R || (L===H.L && R===H.R) || (HAND_EASY.has(L) && HAND_EASY.has(R) && Math.random()>0.3)) && n<100);
-  const chL=L!==H.L, chR=R!==H.R;
-  H.L=L; H.R=R; H.count++; H.flip=false;
+  const ch={L:L!==H.L, R:R!==H.R};
+  H.L=L; H.R=R; H.count++;
   H.numL = c.show==='num' || (c.show==='mix' && Math.random()<0.5);
   H.numR = c.show==='num' || (c.show==='mix' && Math.random()<0.5);
-  $('hCount').textContent=H.count;
-  handsRender({L:chL,R:chR});
-  const [a,b]=HAND_SPEED[c.spd], len=a+Math.random()*(b-a), sw=+c.swap||0;
-  if(c.beep||sw){ const t=now()+0.01; tone(t,880,0.08,0.4); tone(t+0.09,1320,0.12,0.4); }   // 新しいお題：ピポン
-  if(!sw){ H.next=setTimeout(handsNext, Math.round(len*1000)); return; }
-  // 入れ替えあり：お題の長さを拍の数にそろえ、拍ごとに左右を入れ替える
-  H.beatsLeft=Math.max(2,Math.round(len/sw));
-  const memo=+c.memo||0;
-  if(memo>0){   // 先に覚える時間（バーが縮む）。終わったら合図の音で入れ替えを始める
-    H.memo=true; $('hSwapTxt').textContent='';
-    const box=$('hMemo'), bar=$('hMemoBar');
-    box.classList.add('on'); bar.style.transition='none'; bar.style.transform='scaleX(1)'; void bar.offsetWidth;
-    bar.style.transition=`transform ${memo}s linear`; bar.style.transform='scaleX(0)';
-    H.next=setTimeout(()=>handsGo(true), Math.round(memo*1000));
+  return ch;
+}
+function handsShowNew(ch){ H.flip=false; $('hCount').textContent=H.count; handsRender(ch); }
+const handsLen=c=>{ const [a,b]=HAND_SPEED[c.spd]; return a+Math.random()*(b-a); };
+const handsBpm=c=>Math.round(120/(+c.swap));          // 入れ替え1回＝2拍（2秒→60・1.5秒→80・1秒→120）
+const handsSwapTxt=c=>`↔ BPM ${handsBpm(c)}・2拍ごとに左右を入れ替え`;
+// 入れ替えなし：お題が変わるだけ
+function handsNext(){
+  if(!H) return;
+  const c=H.cfg; handsShowNew(handsPick());
+  if(c.beep){ const t=now()+0.01; tone(t,880,0.08,0.4); tone(t+0.09,1320,0.12,0.4); }   // 新しいお題：ピポン
+  H.next=setTimeout(handsNext, Math.round(handsLen(c)*1000));
+}
+/* 入れ替えあり（2026-11-07 持ち主の指示）：後ろでテンポ（BPM）を鳴らし続け、2拍ごとに入れ替える。
+   お題が出る → 覚える時間（バー・テンポとカチッはお手本として鳴るが絵は入れ替えない）→ スタートの合図 → 本番。
+   音は Web Audio の時計で少し先まで予約し、絵はその時刻に合わせて変える（拍がずれないように） */
+// 音の時計が止まっている（自動再生の制限など）ときは画面の時計で進める（拍が止まらないように）
+const hClk=()=>(H&&H.au)?now():performance.now()/1000;
+function handsMetroStart(){
+  audioOn(); H.au=!!(AU.ctx&&AU.ctx.state==='running');
+  H.bd=(+H.cfg.swap)/2; H.k=0; H.bt=hClk()+0.15; H.ph=null; H.vis=[];
+  H.sched=setInterval(handsSched,25); handsSched();
+}
+function handsHalt(){ if(!H) return; clearInterval(H.sched); H.sched=null; (H.vis||[]).forEach(clearTimeout); H.vis=[]; clearTimeout(H.next); }
+function handsLater(t,fn){ const id=setTimeout(()=>{ if(H) fn(); }, Math.max(0,(t-hClk())*1000)); H.vis.push(id); if(H.vis.length>80) H.vis.splice(0,40); }
+function handsSched(){ if(!H||!H.sched) return; while(H.bt<hClk()+0.12){ handsBeatAt(H.k,H.bt); H.k++; H.bt+=H.bd; } }
+function handsTick(t,strong){ if(H.cfg.metro!==false) beatSound('wood',t,false,strong); }
+function handsClick(t){ handsTick(t,true); tone(t,1500,0.04,0.35,'triangle'); }   // 入れ替えの拍：強い拍＋カチッ
+function handsBeatAt(k,t){
+  const c=H.cfg;
+  if(k%2){ handsTick(t,false); return; }               // 裏の拍：小さく
+  if(H.ph===null || (H.ph==='go' && H.swLeft<=0)){      // 新しいお題（ピポン）
+    const ch=handsPick(), sw=+c.swap;
+    H.swNext=Math.max(2,Math.round(handsLen(c)/sw));
+    const ms=+c.memo>0 ? Math.max(2,Math.round(+c.memo/sw)) : 0;   // 覚える時間も入れ替えの拍にそろえる
+    tone(t,880,0.08,0.4); tone(t+0.09,1320,0.12,0.4);
+    if(ms){
+      H.ph='memo'; H.memoLeft=ms;
+      handsLater(t,()=>{ handsShowNew(ch); H.memo=true; $('hSwapTxt').textContent='';
+        const box=$('hMemo'), bar=$('hMemoBar');
+        box.classList.add('on'); bar.style.transition='none'; bar.style.transform='scaleX(1)'; void bar.offsetWidth;
+        bar.style.transition=`transform ${ms*sw}s linear`; bar.style.transform='scaleX(0)'; });
+    } else {
+      H.ph='go'; H.swLeft=H.swNext;
+      handsLater(t,()=>{ handsShowNew(ch); H.memo=false; $('hMemo').classList.remove('on'); $('hSwapTxt').textContent=handsSwapTxt(c); });
+    }
     return;
   }
-  handsGo(false);
-}
-function handsGo(afterMemo){
-  if(!H) return;
-  const sw=+H.cfg.swap;
-  H.memo=false; $('hMemo').classList.remove('on');
-  if(afterMemo){ const t=now()+0.01; tone(t,660,0.1,0.45); tone(t+0.12,990,0.18,0.45); }   // 覚える時間おわり：スタートの合図
-  $('hSwapTxt').textContent=`↔ ${sw}秒ごとに左右を入れ替え`;
-  H.next=setTimeout(handsBeat, Math.round(sw*1000));
-}
-function handsBeat(){
-  if(!H) return;
-  H.beatsLeft--;
-  if(H.beatsLeft<=0){ handsNext(); return; }      // 拍の頭で次のお題へ
-  H.flip=!H.flip; H.swaps=(H.swaps||0)+1;
-  handsRender({L:true,R:true});
-  tone(now()+0.01,1500,0.04,0.35,'triangle');     // 入れ替えの合図：カチッ
-  H.next=setTimeout(handsBeat, Math.round((+H.cfg.swap)*1000));
+  if(H.ph==='memo'){
+    H.memoLeft--;
+    if(H.memoLeft>0){ handsClick(t); return; }          // お手本：このテンポで入れ替えます（絵はそのまま）
+    H.ph='go'; H.swLeft=H.swNext;                       // 覚える時間おわり：スタートの合図
+    tone(t,660,0.1,0.45); tone(t+0.12,990,0.18,0.45);
+    handsLater(t,()=>{ H.memo=false; $('hMemo').classList.remove('on'); $('hSwapTxt').textContent=handsSwapTxt(c); });
+    return;
+  }
+  H.swLeft--;
+  if(H.swLeft<=0){ handsBeatAt(k,t); return; }          // 拍の頭で次のお題へ
+  handsClick(t);
+  handsLater(t,()=>{ H.flip=!H.flip; H.swaps=(H.swaps||0)+1; handsRender({L:true,R:true}); });
 }
 function handsEnd(){
   H.memo=false; $('hMemo').classList.remove('on');
@@ -3231,7 +3259,7 @@ function handsDone(){
   if(PROG && progAdvance({count:n})) return;
   finish({
     type:'hands', cfg:c, title:'完了', note:'おつかれさまでした',
-    stats:[['お題',n+'回'],...(+c.swap?[['入れ替え',sw+'回']]:[]),...(+c.swap&&+c.memo?[['覚える時間',c.memo+'秒']]:[]),['セット',c.sets],['お題が変わる',HAND_SPEED_JP[c.spd]],['ポーズ',c.set==='all'?'いろいろ':'数字だけ'],['出し方',c.show==='num'?'数字':c.show==='mix'?'まぜる':'イラスト']]
+    stats:[['お題',n+'回'],...(+c.swap?[['テンポ','BPM '+handsBpm(c)],['入れ替え',sw+'回']]:[]),...(+c.swap&&+c.memo?[['覚える時間',c.memo+'秒']]:[]),['セット',c.sets],['お題が変わる',HAND_SPEED_JP[c.spd]],['ポーズ',c.set==='all'?'いろいろ':'数字だけ'],['出し方',c.show==='num'?'数字':c.show==='mix'?'まぜる':'イラスト']]
   });
 }
 // おまかせ：数字・ゆっくり → 数字・ふつう → いろいろ・ふつう → いろいろ・はやい
@@ -5092,7 +5120,7 @@ goHome();
    Version check — 古い保存済みの画面が出ていたら、新しい版に切り替える
    （GitHub Pages は更新後しばらく古い版を返すことがあるため）
    ============================================================ */
-const APP_VER='2026-11-07 12:10';   // 更新のたびにこの日時を書き換える
+const APP_VER='2026-11-07 12:40';   // 更新のたびにこの日時を書き換える
 $('appVer').textContent='更新 '+APP_VER;
 (function checkVer(){
   if(location.protocol==='file:') return;
