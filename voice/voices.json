@@ -1,5 +1,5 @@
 {
- "updated": "2026-11-07T17:05",
+ "updated": "2026-11-07T17:07",
  "voices": {
   "kore": {
    "ready": false,
@@ -9,7 +9,7 @@
   },
   "aoede": {
    "ready": false,
-   "count": 170,
+   "count": 201,
    "total": 250,
    "ver": 1
   },
