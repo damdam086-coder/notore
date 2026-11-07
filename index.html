@@ -1150,8 +1150,11 @@ function stopAll(){ stopArrow(); stopNum(); stopStroop(); stopVoice(); stopGrid(
    ============================================================ */
 const LEVEL_TRAININGS=['arrow','num','stroop','move','hands','mem','card','ear','sing'];
 // 2026-11-07 持ち主の指示：リズム運動はレベル分けをしない（ゆっくり＝やさしい、ではない）。動き方を選ぶだけ
-const MOVE_PRESETS=[   // 2026-11-07 持ち主の指示：「まぜる」だけ残す（テンポ40〜140・1回で最大30・2〜5周ごと／秒数4〜12秒×3セット）
-  {n:'まぜる',           cfg:{mode:'mix',   range:'wide', gap:'rare', bpmStep:30, bpmMin:40, bpmMax:140, secMode:'rand'}}
+// やり方の名前。rot＝「○秒で1周」：1秒ごとに鳴り、1周ごとに 5〜10秒 のどれかに変わる（2026-11-07 持ち主の依頼）
+const MOVE_MODE_JP={metro:'メトロノーム', sec:'秒数', rot:'○秒で1周'};
+const pickRot=(r,old)=>{ const a=r.rotMin||5, b=r.rotMax||10; let v,n=0; do{ v=a+rnd(b-a+1); n++; }while(b>a && v===old && n<20); return v; };
+const MOVE_PRESETS=[   // 2026-11-07 持ち主の指示：「まぜる」だけ残す（テンポ30〜140・1回で最大30・2〜5周ごと／秒数4〜12秒×3セット／1周5〜10秒）
+  {n:'まぜる',           cfg:{mode:'mix',   range:'wide', gap:'rare', bpmStep:30, bpmMin:30, bpmMax:140, secMode:'rand', rotMin:5, rotMax:10}}
 ];
 const MOVE_BASE={mode:'metro', moves:['any'], rounds:3, rest:5, range:'slow', bpmStep:20, gap:'rare', dur:30,
   flip:false, beats:4, beatsRand:false, snd:'click', secs:[5,10,15], count:'beep', secMode:'list', secMin:4, secMax:12, secSets:3};
@@ -1626,11 +1629,12 @@ function chips(name,opts,defs){
 }
 function moveModeUI(v){
   $('mMetroBox').style.display = v==='sec'?'none':'block';
-  $('mSecBox').style.display   = v==='metro'?'none':'block';
+  $('mSecBox').style.display   = (v==='sec'||v==='mix')?'block':'none';
   $('mHint').textContent =
     v==='metro' ? '決めた拍数で1周します（例：4拍で1周）。1周のあいだテンポは同じで、周の変わり目でテンポが変わります。1拍目は高い音です。'
-  : v==='sec'   ? '「足首回し、10秒」のように秒数がランダムに出ます（候補から選ぶ／4〜12秒などの範囲でランダム）。1秒ごとに音が鳴り、最後の3秒は高い音、終わりはチャイムです。'
-  :               'ラウンドごとに、メトロノームか秒数かがランダムに決まります。';
+  : v==='rot'   ? '1秒ごとに音が鳴ります。高い音から、声で言った秒数（5〜10秒）で1周し、1周ごとに秒数が変わります。'
+  : v==='sec'   ? '「10秒」のように秒数がランダムに出ます（候補から選ぶ／4〜12秒などの範囲でランダム）。1秒ごとに音が鳴り、最後の3秒は高い音、終わりはチャイムです。'
+  :               'ラウンドごとに、メトロノーム・秒数・○秒で1周のどれかがランダムに決まります。';
 }
 
 // 数字の位置記憶：2回目の表示（白い四角あり／枠だけ）は、おまかせと自分で設定の両方で使い、次回も覚えておく
@@ -1902,7 +1906,7 @@ function renderCustom(t){
   }
   if(t==='move'){
     box.innerHTML=`<div class="card pad">
-      ${rowSeg('やり方','mMode',[{v:'metro',l:'メトロノーム'},{v:'sec',l:'秒数'},{v:'mix',l:'まぜる'}],'metro',moveModeUI)}
+      ${rowSeg('やり方','mMode',[{v:'metro',l:'メトロノーム'},{v:'sec',l:'秒数'},{v:'rot',l:'○秒で1周'},{v:'mix',l:'まぜる'}],'metro',moveModeUI)}
       <div id="mMetroBox">
         <div class="row"><span class="lbl">メトロノームの音</span>${seg('mSnd',[{v:'clock',l:'時計'},{v:'wood',l:'木の音'},{v:'beep',l:'電子音'},{v:'soft',l:'やさしい'},{v:'click',l:'クリック'}],'click',beatPreview)}</div>
         ${rowSeg('テンポの幅','mRange',[{v:'slow',l:'ゆっくり'},{v:'mid',l:'ふつう'},{v:'fast',l:'速め'},{v:'wide',l:'ばらばら'}],'mid',moveRangeUI)}
@@ -2840,7 +2844,7 @@ function buildMovePlan(cfg){
   for(let i=0;i<cfg.rounds;i++){
     let mv; do{ mv=pool[rnd(pool.length)]; }while(pool.length>1 && mv===lastM); lastM=mv;
     let mode=cfg.mode;
-    if(mode==='mix') mode = cfg.auto ? (i%2?'sec':'metro') : (Math.random()<0.5?'metro':'sec');
+    if(mode==='mix') mode = cfg.auto ? (i%2?'sec':'metro') : pick(cfg.rotOff?['metro','sec']:['metro','sec','rot']);
     const r={mv,mode};
     if(mode==='sec'){
       // 1ラウンド＝休みなしで続く何セットか。セットごとに秒数が変わる
@@ -2856,6 +2860,7 @@ function buildMovePlan(cfg){
       r.dur=r.sets.reduce((a,b)=>a+b,0)+SEC_GAP*(nSets-1);
     }else{
       r.dur=cfg.dur; r.range=cfg.range; r.gap=cfg.gap||'mid'; r.beats=cfg.beats||4; r.beatsRand=!!cfg.beatsRand;
+      if(mode==='rot'){ r.rotMin=cfg.rotMin||5; r.rotMax=cfg.rotMax||10; r.beatsRand=false; }
       if(cfg.auto){ r.range=metroN===0?'mid':'wide'; r.gap='mid'; r.beatsRand=metroN>=2; }
       metroN++;
     }
@@ -2907,13 +2912,14 @@ function runMove(cfg){
   $('mDots').innerHTML=''; $('mBeatTxt').textContent='';
   $('mPulse').style.setProperty('--p',0); $('mNext').textContent='';
   $('mSkip').style.display='none';
-  const modeTxt = cfg.mode==='metro'?'メトロノーム':cfg.mode==='sec'?'秒数':'メトロノーム＋秒数';
+  const modeTxt = cfg.mode==='mix'?'まぜる':(MOVE_MODE_JP[cfg.mode]||'');
   show('playMove','リズム運動', cfg.auto?`おまかせ 全${N}ラウンド`:`${modeTxt} ・ ${N}ラウンド`);
   const sub = cfg.mode==='metro'
       ? `決めた拍数で1周します（${cfg.beatsRand?'拍数もランダム':cfg.beats+'拍で1周'}）。1周のあいだテンポは同じで、周の変わり目で予告なく変わります。1拍目は高い音です。`
     : cfg.mode==='sec'
       ? '「10秒」のように秒数がランダムに出ます。鳴っているあいだ動かし続けます。'
-      : 'ラウンドごとに「テンポが変わるメトロノーム」か「ランダムな秒数」が出ます。';
+      : cfg.mode==='rot' ? '1秒ごとに音が鳴ります。声で言った秒数（5〜10秒）で1周します。'
+      : 'ラウンドごとに「テンポが変わるメトロノーム」「ランダムな秒数」「○秒で1周」のどれかが出ます。';
   veilShow($('mVeil'),`<div class="prep">
       <div class="prep-k">ルール</div>
       <div class="prep-t">リズムに合わせて動かす</div>
@@ -2932,26 +2938,26 @@ function mIntro(){
   const r=M.plan[M.i], N=M.plan.length; M.r=r;
   $('mRound').textContent=`${M.i+1}/${N}`;
   $('mClock').textContent=r.dur;
-  $('mModeLbl').textContent=r.mode==='sec'?'秒数':'メトロノーム';
+  $('mModeLbl').textContent=MOVE_MODE_JP[r.mode]||'メトロノーム';
   $('mEx').textContent=r.mv.n; $('mDesc').textContent='';
   $('mPulse').style.setProperty('--p',0);
   $('mBig').textContent = r.mode==='sec'?(r.sets?r.sets[0]:r.dur):'—';
-  $('mUnit').textContent= r.mode==='sec'?'秒':'テンポ';
+  $('mUnit').textContent= r.mode==='sec'?'秒':r.mode==='rot'?'秒で1周':'テンポ';
   M.dir=1;
   const dirEl=$('mDir');
   if(r.mode==='metro' && M.cfg.flip){ dirEl.className='mv-dir on'; dirEl.textContent='↻ 右回り'; }
   else { dirEl.className='mv-dir'; dirEl.textContent = r.mode==='sec'?'鳴っているあいだ動かし続ける':'高い音から1周'; }
   $('mDots').innerHTML=''; $('mBeatTxt').className='mv-beat';
-  $('mBeatTxt').textContent = r.mode==='sec'?(r.sets&&r.sets.length>1?`セット 1/${r.sets.length}`:''):beatsLabel(r);
+  $('mBeatTxt').textContent = r.mode==='sec'?(r.sets&&r.sets.length>1?`セット 1/${r.sets.length}`:''):r.mode==='rot'?`${r.rotMin}〜${r.rotMax}秒で1周`:beatsLabel(r);
   const nx=M.plan[M.i+1];
-  $('mNext').textContent = nx?`次：${nx.mode==='sec'?'秒数':'メトロノーム'}`:'最後のラウンド';
+  $('mNext').textContent = nx?`次：${MOVE_MODE_JP[nx.mode]}`:'最後のラウンド';
   $('mSkip').style.display='none';
   veilShow($('mVeil'),`<div class="lab">ラウンド ${M.i+1} / ${N}</div>
-    <div class="mv-intro">${r.mode==='sec'?'秒数':'メトロノーム'}</div>
-    <div class="mv-mode">${r.mode==='sec'?(r.sets&&r.sets.length>1?`${r.sets.length}セット連続 ・ 1セット目 ${r.sets[0]}秒`:`${r.dur}秒`):`${beatsLabel(r)} ・ ${r.dur}秒`}</div>
-    <div class="lab">${r.mode==='sec'?(r.sets&&r.sets.length>1?'休みなしで続けます。セットごとに秒数が変わり、次の秒数を声で知らせます':'鳴っているあいだ動かし続けます'):'1周のあいだは同じテンポ。周の変わり目でテンポが変わります'}</div>
+    <div class="mv-intro">${MOVE_MODE_JP[r.mode]}</div>
+    <div class="mv-mode">${r.mode==='sec'?(r.sets&&r.sets.length>1?`${r.sets.length}セット連続 ・ 1セット目 ${r.sets[0]}秒`:`${r.dur}秒`):r.mode==='rot'?`1周 ${r.rotMin}〜${r.rotMax}秒 ・ ${r.dur}秒`:`${beatsLabel(r)} ・ ${r.dur}秒`}</div>
+    <div class="lab">${r.mode==='sec'?(r.sets&&r.sets.length>1?'休みなしで続けます。セットごとに秒数が変わり、次の秒数を声で知らせます':'鳴っているあいだ動かし続けます'):r.mode==='rot'?'1秒ごとに音が鳴ります。高い音から、声の秒数で1周します':'1周のあいだは同じテンポ。周の変わり目でテンポが変わります'}</div>
     <div class="big tnum" id="mCd" style="margin-top:8px;min-height:76px"></div>`);
-  say(r.mode==='sec'?`${r.sets?r.sets[0]:r.dur}秒`:r.beatsRand?`${r.dur}秒`:`${r.beats}拍で1周`,true);
+  if(r.mode!=='rot') say(r.mode==='sec'?`${r.sets?r.sets[0]:r.dur}秒`:r.beatsRand?`${r.dur}秒`:`${r.beats}拍で1周`,true);   // ○秒で1周は、周の頭ごとに秒数を言う
   [3,2,1].forEach((n,k)=>mLater(()=>{ const e=$('mCd'); if(e) e.textContent=n; SND.count(now()+0.01); },1600+k*1000));
   mLater(()=>{ veilHide($('mVeil')); mGo(r); },1600+3000);
 }
@@ -2972,10 +2978,12 @@ function mGo(r){
 }
 function mGoMetro(r,t0){
   // テンポは「周」の頭でだけ変わる。1周のあいだは同じテンポ・同じ拍数。
-  M.bpm=pickBpm(r.range,M.bpm!=null?M.bpm:null,M.cfg); M.nextBeat=t0;   // 前のラウンドの続きから
-  M.beats=r.beatsRand?pickBeats(null):r.beats; M.beatIdx=0; M.rotN=0; M.rotLeft=gapRand(r.gap); M.metroOver=false;
-  M.bpmMin=Math.min(M.bpmMin,M.bpm); M.bpmMax=Math.max(M.bpmMax,M.bpm);
-  $('mBig').textContent=M.bpm;
+  const rot=r.mode==='rot';                                 // ○秒で1周：1秒に1つ鳴らし、1周の拍数＝秒数
+  if(rot){ M.saveBpm=M.bpm; M.bpm=60; M.beats=pickRot(r,null); }
+  else { M.bpm=pickBpm(r.range,M.bpm!=null?M.bpm:null,M.cfg); M.beats=r.beatsRand?pickBeats(null):r.beats;   // 前のラウンドの続きから
+    M.bpmMin=Math.min(M.bpmMin,M.bpm); M.bpmMax=Math.max(M.bpmMax,M.bpm); }
+  M.nextBeat=t0; M.beatIdx=0; M.rotN=0; M.rotLeft=gapRand(r.gap); M.metroOver=false;
+  $('mBig').textContent=rot?M.beats:M.bpm;
   mEvery(()=>{
     const t=now();
     if(M.nextBeat<t-0.05) M.nextBeat=t+0.03;            // tab was asleep: don't burst
@@ -2983,7 +2991,8 @@ function mGoMetro(r,t0){
       const bt=M.nextBeat; let changed=false;
       if(M.beatIdx===0){                                 // 周の頭
         if(bt>=M.tEnd-0.05){ M.metroOver=true; M.tEnd=bt; break; }   // 周の途中では終わらない
-        if(M.rotN>0 && --M.rotLeft<=0){
+        if(rot){ if(M.rotN>0){ M.beats=pickRot(r,M.beats); changed=true; } const sec=M.beats; atAudio(bt+0.05,()=>say(`${sec}秒`,true)); }
+        else if(M.rotN>0 && --M.rotLeft<=0){
           M.bpm=pickBpm(r.range,M.bpm,M.cfg); M.changes++; changed=true;
           if(r.beatsRand) M.beats=pickBeats(M.beats);
           M.bpmMin=Math.min(M.bpmMin,M.bpm); M.bpmMax=Math.max(M.bpmMax,M.bpm);
@@ -3003,11 +3012,11 @@ function mGoMetro(r,t0){
           dots.innerHTML=Array.from({length:beats},()=>'<i></i>').join('');
         [...dots.children].forEach((d,k)=>d.className=k===idx?'on':k<idx?'done':'');
         if(idx===0){
-          const bt2=$('mBeatTxt'); bt2.textContent=`${beats}拍で1周 ・ ${rotN}周目`;
+          const bt2=$('mBeatTxt'); bt2.textContent=rot?`${beats}秒で1周 ・ ${rotN}周目`:`${beats}拍で1周 ・ ${rotN}周目`;
           if(changed){ bt2.classList.remove('chg'); void bt2.offsetWidth; bt2.classList.add('chg'); }
           else bt2.classList.remove('chg');
         }
-        if(changed){ b.textContent=bpm; b.classList.remove('chg'); void b.offsetWidth; b.classList.add('chg'); }
+        if(changed || (rot && idx===0)){ b.textContent=rot?beats:bpm; b.classList.remove('chg'); void b.offsetWidth; b.classList.add('chg'); }
       });
       M.nextBeat+=60/M.bpm;
       M.beatIdx=(M.beatIdx+1)%M.beats;
@@ -3051,9 +3060,10 @@ function mEndRound(early){
   const r=M.r, full=Math.max(r.dur,M.tEnd-M.t0), done=early?Math.max(0,Math.min(full,now()-M.t0)):full;
   mPhase('after');
   M.active+=done;
-  M.log.push({exp:`${r.mode==='sec'?'秒数 ・ '+secSetsTxt(r):'メトロノーム ・ '+r.dur+'秒'}`, ok:!early, ans:early?fmtSecs(done)+'で終了':''});
+  M.log.push({exp:`${r.mode==='sec'?'秒数 ・ '+secSetsTxt(r):MOVE_MODE_JP[r.mode]+' ・ '+r.dur+'秒'}`, ok:!early, ans:early?fmtSecs(done)+'で終了':''});
   if(early){ audioCut(true); SND.end(now()+0.02); }
-  else if(r.mode==='metro') SND.end(now()+0.02);
+  else if(r.mode==='metro'||r.mode==='rot') SND.end(now()+0.02);
+  if(r.mode==='rot' && M.saveBpm!=null) M.bpm=M.saveBpm;   // 次のメトロノームは前のテンポの続きから
   $('mClock').textContent=0; $('mPulse').style.setProperty('--p',1);
   $('mSkip').style.display='none';
   const last=M.i>=M.plan.length-1;
@@ -3067,7 +3077,7 @@ function mRest(){
   const nx=M.plan[M.i+1];
   let left=secs;
   veilShow($('mVeil'),`<div class="lab">休憩</div><div class="big tnum" id="mRestN">${left}</div>
-    <div class="lab">次は <b>${nx.mode==='sec'?'秒数':'メトロノーム'}</b></div>`);
+    <div class="lab">次は <b>${MOVE_MODE_JP[nx.mode]}</b></div>`);
   say('休憩',true);
   $('mSkip').style.display='block'; $('mSkip').textContent='休憩をとばす';
   mEvery(()=>{
@@ -5239,7 +5249,7 @@ goHome();
    Version check — 古い保存済みの画面が出ていたら、新しい版に切り替える
    （GitHub Pages は更新後しばらく古い版を返すことがあるため）
    ============================================================ */
-const APP_VER='2026-11-07 17:15';   // 更新のたびにこの日時を書き換える
+const APP_VER='2026-11-07 17:40';   // 更新のたびにこの日時を書き換える
 $('appVer').textContent='更新 '+APP_VER;
 (function checkVer(){
   if(location.protocol==='file:') return;
