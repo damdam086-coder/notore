@@ -2802,7 +2802,7 @@ const VOICE_SETS=[
 function voicePref(){ try{ const v=localStorage.getItem('notore-voice'); return VOICE_SETS.some(x=>x.id===v)?v:'kokoro'; }catch(e){ return 'kokoro'; } }
 const VOX={raw:[], buf:{}, src:[], fetched:{}, man:null, cur:voicePref()};
 // 8割できた声は先に選べる（まだ無い言葉は今の声で代わりに話す）
-const voiceReady=id=>{ if(id==='kokoro') return true; const m=VOX.man&&VOX.man.voices&&VOX.man.voices[id]; return !!m && (m.ready || m.count>=m.total*0.75); };
+const voiceReady=id=>{ if(id==='kokoro') return true; const m=VOX.man&&VOX.man.voices&&VOX.man.voices[id]; return !!m && (m.ready || m.count>=m.total*0.6); };   // 2026-11-07：言葉が172→250個に増えたので6割で選べる（足りない言葉は今の声）
 function voxFetch(id){
   id=id||'kokoro';
   if(VOX.fetched[id] || location.protocol==='file:') return;
@@ -5335,7 +5335,7 @@ goHome();
    Version check — 古い保存済みの画面が出ていたら、新しい版に切り替える
    （GitHub Pages は更新後しばらく古い版を返すことがあるため）
    ============================================================ */
-const APP_VER='2026-11-07 19:10';   // 更新のたびにこの日時を書き換える
+const APP_VER='2026-11-07 19:30';   // 更新のたびにこの日時を書き換える
 $('appVer').textContent='更新 '+APP_VER;
 (function checkVer(){
   if(location.protocol==='file:') return;
