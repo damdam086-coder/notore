@@ -356,6 +356,7 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 .lvres-s{font-size:18px;margin-top:6px}
 .lvres-s b{color:var(--accent)}
 .lvnext{margin-top:var(--s4)}
+.lvres-s{font-size:15px;color:var(--text-2);margin-top:6px;line-height:1.6}
 /* 呼吸調整のリズム（丸いボタン・押すとすぐ始まる・2026-11-07） */
 .lvgrid.brgrid{display:flex;flex-wrap:wrap;justify-content:center;gap:12px}
 .brbtn{width:100px;height:100px;border-radius:50%;display:grid;place-items:center;border:1px solid var(--line-2);border-top:5px solid var(--lc);background:var(--surface);color:var(--lc);font-size:17px;font-weight:800;letter-spacing:-.02em;white-space:nowrap;padding:0;cursor:pointer}
@@ -1298,6 +1299,18 @@ function levelResult(r){
   if(!c.lv || r.type==='breath'){ box.style.display='none'; box.innerHTML=''; $('rAgain').textContent='もう一度'; return; }
   const ok=levelPass(r), lv=c.lv, t=c.lvT, nx=lv+1, last=lv>=lvMax(t);
   box.style.display='block';
+  if(t==='hands' && r.title!=='途中で終了'){   // 2026-11-07 持ち主の指示：正解が判定できないので「クリア」とは言わない。自分で振り返って決める
+    box.innerHTML=`<div class="lvres ok">
+        <div class="lvres-k">${lvName(lv,t)}</div>
+        <div class="lvres-t">できましたか？</div>
+        <div class="lvres-s">${last?'うまくできたら、難問もクリアです。':'うまくできたら、次のレベルへ。'}むずかしかったら、もう一度チャレンジしましょう。</div>
+        ${!last?`<button class="btn lvnext" id="lvNext">うまくできた → レベル${nx}へ</button>`:''}
+      </div>`;
+    $('rAgain').textContent=`もう一度（レベル${lv}）`;
+    const b=$('lvNext'); if(b) b.onclick=()=>levelStart(t,nx);
+    say('おつかれさまでした',true);
+    return;
+  }
   box.innerHTML=`<div class="lvres ${ok?'ok':''}">
       <div class="lvres-k">${lvName(lv,t)}</div>
       <div class="lvres-t">${ok?(last?'難問クリア！':'クリア！'):'もう一度チャレンジしましょう'}</div>
@@ -3186,7 +3199,9 @@ function handsSet(first){
     H.clock=setInterval(()=>{
       if(!H||H.memo) return;   // 覚える時間は残り時間に数えない
       left--; $('hClock').textContent=Math.max(0,left);
-      if(left<=0){ clearInterval(H.clock); handsHalt(); handsEnd(); }
+      if(left<=0){ clearInterval(H.clock);
+        if(+c.swap){ H.lastCall=true; if(!H.memo) $('hSwapTxt').textContent=handsSwapTxt(c)+'・最後のお題'; }   // 2026-11-07：いまのお題は最後までやる
+        else { handsHalt(); handsEnd(); } }
     },1000);
     if(+c.swap) handsMetroStart(); else handsNext();
   };
@@ -3245,6 +3260,11 @@ function handsClick(t){ handsTick(t,true); tone(t,1500,0.04,0.35,'triangle'); } 
 function handsBeatAt(k,t){
   const c=H.cfg;
   if(k%2){ handsTick(t,false); return; }               // 裏の拍：小さく
+  if(H.ph==='go' && H.swLeft<=0 && H.lastCall){         // 時間が来ていたら、ここで終わり（新しいお題は出さない）
+    H.lastCall=false; clearInterval(H.sched); H.sched=null;
+    SND.end(t); handsLater(t,()=>{ if(H.set>=H.cfg.sets) say('おわりです',true); handsHalt(); handsEnd(); });
+    return;
+  }
   if(H.ph===null || (H.ph==='go' && H.swLeft<=0)){      // 新しいお題（ピポン）
     const ch=handsPick(), sw=+c.swap;
     H.swNext=Math.max(2,Math.round(handsLen(c)/sw));
@@ -3267,7 +3287,7 @@ function handsBeatAt(k,t){
     if(H.memoLeft>0){ handsClick(t); return; }          // お手本：このテンポで入れ替えます（絵はそのまま）
     H.ph='go'; H.swLeft=H.swNext;                       // 覚える時間おわり：スタートの合図
     tone(t,660,0.1,0.45); tone(t+0.12,990,0.18,0.45);
-    handsLater(t,()=>{ H.memo=false; $('hMemo').classList.remove('on'); $('hSwapTxt').textContent=handsSwapTxt(c); });
+    handsLater(t,()=>{ H.memo=false; $('hMemo').classList.remove('on'); $('hSwapTxt').textContent=handsSwapTxt(c)+(H.lastCall?'・最後のお題':''); });
     return;
   }
   H.swLeft--;
@@ -3276,7 +3296,7 @@ function handsBeatAt(k,t){
   handsLater(t,()=>{ H.flip=!H.flip; H.swaps=(H.swaps||0)+1; handsRender({L:true,R:true}); });
 }
 function handsEnd(){
-  H.memo=false; $('hMemo').classList.remove('on');
+  H.memo=false; H.lastCall=false; $('hMemo').classList.remove('on');
   if(H.set>=H.cfg.sets) return handsDone();
   H.stops.push(veilRest($('hVeil'),15,()=>{ if(H){ H.set++; handsSet(false); } }));
 }
@@ -5214,7 +5234,7 @@ goHome();
    Version check — 古い保存済みの画面が出ていたら、新しい版に切り替える
    （GitHub Pages は更新後しばらく古い版を返すことがあるため）
    ============================================================ */
-const APP_VER='2026-11-07 16:10';   // 更新のたびにこの日時を書き換える
+const APP_VER='2026-11-07 16:30';   // 更新のたびにこの日時を書き換える
 $('appVer').textContent='更新 '+APP_VER;
 (function checkVer(){
   if(location.protocol==='file:') return;
