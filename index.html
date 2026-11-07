@@ -1140,7 +1140,7 @@ function show(id,title,sub){
 }
 $('back').innerHTML=ICON.back;
 $('back').onclick=()=>{ stopAll(); stopProg(); if(['hub','results'].includes(document.querySelector('.screen.on').id)) goHome(); else if(curTrain) openHub(curTrain); else goHome(); };
-function stopAll(){ stopArrow(); stopNum(); stopStroop(); stopVoice(); stopGrid(); stopMove(); stopHands(); stopBreath(); stopMem(); stopCard(); stopSpot(); stopStep(); stopEar(); stopSing(); }
+function stopAll(){ slStop(); stopArrow(); stopNum(); stopStroop(); stopVoice(); stopGrid(); stopMove(); stopHands(); stopBreath(); stopMem(); stopCard(); stopSpot(); stopStep(); stopEar(); stopSing(); }
 
 /* ============================================================
    Home
@@ -1339,7 +1339,7 @@ function levelHubRender(t){
     lv.classList.add('brgrid'); $('hubLevelsLbl').textContent='動き方を選んではじめる';
     const N=MOVE_PRESETS.length;
     lv.innerHTML=MOVE_PRESETS.map((p,i)=>`<button class="brbtn mvbtn" data-i="${i}" style="--lc:hsl(${215-Math.round(i*180/Math.max(1,N-1))},62%,44%)">${p.n}</button>`).join('');
-    lv.querySelectorAll('.brbtn').forEach(b=>b.onclick=()=>{ LVNOW=null; runMove({...MOVE_BASE, rounds:5, dur:40, ...MOVE_PRESETS[+b.dataset.i].cfg}); });
+    lv.querySelectorAll('.brbtn').forEach(b=>b.onclick=()=>{ LVNOW=null; const ly=lyRead(); runMove({...MOVE_BASE, rounds:5, dur:40, ...MOVE_PRESETS[+b.dataset.i].cfg}); LY_NEXT=ly; });
     trainerOpen(false,t); return;
   }
   if(t==='breath'){
@@ -1612,6 +1612,52 @@ function rowToggle(label,id,def,onch){
   return `<div class="row"><span class="lbl">${label}</span><button class="toggle${def?' on':''}" id="${id}"></button></div>`;
 }
 
+/* ---- 音をつける（2026-11-07 持ち主の依頼）：フラッシュ・方向・ストループ・リズム運動に、画面とは別の間隔で
+   色の名前（日本語・英語）・数字の読み上げ、または効果音（正解＋ダミー）を重ねる。説明画面や休憩の幕が出ている間は鳴らさない ---- */
+function lyUI(){
+  return `<div id="lyWrap">${rowToggle('音をつける','lyOn',false,v=>{ $('lyBox').style.display=v?'block':'none'; })}
+    <div id="lyBox" style="display:none">
+      ${rowSeg('鳴らすもの','lyWhat',Object.keys(SOUND_WHAT).map(k=>({v:k,l:SOUND_WHAT[k]})),'cj',v=>{
+        $('lyColRow').style.display=(v==='cj'||v==='ce')?'flex':'none'; $('lyNumRow').style.display=(v==='nj'||v==='ne')?'flex':'none';
+        $('lyFxBox').style.display=v==='fx'?'block':'none';
+      })}
+      <div class="row" id="lyColRow"><span class="lbl">使う色</span>${chips('lyColors',WALL_COLOR_CHIPS(),['red','yellow','green','blue'])}</div>
+      <div class="row" id="lyNumRow" style="display:none"><span class="lbl">数字</span>${seg('lyRange',[{v:'5',l:'1〜5'},{v:'10',l:'1〜10'}],'5')}</div>
+      <div id="lyFxBox" style="display:none">
+        <div class="row"><span class="lbl">正解の音</span>${seg('lyFx',Object.keys(FX).map(k=>({v:k,l:FX[k].n})),'bell',fxPlay)}</div>
+        ${rowSeg('正解の出る割合','lyRate',[{v:'0.2',l:'少なめ'},{v:'0.33',l:'ふつう'},{v:'0.5',l:'多め'}],'0.33')}
+      </div>
+      ${rowSeg('鳴らす間隔','lyIv',[{v:'2',l:'2秒'},{v:'3',l:'3秒'},{v:'4',l:'4秒'},{v:'5',l:'5秒'},{v:'r24',l:'2〜4秒ランダム'},{v:'r36',l:'3〜6秒ランダム'}],'3')}
+    </div></div>`;
+}
+function lyRead(){
+  const t=$('lyOn'); if(!t || !t.classList.contains('on')) return null;
+  return {sWhat:segVal('lyWhat'), sColors:(cfgUI.lyColors||['red','yellow','green','blue']).slice(), sRange:+segVal('lyRange'), sFx:segVal('lyFx'), sRate:+segVal('lyRate'), iv:segVal('lyIv')};
+}
+let LY=null, LY_NEXT=null;
+function slStop(){ if(LY) clearTimeout(LY.to); LY=null; LY_NEXT=null; }
+function slGo(){ if(!LY_NEXT || LY) return; audioOn(); LY={c:LY_NEXT, prev:{}, n:0, hits:0}; if(LY.c.sWhat==='fx') fxPlay(LY.c.sFx); slNext(); }
+const slWait=c=>c.iv==='r24'?2+Math.random()*2 : c.iv==='r36'?3+Math.random()*3 : (+c.iv||3);
+const slPaused=()=>[...document.querySelectorAll('.screen.on .veil')].some(v=>getComputedStyle(v).display!=='none');
+function slNext(){
+  if(!LY) return;
+  LY.to=setTimeout(()=>{ if(!LY) return; if(!slPaused()) slPlay(); slNext(); }, Math.round(slWait(LY.c)*1000));
+}
+function slPlay(){
+  const c=LY.c, prev=LY.prev, st={}; let n=0; const pool=soundPool(c);
+  if(c.sWhat==='fx'){
+    const dummies=pool.filter(k=>k!==c.sFx);
+    st.ok = Math.random()<(c.sRate||0.33) && !(prev.ok && prev.ok2); st.ok2 = st.ok && prev.ok;
+    if(st.ok) st.x=c.sFx; else { do{ st.x=pick(dummies); n++; }while(dummies.length>1 && st.x===prev.x && n<20); }
+    if(st.ok) LY.hits++;
+    FX[st.x].p(now()+0.01);
+  }else{
+    do{ st.x=pick(pool); n++; }while(pool.length>1 && st.x===prev.x && n<30);
+    say(c.sWhat==='cj'?COLOR_JA[st.x] : c.sWhat==='ce'?COLOR_EN[st.x] : c.sWhat==='nj'?NUM_JA[st.x] : NUM_EN[st.x], false);
+  }
+  LY.prev=st; LY.n++;
+}
+
 // multi-select chips (at least one stays on)
 function chips(name,opts,defs){
   const id='ch_'+name; defs=defs.map(String);
@@ -1677,6 +1723,7 @@ function renderCustom(t){
       </div>
       ${rowSeg('セット数','aSets',[{v:'1',l:'1'},{v:'2',l:'2'},{v:'3',l:'3'}],'1')}
       <div class="hint" id="aRuleHint">矢印と正反対の方向へ頭を向けます。</div>
+      ${lyUI()}
     </div>`;
   }
   if(t==='num'){
@@ -1729,6 +1776,7 @@ function renderCustom(t){
       <div class="hint" id="sHintBand" style="display:none">背景に色のあるマスだけルールが逆（文字を読む↔色を答える）に。ラインの場所は毎回ランダムです。</div>
       <div class="hint" id="sHintCell" style="display:none">マスごとに背景色がランダムに散らばります。背景の色ごとに読み方のルールが変わります。</div>
       <div class="hint" id="sHint2" style="display:none">マイクを使います。localhost 経由で開き、マイクを許可してください。認識には通信が必要です。</div>
+      ${lyUI()}
     </div>`;
   }
   if(t==='step'){
@@ -1824,6 +1872,7 @@ function renderCustom(t){
       <div id="cDurBox">${rowRange('1セットの時間','cDur',20,120,10,60,v=>v+'秒')}</div>
       ${rowToggle('切り替わりの音','cBeep',false)}
       <div class="hint" id="fCardHint">「変わるもの」で選んだものだけが、カードごとに変わります（選ばなかったものは最初のまま）。前とまったく同じものは続けて出ません。「本物どおり」は、ハート・ダイヤが赤、スペード・クラブが黒になります。「数えるお題」をオンにすると、はじめに「ハートは何回？」のようなお題が出て、最後に答え合わせをします（お題は毎回変わります）。</div>
+      ${lyUI()}
     </div>`;
   }
   if(t==='mem'){
@@ -1941,6 +1990,7 @@ function renderCustom(t){
       ${rowSeg('ラウンド数','mRounds',[3,5,8,10].map(v=>({v,l:String(v)})),'5')}
       ${rowSeg('ラウンドの間の休み','mRest',[{v:'0',l:'なし'},{v:'5',l:'5秒'},{v:'10',l:'10秒'},{v:'15',l:'15秒'}],'5')}
       <div class="hint" id="mHint"></div>
+      ${lyUI()}
     </div>`;
   }
   if(t!=='card') $('hubTop').innerHTML='';
@@ -2021,6 +2071,10 @@ $('customStart').onclick=()=>{
     else
       runStroop({ sc:segVal('sSc'), rule:segVal('sRule'), iv:+$('sIv').value, dur:+$('sDur').value, sets:+segVal('sSets') });
   }
+  if(['card','arrow','stroop','move'].includes(curTrain)){
+    const noLy=(curTrain==='stroop' && $('sVoice') && $('sVoice').classList.contains('on')) || (curTrain==='card' && (segVal('fKind')||flashKindPref())==='sound');
+    LY_NEXT = noLy ? null : lyRead();
+  }
 };
 
 /* ============================================================
@@ -2057,7 +2111,7 @@ function veilPrepare(el,info,cb){
       ${info.ex||''}
       <button class="btn prep-b" id="prepGo">はじめる</button>
     </div>`);
-  el.querySelector('#prepGo').onclick=()=>{ inner=veilCountdown(el,info.title,cb); };
+  el.querySelector('#prepGo').onclick=()=>{ audioOn(); inner=veilCountdown(el,info.title,()=>{ cb(); slGo(); }); };   // 音をつけるは本番が始まってから
   return ()=>{ if(inner) inner(); };
 }
 
@@ -2928,7 +2982,7 @@ function runMove(cfg){
   $('mGo').onclick=()=>{
     if(!M) return;
     audioOn(); say(' ',true); wakeOn();   // unlock sound & voice inside the tap
-    mIntro();
+    mIntro(); slGo();
   };
 }
 function mIntro(){
@@ -4283,7 +4337,7 @@ function flashKindUI(k){
   const show_=(id,on)=>{ const e=$(id); if(e) e.style.display=on?'block':'none'; };
   show_('fCardBox',k==='card');
   const mathOn = k==='num' && $('fnMath') && $('fnMath').classList.contains('on');
-  show_('cDurBox',!mathOn); show_('fCardHint',k==='card'); show_('fColorBox',k==='color'); show_('fNumBox',k==='num'); show_('fSoundBox',k==='sound');
+  show_('cDurBox',!mathOn); show_('fCardHint',k==='card'); show_('fColorBox',k==='color'); show_('fNumBox',k==='num'); show_('fSoundBox',k==='sound'); show_('lyWrap',k!=='sound');
   if(curTrain==='card' && !LEVEL_TRAININGS.includes('card')) $('quickDesc').textContent=FLASH_QUICK[k];
 }
 const WALL_COLORS={
@@ -4807,7 +4861,7 @@ function quizReveal(user){
 function cardDone(early){
   if(C && C.quiz && !early){                      // お題があるときは、止めて答えを聞く
     clearTimeout(C.to); clearTimeout(C.to2); clearTimeout(C.to3); clearInterval(C.clock); C.to=C.to2=C.clock=null;
-    quizAsk(); return;
+    slStop(); quizAsk(); return;
   }
   const c=C.cfg, n=C.count, kind=flashKindOf(c), cues=C.cues||0, hits=C.hits||0; stopCard();
   const what = kind==='sound' ? (c.sWhat==='fx'?['正解の音',FX[c.sFx].n+' '+hits+'回']:['鳴らしたもの',SOUND_WHAT[c.sWhat]]) : kind==='color' ? ['色',c.wallColors.length+'色'+(wallOverKinds(c).some(k=>k!=='none')?'・'+wallOverKinds(c).map(k=>WALL_OVER[k]).join('・'):'')] : kind==='num' ? ['変わったもの',c.nchange.map(x=>x==='num'?'数字':'色').join('・')] : ['変わったもの',cardChangeTxt(c)];
@@ -5184,6 +5238,7 @@ const stepAutoCfg=()=>({drills:['lr','fb','hopR','hopL','gupa','cross','inout','
 let last=null;
 const TYPE_NAME={step:'リズムステップ',spot:'丸タッチ',arrow:'方向トレーニング',num:'数字記憶',stroop:'ストループ',voice:'ストループ（音声）',grid:'ストループ 一覧',move:'リズム運動',hands:'左右の手まね',breath:'呼吸調整',mem:'数字の位置記憶',card:'フラッシュ',ear:'音感トレーニング',sing:'発声トレーニング'};
 function finish(r){
+  slStop();
   if(r.type==='breath' && r.cfg && r.cfg.thenLv){ const x=r.cfg.thenLv; levelStart(x.t,x.lv); return; }   // 呼吸のあと、そのままレベル1へ
   last=r;
   if(r.celebrate){
@@ -5249,7 +5304,7 @@ goHome();
    Version check — 古い保存済みの画面が出ていたら、新しい版に切り替える
    （GitHub Pages は更新後しばらく古い版を返すことがあるため）
    ============================================================ */
-const APP_VER='2026-11-07 17:40';   // 更新のたびにこの日時を書き換える
+const APP_VER='2026-11-07 18:10';   // 更新のたびにこの日時を書き換える
 $('appVer').textContent='更新 '+APP_VER;
 (function checkVer(){
   if(location.protocol==='file:') return;
