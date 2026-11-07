@@ -1150,11 +1150,7 @@ function stopAll(){ stopArrow(); stopNum(); stopStroop(); stopVoice(); stopGrid(
    ============================================================ */
 const LEVEL_TRAININGS=['arrow','num','stroop','move','hands','mem','card','ear','sing'];
 // 2026-11-07 持ち主の指示：リズム運動はレベル分けをしない（ゆっくり＝やさしい、ではない）。動き方を選ぶだけ
-const MOVE_PRESETS=[
-  {n:'テンポ一定',       cfg:{mode:'metro', range:'mid',  gap:'none'}},
-  {n:'ときどき変わる',   cfg:{mode:'metro', range:'mid',  gap:'rare', bpmStep:20}},
-  {n:'よく変わる',       cfg:{mode:'metro', range:'wide', gap:'mid',  bpmStep:30, bpmMin:40, bpmMax:140}},
-  {n:'秒数',             cfg:{mode:'sec',   secMode:'rand', secSets:3}},
+const MOVE_PRESETS=[   // 2026-11-07 持ち主の指示：「まぜる」だけ残す（テンポ40〜140・1回で最大30・2〜5周ごと／秒数4〜12秒×3セット）
   {n:'まぜる',           cfg:{mode:'mix',   range:'wide', gap:'rare', bpmStep:30, bpmMin:40, bpmMax:140, secMode:'rand'}}
 ];
 const MOVE_BASE={mode:'metro', moves:['any'], rounds:3, rest:5, range:'slow', bpmStep:20, gap:'rare', dur:30,
@@ -1339,7 +1335,7 @@ function levelHubRender(t){
     $('hubLevelsWrap').style.display='block'; $('trainerHead').style.display='flex'; $('customLbl').style.display='none'; $('hubLevelsSex').innerHTML='';
     lv.classList.add('brgrid'); $('hubLevelsLbl').textContent='動き方を選んではじめる';
     const N=MOVE_PRESETS.length;
-    lv.innerHTML=MOVE_PRESETS.map((p,i)=>`<button class="brbtn mvbtn" data-i="${i}" style="--lc:hsl(${215-Math.round(i*180/(N-1))},62%,44%)">${p.n}</button>`).join('');
+    lv.innerHTML=MOVE_PRESETS.map((p,i)=>`<button class="brbtn mvbtn" data-i="${i}" style="--lc:hsl(${215-Math.round(i*180/Math.max(1,N-1))},62%,44%)">${p.n}</button>`).join('');
     lv.querySelectorAll('.brbtn').forEach(b=>b.onclick=()=>{ LVNOW=null; runMove({...MOVE_BASE, rounds:5, dur:40, ...MOVE_PRESETS[+b.dataset.i].cfg}); });
     trainerOpen(false,t); return;
   }
@@ -5243,7 +5239,7 @@ goHome();
    Version check — 古い保存済みの画面が出ていたら、新しい版に切り替える
    （GitHub Pages は更新後しばらく古い版を返すことがあるため）
    ============================================================ */
-const APP_VER='2026-11-07 17:00';   // 更新のたびにこの日時を書き換える
+const APP_VER='2026-11-07 17:15';   // 更新のたびにこの日時を書き換える
 $('appVer').textContent='更新 '+APP_VER;
 (function checkVer(){
   if(location.protocol==='file:') return;
