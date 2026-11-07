@@ -3289,7 +3289,7 @@ const BREATH_STEPS=[
 ];
 const breathPat=c=>`${c.out}-${c.hold}-${c.in}`;
 // 2026-11-07 持ち主の指示：あらかじめ決めておくリズム（吐く-止める-吸う）。声は残り3秒だけ・音はやさしいが初期値
-const BREATH_PRESETS=[[5,5,5],[6,6,6],[8,8,8],[10,10,10],[10,10,15],[15,15,15],[20,20,25]].map(([o,h,i])=>({out:o,hold:h,in:i}));
+const BREATH_PRESETS=[[5,5,5],[6,6,6],[8,8,8],[10,10,10],[10,10,5],[15,15,15],[20,20,25]].map(([o,h,i])=>({out:o,hold:h,in:i}));
 const BREATH_DEF={min:5, count:'last3', snd:'soft', minute:true};
 // 声の数え方：up=最後まで数える／last3=残り3秒だけ「さん・に・いち」／off=数えない（古い設定も読む）
 const breathCount=c=>({up:'up',last3:'last3',off:'off',voice:'up'})[c.count]||'last3';
@@ -5130,7 +5130,7 @@ goHome();
    Version check — 古い保存済みの画面が出ていたら、新しい版に切り替える
    （GitHub Pages は更新後しばらく古い版を返すことがあるため）
    ============================================================ */
-const APP_VER='2026-11-07 14:00';   // 更新のたびにこの日時を書き換える
+const APP_VER='2026-11-07 14:10';   // 更新のたびにこの日時を書き換える
 $('appVer').textContent='更新 '+APP_VER;
 (function checkVer(){
   if(location.protocol==='file:') return;
