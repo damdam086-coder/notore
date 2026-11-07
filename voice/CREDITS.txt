@@ -17,3 +17,7 @@
 （2026-11-07 追加：フラッシュ「音」用。日本語の「くろ」（c_black）を同じ声で作成。
   英語の色（e_red・e_blue・e_yellow・e_green・e_white・e_black・e_orange・e_purple・e_pink・e_sky＝Light blue）と
   英語の数字（e_n1〜e_n10＝One〜Ten）は、同じ Kokoro-82M の英語の声 af_heart で作成。Whisper で聞き取れることを確認）
+（2026-11-07 追加：暗算のルールの読み上げ（m_*：色ごとの「は足します・は引きます・の数字だけ足します・と」、
+  「からスタートします」「出てくる数字をぜんぶ足します」など）、スタートの数 n40〜n400（10刻み）、
+  合図の説明（r_cue_flip・r_cue_ign・r_cue_this）を同じ Kokoro jf_alpha の声で作成。
+  n100・n110・n130 は頭の「h」が弱く、文字起こしでは「約」と聞こえる（人の耳では「ひゃく」に近い）。Gemini の声で置き換える予定）

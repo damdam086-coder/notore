@@ -356,6 +356,7 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 .lvres-s{font-size:18px;margin-top:6px}
 .lvres-s b{color:var(--accent)}
 .lvnext{margin-top:var(--s4)}
+.cuebox{font-size:17px;margin:12px 0 4px;line-height:1.6}
 .lvres-s{font-size:15px;color:var(--text-2);margin-top:6px;line-height:1.6}
 /* 呼吸調整のリズム（丸いボタン・押すとすぐ始まる・2026-11-07） */
 .lvgrid.brgrid{display:flex;flex-wrap:wrap;justify-content:center;gap:12px}
@@ -1166,17 +1167,17 @@ const AR=(rule,dirs,iv,ex)=>({rule,dirs,cols:2,iv,dur:30,sets:1,math:false,...(e
 const AR_MATH={math:true, nrange:'n10', ncolors:['red','green','blue','yellow'], ignore:true};
 // t＝レベル一覧に出す短い名前、say＝始める前に読み上げる説明
 const LEVELS={
-  arrow:[
-    {t:'同じ方向・4方向・ゆっくり', say:'矢印と同じ方向を向きます', cfg:AR('same',4,2.0)},
-    {t:'同じ方向・8方向',           say:'矢印と同じ方向を向きます', cfg:AR('same',8,1.5)},
-    {t:'反対を向く・4方向',         say:'矢印と反対の方向を向きます', cfg:AR('anti',4,1.5)},
-    {t:'反対を向く・8方向',         say:'矢印と反対の方向を向きます', cfg:AR('anti',8,1.5)},
-    {t:'色で判断・4方向',           say:'矢印の色で向きが変わります', cfg:AR('color',4,1.5,{cols:2})},
-    {t:'同じ方向＋暗算（ぜんぶ足す）', say:'矢印と同じ方向を向きます、暗算もします', cfg:AR('same',4,1.5,{...AR_MATH, every:3, mrule:'add_all'})},
-    {t:'反対を向く＋暗算（ぜんぶ足す）', say:'矢印と反対の方向を向きます、暗算もします', cfg:AR('anti',4,1.5,{...AR_MATH, every:3, mrule:'add_all'})},
-    {t:'反対・8方向＋暗算（1色だけ足す）', say:'矢印と反対の方向を向きます、暗算もします', cfg:AR('anti',8,1.2,{...AR_MATH, every:2, mrule:'add_one'})},
-    {t:'色で判断・8方向＋暗算（足す色・引く色）', say:'矢印の色で向きが変わります、暗算もします', cfg:AR('color',8,1.2,{...AR_MATH, cols:4, every:2, mrule:'add_sub'})},
-    {t:'色で判断・とても速く＋暗算（全部計算）', say:'矢印の色で向きが変わります、暗算もします', cfg:AR('color',8,0.8,{...AR_MATH, cols:4, every:1, nrange:'d9', mrule:'auto', ignore:false})}
+  arrow:[   // 2026-11-07 持ち主の指示：音の合図でルールが逆になる（同じ⇄反対・色の意味が入れ替わる）。合図以外の音（ダミー）は無視。暗算はルールの中身まで声で言う
+    {t:'同じ方向・4方向・ゆっくり',                 say:'矢印と同じ方向を向きます', cfg:AR('same',4,2.0)},
+    {t:'反対を向く・4方向',                         say:'矢印と反対の方向を向きます', cfg:AR('anti',4,1.5)},
+    {t:'同じ方向・ベルが鳴ったら逆',               say:'矢印と同じ方向を向きます', cfg:AR('same',4,1.5,{cue:{sFx:'bell',sRate:0.35,noDummy:true,iv:'r36'}})},
+    {t:'反対を向く・たいこで逆・ほかの音は無視',     say:'矢印と反対の方向を向きます', cfg:AR('anti',4,1.5,{cue:{sFx:'drum',sRate:0.3,iv:'r36'}})},
+    {t:'色で判断・4方向',                           say:'矢印の色で向きが変わります', cfg:AR('color',4,1.5,{cols:2})},
+    {t:'同じ方向・8方向・ふえで逆・ほかの音は無視', say:'矢印と同じ方向を向きます', cfg:AR('same',8,1.2,{cue:{sFx:'whistle',sRate:0.3,iv:'r24'}})},
+    {t:'色で判断・ポコポコで逆・ほかの音は無視',     say:'矢印の色で向きが変わります', cfg:AR('color',4,1.5,{cols:2,cue:{sFx:'wood',sRate:0.3,iv:'r24'}})},
+    {t:'同じ方向＋暗算（ぜんぶ足す）・たいこで逆',   say:'矢印と同じ方向を向きます、暗算もします', cfg:AR('same',4,1.5,{...AR_MATH, every:3, mrule:'add_all',cue:{sFx:'drum',sRate:0.3,iv:'r36'}})},
+    {t:'反対・8方向＋暗算（1色だけ足す）・キラキラで逆', say:'矢印と反対の方向を向きます、暗算もします', cfg:AR('anti',8,1.2,{...AR_MATH, every:2, mrule:'add_one',cue:{sFx:'spark',sRate:0.3,iv:'r24'}})},
+    {t:'色で判断・速く＋暗算（おまかせ）・ピンポンで逆', say:'矢印の色で向きが変わります、暗算もします', cfg:AR('color',8,1.0,{...AR_MATH, cols:4, every:2, nrange:'d9', mrule:'auto', ignore:false,cue:{sFx:'pinpon',sRate:0.3,iv:'r24'}})}
   ],
   num:[
     {t:'4桁・7秒見る',  say:'数字を覚えてそのまま答えます', cfg:{dig:4,t:7,rev:false,total:3}},
@@ -1259,7 +1260,7 @@ const LEVELS={
     {t:'数字・暗算（全部計算）1〜13・15個',say:'数字を頭の中で計算します', cfg:{...FNUM_BASE, rule:'auto', ignore:false, nrange:'n13', mathQ:15, timing:'rand', rand:'r1'}}
   ]
 };
-var LVNOW=null;   // いまレベルで遊んでいるか（{t,lv}）。自分で設定・おまかせで始めたら null
+var LVNOW=null, LV_CUE=null;   // いまレベルで遊んでいるか（{t,lv}）。自分で設定・おまかせで始めたら null
 const lvMax=t=>(LEVELS[t]||[]).length||10;   // 難問＝その種目の最後のレベル（手まねは5段・ほかは10段）
 const lvName=(n,t)=>n===lvMax(t)?`レベル${n}（難問）`:`レベル${n}`;
 function levelStart(t,lv){
@@ -1287,7 +1288,18 @@ function levelStart(t,lv){
   if(prep){
     const k=prep.querySelector('.prep-k'); if(k){ k.textContent=lvName(lv,t); k.classList.add('lvk'); }
   }
-  say([`レベル${lv}`, ...(lv===lvMax(t)?['難問です']:[]), ...L.say.split('、')].join('、'),true);
+  let words=L.say;
+  if(t==='arrow' && A && A.m) words=words.replace('暗算もします', mathSay(A.m));           // 暗算はルールの中身まで言う
+  if(t==='card' && C && C.math) words=words+'、'+mathSay(C.math);
+  if(cfg.cue){                                                                            // 音の合図でルールが逆になる
+    LY_NEXT={sWhat:'fx', flip:true, ...cfg.cue};
+    words+='、音が鳴ったらルールが逆になります'+(cfg.cue.noDummy?'':'、ほかの音は無視します')+'、この音です';
+    if(prep){ const ex=document.createElement('div'); ex.className='qtext cuebox';
+      ex.innerHTML=`<b>${FX[cfg.cue.sFx].n}</b>が鳴ったら<b>ルールが逆</b>${cfg.cue.noDummy?'':'（ほかの音は無視）'}<br><button class="btn" style="width:auto;padding:8px 18px;margin-top:8px" onclick="fxPlay('${cfg.cue.sFx}')">▶ ${FX[cfg.cue.sFx].n}</button>`;
+      const go=prep.querySelector('.prep-b'); prep.insertBefore(ex,go); }
+  }
+  const dur=say([`レベル${lv}`, ...(lv===lvMax(t)?['難問です']:[]), ...words.split('、')].join('、'),true);
+  if(cfg.cue) LV_CUE=setTimeout(()=>{ if(LY_NEXT) fxPlay(cfg.cue.sFx); }, Math.round(((dur||3)+0.2)*1000));   // 「この音です」のあとに合図の音
 }
 // クリアしたか（正解のあるものは合格ライン、ないものは最後までやり切ったら）
 function levelPass(r){
@@ -1635,8 +1647,8 @@ function lyRead(){
   return {sWhat:segVal('lyWhat'), sColors:(cfgUI.lyColors||['red','yellow','green','blue']).slice(), sRange:+segVal('lyRange'), sFx:segVal('lyFx'), sRate:+segVal('lyRate'), iv:segVal('lyIv')};
 }
 let LY=null, LY_NEXT=null;
-function slStop(){ if(LY) clearTimeout(LY.to); LY=null; LY_NEXT=null; }
-function slGo(){ if(!LY_NEXT || LY) return; audioOn(); LY={c:LY_NEXT, prev:{}, n:0, hits:0}; if(LY.c.sWhat==='fx') fxPlay(LY.c.sFx); slNext(); }
+function slStop(){ if(LY) clearTimeout(LY.to); LY=null; LY_NEXT=null; clearTimeout(LV_CUE); }
+function slGo(){ if(!LY_NEXT || LY) return; audioOn(); LY={c:LY_NEXT, prev:{}, n:0, hits:0}; if(LY.c.sWhat==='fx' && !LY.c.flip) fxPlay(LY.c.sFx); slNext(); }
 const slWait=c=>c.iv==='r24'?2+Math.random()*2 : c.iv==='r36'?3+Math.random()*3 : (+c.iv||3);
 const slPaused=()=>[...document.querySelectorAll('.screen.on .veil')].some(v=>getComputedStyle(v).display!=='none');
 function slNext(){
@@ -1648,6 +1660,7 @@ function slPlay(){
   if(c.sWhat==='fx'){
     const dummies=pool.filter(k=>k!==c.sFx);
     st.ok = Math.random()<(c.sRate||0.33) && !(prev.ok && prev.ok2); st.ok2 = st.ok && prev.ok;
+    if(!st.ok && c.noDummy){ LY.prev=st; return; }   // ダミーなし：合図のときだけ鳴る
     if(st.ok) st.x=c.sFx; else { do{ st.x=pick(dummies); n++; }while(dummies.length>1 && st.x===prev.x && n<20); }
     if(st.ok) LY.hits++;
     FX[st.x].p(now()+0.01);
@@ -2211,6 +2224,7 @@ function arrowSet(first){
   A.stops.push(first
     ? veilPrepare($('aVeil'), info, begin)
     : veilCountdown($('aVeil'), c.math?`暗算：${A.m.html}`:$('aTag').textContent, begin));
+  if(c.math && (!first || !c.lv)) say(mathSay(A.m),true);   // レベルの最初は levelStart が言う
 }
 function arrowNext(){
   if(!A) return;
@@ -2773,7 +2787,7 @@ const SND={
 /* ---- voice ----
    まずは録音した声（voice/*.mp3）を Web Audio で鳴らす。ブラウザの読み上げ機能は
    ブラウザによって鳴らない（Brave など）ので、録音が読めないときだけ代わりに使う。 */
-const VOX_MAP={'はじめます':'hajime','吐きます':'haku','止めます':'tomeru','吸います':'suu','おわりです。ふつうの呼吸に戻しましょう':'owari','休憩':'kyukei','逆回し':'gyaku','おつかれさまでした':'otsukare','足首回し':'ankle','肩回し':'shoulder','手首回し':'wrist','腕回し':'arm','股関節回し':'hip','腰回し':'waist','ひざ回し':'knee','いち':'n1','に':'n2','さん':'n3','よん':'n4','ご':'n5','ろく':'n6','なな':'n7','はち':'n8','きゅう':'n9','じゅう':'n10','11':'n11','12':'n12','13':'n13','14':'n14','15':'n15','16':'n16','17':'n17','18':'n18','19':'n19','20':'n20','21':'n21','22':'n22','23':'n23','24':'n24','25':'n25','26':'n26','27':'n27','28':'n28','29':'n29','30':'n30','5秒':'s5','10秒':'s10','15秒':'s15','20秒':'s20','30秒':'s30','40秒':'s40','50秒':'s50','60秒':'s60','70秒':'s70','80秒':'s80','90秒':'s90','1拍で1周':'b1','2拍で1周':'b2','3拍で1周':'b3','4拍で1周':'b4','5拍で1周':'b5','6拍で1周':'b6','7拍で1周':'b7','8拍で1周':'b8','9拍で1周':'b9','10拍で1周':'b10','11拍で1周':'b11','12拍で1周':'b12','この呼吸で終わりです':'konokokyu','1分経過':'m1','2分経過':'m2','3分経過':'m3','4分経過':'m4','5分経過':'m5','6分経過':'m6','7分経過':'m7','8分経過':'m8','9分経過':'m9','10分経過':'m10','残り1分です':'r1','残り2分です':'r2','残り3分です':'r3','残り4分です':'r4','残り5分です':'r5','残り6分です':'r6','残り7分です':'r7','残り8分です':'r8','残り9分です':'r9','あか':'c_red','きいろ':'c_yellow','みどり':'c_green','あお':'c_blue','しろ':'c_white','オレンジ':'c_orange','むらさき':'c_purple','ピンク':'c_pink','みずいろ':'c_sky','おわりです':'owari2','1秒':'s1','2秒':'s2','3秒':'s3','4秒':'s4','6秒':'s6','7秒':'s7','8秒':'s8','9秒':'s9','11秒':'s11','12秒':'s12','13秒':'s13','14秒':'s14','16秒':'s16','17秒':'s17','18秒':'s18','19秒':'s19','21秒':'s21','22秒':'s22','23秒':'s23','24秒':'s24','25秒':'s25','26秒':'s26','27秒':'s27','28秒':'s28','29秒':'s29','左右ジャンプ':'st_lr','前後ジャンプ':'st_fb','右足ケンケン':'st_hopR','左足ケンケン':'st_hopL','グーパー':'st_gupa','開く・クロス':'st_cross','イン・イン・アウト・アウト':'st_inout','右足2歩・戻る':'st_walk2','シンコペーション':'st_sync','3拍子ステップ':'st_waltz','ランダム':'st_rand','レベル1':'lv1','レベル2':'lv2','レベル3':'lv3','レベル4':'lv4','レベル5':'lv5','レベル6':'lv6','レベル7':'lv7','レベル8':'lv8','レベル9':'lv9','レベル10':'lv10','難問です':'nanmon','矢印と同じ方向を向きます':'r_ar_same','矢印と反対の方向を向きます':'r_ar_anti','矢印の色で向きが変わります':'r_ar_color','暗算もします':'r_math_too','数字を覚えてそのまま答えます':'r_num','数字を覚えて逆から答えます':'r_num_rev','文字を読みます':'r_st_read','インクの色を答えます':'r_st_color','一覧を順番にインクの色で答えます':'r_st_grid','背景の色でルールが変わります':'r_st_cell','音に合わせて大きく回します':'r_mv_metro','秒数のあいだ回し続けます':'r_mv_sec','音と秒数に合わせて回します':'r_mv_mix','左右で違う形をまねします':'r_hd','カチッという音で左右を入れ替えます':'r_hd_swap','数字の場所を覚えて1から順に押します':'r_mem','画面の色が変わるのを見ていましょう':'r_cd_color','お題の数を数えながら見ます':'r_cd_quiz','数字を頭の中で計算します':'r_cd_math','クリアです':'clear','難問クリアです':'clear10','次は':'tsugiwa','チャレンジしましょう':'challenge','もう一度チャレンジしましょう':'again','音を聴いて鍵盤で答えます':'r_ear','音を聴いて同じ高さで声を出します':'r_sing','ドレミ以外の音も出ます':'r_ear_chr','くろ':'c_black','Red':'e_red','Blue':'e_blue','Yellow':'e_yellow','Green':'e_green','White':'e_white','Black':'e_black','Orange':'e_orange','Purple':'e_purple','Pink':'e_pink','Light blue':'e_sky','One':'e_n1','Two':'e_n2','Three':'e_n3','Four':'e_n4','Five':'e_n5','Six':'e_n6','Seven':'e_n7','Eight':'e_n8','Nine':'e_n9','Ten':'e_n10'};
+const VOX_MAP={'はじめます':'hajime','吐きます':'haku','止めます':'tomeru','吸います':'suu','おわりです。ふつうの呼吸に戻しましょう':'owari','休憩':'kyukei','逆回し':'gyaku','おつかれさまでした':'otsukare','足首回し':'ankle','肩回し':'shoulder','手首回し':'wrist','腕回し':'arm','股関節回し':'hip','腰回し':'waist','ひざ回し':'knee','いち':'n1','に':'n2','さん':'n3','よん':'n4','ご':'n5','ろく':'n6','なな':'n7','はち':'n8','きゅう':'n9','じゅう':'n10','11':'n11','12':'n12','13':'n13','14':'n14','15':'n15','16':'n16','17':'n17','18':'n18','19':'n19','20':'n20','21':'n21','22':'n22','23':'n23','24':'n24','25':'n25','26':'n26','27':'n27','28':'n28','29':'n29','30':'n30','5秒':'s5','10秒':'s10','15秒':'s15','20秒':'s20','30秒':'s30','40秒':'s40','50秒':'s50','60秒':'s60','70秒':'s70','80秒':'s80','90秒':'s90','1拍で1周':'b1','2拍で1周':'b2','3拍で1周':'b3','4拍で1周':'b4','5拍で1周':'b5','6拍で1周':'b6','7拍で1周':'b7','8拍で1周':'b8','9拍で1周':'b9','10拍で1周':'b10','11拍で1周':'b11','12拍で1周':'b12','この呼吸で終わりです':'konokokyu','1分経過':'m1','2分経過':'m2','3分経過':'m3','4分経過':'m4','5分経過':'m5','6分経過':'m6','7分経過':'m7','8分経過':'m8','9分経過':'m9','10分経過':'m10','残り1分です':'r1','残り2分です':'r2','残り3分です':'r3','残り4分です':'r4','残り5分です':'r5','残り6分です':'r6','残り7分です':'r7','残り8分です':'r8','残り9分です':'r9','あか':'c_red','きいろ':'c_yellow','みどり':'c_green','あお':'c_blue','しろ':'c_white','オレンジ':'c_orange','むらさき':'c_purple','ピンク':'c_pink','みずいろ':'c_sky','おわりです':'owari2','1秒':'s1','2秒':'s2','3秒':'s3','4秒':'s4','6秒':'s6','7秒':'s7','8秒':'s8','9秒':'s9','11秒':'s11','12秒':'s12','13秒':'s13','14秒':'s14','16秒':'s16','17秒':'s17','18秒':'s18','19秒':'s19','21秒':'s21','22秒':'s22','23秒':'s23','24秒':'s24','25秒':'s25','26秒':'s26','27秒':'s27','28秒':'s28','29秒':'s29','左右ジャンプ':'st_lr','前後ジャンプ':'st_fb','右足ケンケン':'st_hopR','左足ケンケン':'st_hopL','グーパー':'st_gupa','開く・クロス':'st_cross','イン・イン・アウト・アウト':'st_inout','右足2歩・戻る':'st_walk2','シンコペーション':'st_sync','3拍子ステップ':'st_waltz','ランダム':'st_rand','レベル1':'lv1','レベル2':'lv2','レベル3':'lv3','レベル4':'lv4','レベル5':'lv5','レベル6':'lv6','レベル7':'lv7','レベル8':'lv8','レベル9':'lv9','レベル10':'lv10','難問です':'nanmon','矢印と同じ方向を向きます':'r_ar_same','矢印と反対の方向を向きます':'r_ar_anti','矢印の色で向きが変わります':'r_ar_color','暗算もします':'r_math_too','数字を覚えてそのまま答えます':'r_num','数字を覚えて逆から答えます':'r_num_rev','文字を読みます':'r_st_read','インクの色を答えます':'r_st_color','一覧を順番にインクの色で答えます':'r_st_grid','背景の色でルールが変わります':'r_st_cell','音に合わせて大きく回します':'r_mv_metro','秒数のあいだ回し続けます':'r_mv_sec','音と秒数に合わせて回します':'r_mv_mix','左右で違う形をまねします':'r_hd','カチッという音で左右を入れ替えます':'r_hd_swap','数字の場所を覚えて1から順に押します':'r_mem','画面の色が変わるのを見ていましょう':'r_cd_color','お題の数を数えながら見ます':'r_cd_quiz','数字を頭の中で計算します':'r_cd_math','クリアです':'clear','難問クリアです':'clear10','次は':'tsugiwa','チャレンジしましょう':'challenge','もう一度チャレンジしましょう':'again','音を聴いて鍵盤で答えます':'r_ear','音を聴いて同じ高さで声を出します':'r_sing','ドレミ以外の音も出ます':'r_ear_chr','くろ':'c_black','Red':'e_red','Blue':'e_blue','Yellow':'e_yellow','Green':'e_green','White':'e_white','Black':'e_black','Orange':'e_orange','Purple':'e_purple','Pink':'e_pink','Light blue':'e_sky','One':'e_n1','Two':'e_n2','Three':'e_n3','Four':'e_n4','Five':'e_n5','Six':'e_n6','Seven':'e_n7','Eight':'e_n8','Nine':'e_n9','Ten':'e_n10','くろは足します':'m_black_add','くろは引きます':'m_black_sub','くろの数字だけ足します':'m_black_only','くろと':'m_black_to','あかは足します':'m_red_add','あかは引きます':'m_red_sub','あかの数字だけ足します':'m_red_only','あかと':'m_red_to','みどりは足します':'m_green_add','みどりは引きます':'m_green_sub','みどりの数字だけ足します':'m_green_only','みどりと':'m_green_to','あおは足します':'m_blue_add','あおは引きます':'m_blue_sub','あおの数字だけ足します':'m_blue_only','あおと':'m_blue_to','きいろは足します':'m_yellow_add','きいろは引きます':'m_yellow_sub','きいろの数字だけ足します':'m_yellow_only','きいろと':'m_yellow_to','むらさきは足します':'m_purple_add','むらさきは引きます':'m_purple_sub','むらさきの数字だけ足します':'m_purple_only','むらさきと':'m_purple_to','オレンジは足します':'m_orange_add','オレンジは引きます':'m_orange_sub','オレンジの数字だけ足します':'m_orange_only','オレンジと':'m_orange_to','からスタートします':'m_start','出てくる数字をぜんぶ足します':'m_add_all','から出てくる数字をぜんぶ引きます':'m_sub_all','ほかの色は引きます':'m_other_sub','ほかの色は無視します':'m_other_ign','偶数は足して奇数は引きます':'m_even_sub','奇数は足して偶数は引きます':'m_odd_sub','偶数だけ足して奇数は無視します':'m_even_ign','奇数だけ足して偶数は無視します':'m_odd_ign','10':'n10','40':'n40','50':'n50','60':'n60','70':'n70','80':'n80','90':'n90','100':'n100','110':'n110','120':'n120','130':'n130','140':'n140','150':'n150','160':'n160','170':'n170','180':'n180','190':'n190','200':'n200','210':'n210','220':'n220','230':'n230','240':'n240','250':'n250','260':'n260','270':'n270','280':'n280','290':'n290','300':'n300','310':'n310','320':'n320','330':'n330','340':'n340','350':'n350','360':'n360','370':'n370','380':'n380','390':'n390','400':'n400','音が鳴ったらルールが逆になります':'r_cue_flip','ほかの音は無視します':'r_cue_ign','この音です':'r_cue_this'};
 const VOICE_VER='kokoro6';   // 今の声（Kokoro）を作り直したら変える（古い声が残らないように）
 // 声の種類。今の声は voice/ 直下、Gemini で作った声は voice/<id>/。どれだけ出来ているかは voice/voices.json（作る係が書く）
 const VOICE_SETS=[
@@ -2851,12 +2865,13 @@ function voxSay(text,cut){
   const bufs=text.split('、').map(p=>{ const f=VOX_MAP[p.trim()]; return cur[f]||base[f]; });   // 選んだ声に無い言葉は今の声で
   if(!bufs.length || bufs.some(b=>!b)) return false;
   if(cut) voxStop();
+  const gaps=text.split('、').map(p=>/^から/.test(p.trim()));   // 「50、からスタートします」は間を詰める
   let t=AU.ctx.currentTime+0.01;
-  bufs.forEach(b=>{
+  bufs.forEach((b,i)=>{
     const s=AU.ctx.createBufferSource(), g=AU.ctx.createGain();
     s.buffer=b; g.gain.value=voiceGain(); s.connect(g); g.connect(AU.out); s.start(t);
     VOX.src.push(s); if(VOX.src.length>12) VOX.src.shift();
-    t+=b.duration+0.12;
+    t+=b.duration+(gaps[i+1]?0.02:0.12);
   });
   return t-AU.ctx.currentTime;                     // 声が鳴り終わるまでの秒数
 }
@@ -4477,6 +4492,7 @@ function runCard(cfg){
     info.ex='';
   }
   C.stops.push(veilPrepare($('cVeil'),info,cardBegin));
+  if(C.math && !cfg.lv) say(mathSay(C.math),true);
   if(kind==='sound' && cfg.sWhat==='fx') setTimeout(()=>{ if(C) fxPlay(cfg.sFx); },350);
 }
 function cardChangeTxt(c){
@@ -4492,6 +4508,20 @@ const colN=k=>CARD_COLORS[k].n;
 // 「無視する数字：なし」のときのルール名
 const MATH_RULES_ALL={add_one:'1色は足す・ほかは引く',add_two:'2色は足す・ほかは引く',add_sub:'足す色・引く色（2色だけ）',even:'偶数は足す・奇数は引く',odd:'奇数は足す・偶数は引く'};
 const mathRuleName=m=>(!m.ign && MATH_RULES_ALL[m.rule]) || MATH_RULES[m.rule];
+// 暗算のルールを読み上げる文（「、」で区切った声の部品）。2026-11-07 持ち主の指示：「暗算もします」ではなく中身まで言う
+function mathSay(m){
+  const J=k=>COLOR_JA[k]||'', a=m.tg&&m.tg[0], b=m.tg&&m.tg[1], st=m.start?[String(m.start),'からスタートします']:[];
+  const P = !m.ign ? {
+    add_all:['出てくる数字をぜんぶ足します'], sub_all:[String(m.start),'から出てくる数字をぜんぶ引きます'],
+    add_one:[...st, J(a)+'は足します','ほかの色は引きます'], add_two:[...st, J(a)+'と', J(b)+'は足します','ほかの色は引きます'],
+    add_sub:[...st, J(a)+'は足します', J(b)+'は引きます'], even:[...st,'偶数は足して奇数は引きます'], odd:[...st,'奇数は足して偶数は引きます']
+  } : {
+    add_all:['出てくる数字をぜんぶ足します'], sub_all:[String(m.start),'から出てくる数字をぜんぶ引きます'],
+    add_one:[J(a)+'の数字だけ足します','ほかの色は無視します'], add_two:[J(a)+'と', J(b)+'の数字だけ足します','ほかの色は無視します'],
+    add_sub:[...st, J(a)+'は足します', J(b)+'は引きます','ほかの色は無視します'], even:['偶数だけ足して奇数は無視します'], odd:['奇数だけ足して偶数は無視します']
+  };
+  return (P[m.rule]||['出てくる数字をぜんぶ足します']).join('、');
+}
 const colB=k=>`<b style="color:${CARD_COLORS[k].c}">${CARD_COLORS[k].n}</b>`;
 // ign=false（無視しない）のときは、対象でない数字は「引く」になる
 function mathSign(rule,it,tg,ign){
@@ -4564,7 +4594,7 @@ function mathBuild(cfg){
     add_two:`${colB(tg[0])}と${colB(tg[1])}を足す`, add_sub:`${start?start+'から ':''}${colB(tg[0])}は＋ ${colB(tg[1])}は−`,
     even:'偶数だけ足す', odd:'奇数だけ足す'
   }[rule];
-  return {rule, ign, seq, w, start, answer, html, tag, i:0, user:null};
+  return {rule, ign, seq, w, start, answer, html, tag, tg, i:0, user:null};
 }
 function mathNext(){
   const m=C.math, el=$('cNumOnly');
@@ -5238,6 +5268,7 @@ const stepAutoCfg=()=>({drills:['lr','fb','hopR','hopL','gupa','cross','inout','
 let last=null;
 const TYPE_NAME={step:'リズムステップ',spot:'丸タッチ',arrow:'方向トレーニング',num:'数字記憶',stroop:'ストループ',voice:'ストループ（音声）',grid:'ストループ 一覧',move:'リズム運動',hands:'左右の手まね',breath:'呼吸調整',mem:'数字の位置記憶',card:'フラッシュ',ear:'音感トレーニング',sing:'発声トレーニング'};
 function finish(r){
+  if(LY && LY.c.flip && r.stats) r.stats.push(['ルールが逆になった',LY.hits+'回']);
   slStop();
   if(r.type==='breath' && r.cfg && r.cfg.thenLv){ const x=r.cfg.thenLv; levelStart(x.t,x.lv); return; }   // 呼吸のあと、そのままレベル1へ
   last=r;
@@ -5304,7 +5335,7 @@ goHome();
    Version check — 古い保存済みの画面が出ていたら、新しい版に切り替える
    （GitHub Pages は更新後しばらく古い版を返すことがあるため）
    ============================================================ */
-const APP_VER='2026-11-07 18:10';   // 更新のたびにこの日時を書き換える
+const APP_VER='2026-11-07 19:10';   // 更新のたびにこの日時を書き換える
 $('appVer').textContent='更新 '+APP_VER;
 (function checkVer(){
   if(location.protocol==='file:') return;
