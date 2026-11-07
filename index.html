@@ -568,7 +568,9 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 .prep-ex .mini{width:38px;height:38px}
 #cField.mode-num{background:#fff;border-color:rgba(0,0,0,.08)}
 #cField.mode-num .ccard,#cField.mode-color .ccard,#cField.mode-card .fnum,#cField.mode-color .fnum{display:none}
-#cField.mode-num .fnum{display:block}
+#cField.mode-num .fnum,#cField.mode-sound .fnum{display:block}
+#cField.mode-sound{background:#fff;border-color:rgba(0,0,0,.08)}
+#cField.mode-sound .ccard{display:none}
 .fnum{display:none;font-size:min(62vw,52vh,340px);font-weight:700;line-height:1;letter-spacing:-.03em;font-family:-apple-system,"Helvetica Neue",Arial,sans-serif}
 .fnum.flip{animation:flip .14s ease-out}
 .fwall{position:fixed;inset:0;z-index:50}
@@ -1776,6 +1778,19 @@ function renderCustom(t){
         <div class="row" id="fnChangeRow"><span class="lbl">変わるもの</span>${chips('fnChange',[{v:'num',l:'数字'},{v:'col',l:'色'}],['num','col'])}</div>
         <div class="row"><span class="lbl">数字の色</span>${chips('fnColors',Object.keys(CARD_COLORS).map(k=>({v:k,l:`<span class=\"cdot\" style=\"background:${CARD_COLORS[k].c}\"></span>${CARD_COLORS[k].n}`})),['black','red','green','blue','yellow'])}</div>
       </div>
+      <div id="fSoundBox" style="display:none">
+        ${rowSeg('鳴らすもの','sWhat',Object.keys(SOUND_WHAT).map(k=>({v:k,l:SOUND_WHAT[k]})),'cj',v=>{
+          $('sColRow').style.display=(v==='cj'||v==='ce')?'flex':'none'; $('sNumRow').style.display=(v==='nj'||v==='ne')?'flex':'none';
+          $('sFxBox').style.display=v==='fx'?'block':'none'; $('sShowRow').style.display=v==='fx'?'none':'flex';
+        })}
+        <div class="row" id="sColRow"><span class="lbl">使う色</span>${chips('sColors',WALL_COLOR_CHIPS(),['red','yellow','green','blue'])}</div>
+        <div class="row" id="sNumRow" style="display:none"><span class="lbl">数字</span>${seg('sRange',[{v:'5',l:'1〜5'},{v:'10',l:'1〜10'}],'5')}</div>
+        <div id="sFxBox" style="display:none">
+          <div class="row"><span class="lbl">正解の音</span>${seg('sFx',Object.keys(FX).map(k=>({v:k,l:FX[k].n})),'bell',fxPlay)}</div>
+          ${rowSeg('正解の出る割合','sRate',[{v:'0.2',l:'少なめ'},{v:'0.33',l:'ふつう'},{v:'0.5',l:'多め'}],'0.33')}
+        </div>
+        <div id="sShowRow" class="row" style="display:flex"><span class="lbl">画面にも出す</span>${seg('sShow',[{v:'0',l:'出さない'},{v:'1',l:'出す'}],'0')}</div>
+      </div>
       <div id="cDurBox">${rowRange('1セットの時間','cDur',20,120,10,60,v=>v+'秒')}</div>
       ${rowToggle('切り替わりの音','cBeep',false)}
       <div class="hint" id="fCardHint">「変わるもの」で選んだものだけが、カードごとに変わります（選ばなかったものは最初のまま）。前とまったく同じものは続けて出ません。「本物どおり」は、ハート・ダイヤが赤、スペード・クラブが黒になります。「数えるお題」をオンにすると、はじめに「ハートは何回？」のようなお題が出て、最後に答え合わせをします（お題は毎回変わります）。</div>
@@ -1936,7 +1951,7 @@ $('customStart').onclick=()=>{
     speedup:$('jSpeed').classList.contains('on'), voice:$('jVoice').classList.contains('on'), stepSound:$('jStepSnd').classList.contains('on')
   });
   if(curTrain==='card') runCard({
-    kind:segVal('fKind')||flashKindPref(), wallColors:cfgUI.fwColors.slice(), wallOver:(cfgUI.fwOver||['none']).slice(), wallDirs:(cfgUI.fwDirs||WALL_DIRS).slice(), wallBody:(cfgUI.fwBody||WALL_BODY_DEF).slice(), ruleCue:segVal('fwRule')||'off', nrange:segVal('fnRange'),
+    kind:segVal('fKind')||flashKindPref(), wallColors:cfgUI.fwColors.slice(), wallOver:(cfgUI.fwOver||['none']).slice(), wallDirs:(cfgUI.fwDirs||WALL_DIRS).slice(), wallBody:(cfgUI.fwBody||WALL_BODY_DEF).slice(), ruleCue:segVal('fwRule')||'off', sWhat:segVal('sWhat'), sColors:(cfgUI.sColors||['red','yellow','green','blue']).slice(), sRange:+segVal('sRange'), sFx:segVal('sFx'), sRate:+segVal('sRate'), sShow:segVal('sShow')==='1', nrange:segVal('fnRange'),
     nchange:cfgUI.fnChange.slice(), ncolors:cfgUI.fnColors.slice(),
     math:$('fnMath').classList.contains('on'), rule:segVal('fnRule'), mathQ:+segVal('fnQ'), ignore:segVal('fnIgnore')!=='no',
     timing:segVal('cTiming'), iv:+segVal('cIv'), rand:segVal('cRand'), change:cfgUI.cChange.slice(),
@@ -2680,7 +2695,7 @@ const SND={
 /* ---- voice ----
    まずは録音した声（voice/*.mp3）を Web Audio で鳴らす。ブラウザの読み上げ機能は
    ブラウザによって鳴らない（Brave など）ので、録音が読めないときだけ代わりに使う。 */
-const VOX_MAP={'はじめます':'hajime','吐きます':'haku','止めます':'tomeru','吸います':'suu','おわりです。ふつうの呼吸に戻しましょう':'owari','休憩':'kyukei','逆回し':'gyaku','おつかれさまでした':'otsukare','足首回し':'ankle','肩回し':'shoulder','手首回し':'wrist','腕回し':'arm','股関節回し':'hip','腰回し':'waist','ひざ回し':'knee','いち':'n1','に':'n2','さん':'n3','よん':'n4','ご':'n5','ろく':'n6','なな':'n7','はち':'n8','きゅう':'n9','じゅう':'n10','11':'n11','12':'n12','13':'n13','14':'n14','15':'n15','16':'n16','17':'n17','18':'n18','19':'n19','20':'n20','21':'n21','22':'n22','23':'n23','24':'n24','25':'n25','26':'n26','27':'n27','28':'n28','29':'n29','30':'n30','5秒':'s5','10秒':'s10','15秒':'s15','20秒':'s20','30秒':'s30','40秒':'s40','50秒':'s50','60秒':'s60','70秒':'s70','80秒':'s80','90秒':'s90','1拍で1周':'b1','2拍で1周':'b2','3拍で1周':'b3','4拍で1周':'b4','5拍で1周':'b5','6拍で1周':'b6','7拍で1周':'b7','8拍で1周':'b8','9拍で1周':'b9','10拍で1周':'b10','11拍で1周':'b11','12拍で1周':'b12','この呼吸で終わりです':'konokokyu','1分経過':'m1','2分経過':'m2','3分経過':'m3','4分経過':'m4','5分経過':'m5','6分経過':'m6','7分経過':'m7','8分経過':'m8','9分経過':'m9','10分経過':'m10','残り1分です':'r1','残り2分です':'r2','残り3分です':'r3','残り4分です':'r4','残り5分です':'r5','残り6分です':'r6','残り7分です':'r7','残り8分です':'r8','残り9分です':'r9','あか':'c_red','きいろ':'c_yellow','みどり':'c_green','あお':'c_blue','しろ':'c_white','オレンジ':'c_orange','むらさき':'c_purple','ピンク':'c_pink','みずいろ':'c_sky','おわりです':'owari2','1秒':'s1','2秒':'s2','3秒':'s3','4秒':'s4','6秒':'s6','7秒':'s7','8秒':'s8','9秒':'s9','11秒':'s11','12秒':'s12','13秒':'s13','14秒':'s14','16秒':'s16','17秒':'s17','18秒':'s18','19秒':'s19','21秒':'s21','22秒':'s22','23秒':'s23','24秒':'s24','25秒':'s25','26秒':'s26','27秒':'s27','28秒':'s28','29秒':'s29','左右ジャンプ':'st_lr','前後ジャンプ':'st_fb','右足ケンケン':'st_hopR','左足ケンケン':'st_hopL','グーパー':'st_gupa','開く・クロス':'st_cross','イン・イン・アウト・アウト':'st_inout','右足2歩・戻る':'st_walk2','シンコペーション':'st_sync','3拍子ステップ':'st_waltz','ランダム':'st_rand','レベル1':'lv1','レベル2':'lv2','レベル3':'lv3','レベル4':'lv4','レベル5':'lv5','レベル6':'lv6','レベル7':'lv7','レベル8':'lv8','レベル9':'lv9','レベル10':'lv10','難問です':'nanmon','矢印と同じ方向を向きます':'r_ar_same','矢印と反対の方向を向きます':'r_ar_anti','矢印の色で向きが変わります':'r_ar_color','暗算もします':'r_math_too','数字を覚えてそのまま答えます':'r_num','数字を覚えて逆から答えます':'r_num_rev','文字を読みます':'r_st_read','インクの色を答えます':'r_st_color','一覧を順番にインクの色で答えます':'r_st_grid','背景の色でルールが変わります':'r_st_cell','音に合わせて大きく回します':'r_mv_metro','秒数のあいだ回し続けます':'r_mv_sec','音と秒数に合わせて回します':'r_mv_mix','左右で違う形をまねします':'r_hd','カチッという音で左右を入れ替えます':'r_hd_swap','数字の場所を覚えて1から順に押します':'r_mem','画面の色が変わるのを見ていましょう':'r_cd_color','お題の数を数えながら見ます':'r_cd_quiz','数字を頭の中で計算します':'r_cd_math','クリアです':'clear','難問クリアです':'clear10','次は':'tsugiwa','チャレンジしましょう':'challenge','もう一度チャレンジしましょう':'again','音を聴いて鍵盤で答えます':'r_ear','音を聴いて同じ高さで声を出します':'r_sing','ドレミ以外の音も出ます':'r_ear_chr'};
+const VOX_MAP={'はじめます':'hajime','吐きます':'haku','止めます':'tomeru','吸います':'suu','おわりです。ふつうの呼吸に戻しましょう':'owari','休憩':'kyukei','逆回し':'gyaku','おつかれさまでした':'otsukare','足首回し':'ankle','肩回し':'shoulder','手首回し':'wrist','腕回し':'arm','股関節回し':'hip','腰回し':'waist','ひざ回し':'knee','いち':'n1','に':'n2','さん':'n3','よん':'n4','ご':'n5','ろく':'n6','なな':'n7','はち':'n8','きゅう':'n9','じゅう':'n10','11':'n11','12':'n12','13':'n13','14':'n14','15':'n15','16':'n16','17':'n17','18':'n18','19':'n19','20':'n20','21':'n21','22':'n22','23':'n23','24':'n24','25':'n25','26':'n26','27':'n27','28':'n28','29':'n29','30':'n30','5秒':'s5','10秒':'s10','15秒':'s15','20秒':'s20','30秒':'s30','40秒':'s40','50秒':'s50','60秒':'s60','70秒':'s70','80秒':'s80','90秒':'s90','1拍で1周':'b1','2拍で1周':'b2','3拍で1周':'b3','4拍で1周':'b4','5拍で1周':'b5','6拍で1周':'b6','7拍で1周':'b7','8拍で1周':'b8','9拍で1周':'b9','10拍で1周':'b10','11拍で1周':'b11','12拍で1周':'b12','この呼吸で終わりです':'konokokyu','1分経過':'m1','2分経過':'m2','3分経過':'m3','4分経過':'m4','5分経過':'m5','6分経過':'m6','7分経過':'m7','8分経過':'m8','9分経過':'m9','10分経過':'m10','残り1分です':'r1','残り2分です':'r2','残り3分です':'r3','残り4分です':'r4','残り5分です':'r5','残り6分です':'r6','残り7分です':'r7','残り8分です':'r8','残り9分です':'r9','あか':'c_red','きいろ':'c_yellow','みどり':'c_green','あお':'c_blue','しろ':'c_white','オレンジ':'c_orange','むらさき':'c_purple','ピンク':'c_pink','みずいろ':'c_sky','おわりです':'owari2','1秒':'s1','2秒':'s2','3秒':'s3','4秒':'s4','6秒':'s6','7秒':'s7','8秒':'s8','9秒':'s9','11秒':'s11','12秒':'s12','13秒':'s13','14秒':'s14','16秒':'s16','17秒':'s17','18秒':'s18','19秒':'s19','21秒':'s21','22秒':'s22','23秒':'s23','24秒':'s24','25秒':'s25','26秒':'s26','27秒':'s27','28秒':'s28','29秒':'s29','左右ジャンプ':'st_lr','前後ジャンプ':'st_fb','右足ケンケン':'st_hopR','左足ケンケン':'st_hopL','グーパー':'st_gupa','開く・クロス':'st_cross','イン・イン・アウト・アウト':'st_inout','右足2歩・戻る':'st_walk2','シンコペーション':'st_sync','3拍子ステップ':'st_waltz','ランダム':'st_rand','レベル1':'lv1','レベル2':'lv2','レベル3':'lv3','レベル4':'lv4','レベル5':'lv5','レベル6':'lv6','レベル7':'lv7','レベル8':'lv8','レベル9':'lv9','レベル10':'lv10','難問です':'nanmon','矢印と同じ方向を向きます':'r_ar_same','矢印と反対の方向を向きます':'r_ar_anti','矢印の色で向きが変わります':'r_ar_color','暗算もします':'r_math_too','数字を覚えてそのまま答えます':'r_num','数字を覚えて逆から答えます':'r_num_rev','文字を読みます':'r_st_read','インクの色を答えます':'r_st_color','一覧を順番にインクの色で答えます':'r_st_grid','背景の色でルールが変わります':'r_st_cell','音に合わせて大きく回します':'r_mv_metro','秒数のあいだ回し続けます':'r_mv_sec','音と秒数に合わせて回します':'r_mv_mix','左右で違う形をまねします':'r_hd','カチッという音で左右を入れ替えます':'r_hd_swap','数字の場所を覚えて1から順に押します':'r_mem','画面の色が変わるのを見ていましょう':'r_cd_color','お題の数を数えながら見ます':'r_cd_quiz','数字を頭の中で計算します':'r_cd_math','クリアです':'clear','難問クリアです':'clear10','次は':'tsugiwa','チャレンジしましょう':'challenge','もう一度チャレンジしましょう':'again','音を聴いて鍵盤で答えます':'r_ear','音を聴いて同じ高さで声を出します':'r_sing','ドレミ以外の音も出ます':'r_ear_chr','くろ':'c_black','Red':'e_red','Blue':'e_blue','Yellow':'e_yellow','Green':'e_green','White':'e_white','Black':'e_black','Orange':'e_orange','Purple':'e_purple','Pink':'e_pink','Light blue':'e_sky','One':'e_n1','Two':'e_n2','Three':'e_n3','Four':'e_n4','Five':'e_n5','Six':'e_n6','Seven':'e_n7','Eight':'e_n8','Nine':'e_n9','Ten':'e_n10'};
 const VOICE_VER='kokoro6';   // 今の声（Kokoro）を作り直したら変える（古い声が残らないように）
 // 声の種類。今の声は voice/ 直下、Gemini で作った声は voice/<id>/。どれだけ出来ているかは voice/voices.json（作る係が書く）
 const VOICE_SETS=[
@@ -4212,13 +4227,14 @@ const cardIvTxt=c=>c.timing==='fixed'?`${c.iv}秒ごと`:`${CARD_RAND[c.rand][0]
 const suitSvg=(s,col,cls)=>`<svg class="${cls||'suit'}" viewBox="0 0 100 100"><g fill="${col}">${SUITS[s].svg}</g></svg>`;
 const pick=a=>a[rnd(a.length)];
 // フラッシュの種類
-const FLASH_KINDS={card:'トランプ', color:'カラー', num:'数字だけ'};
+const FLASH_KINDS={card:'トランプ', color:'カラー', num:'数字だけ', sound:'音'};
 const flashKindOf=c=>c.kind||'card';
 function flashKindPref(){ try{ const k=localStorage.getItem('notore-flash-kind'); return FLASH_KINDS[k]?k:'card'; }catch(e){ return 'card'; } }
 const FLASH_QUICK={
   card :'記号（スペード・ハート・ダイヤ・クラブ）と色（赤・黒）が、1.5〜3秒のランダムな間隔でパッと切り替わります。はじめに「赤いスペードは何回？」のような数えるお題が出るので、数えながら見て、最後に答えます。60秒。',
   color:'画面いっぱいの色（赤・黄・緑・青の4色）が、1.5〜3秒のランダムな間隔でパッと切り替わります。60秒。',
-  num  :'大きな数字（1〜10）と、その色（黒・赤・緑・青・黄）が、1.5〜3秒のランダムな間隔でパッと切り替わります。60秒。'
+  num  :'大きな数字（1〜10）と、その色（黒・赤・緑・青・黄）が、1.5〜3秒のランダムな間隔でパッと切り替わります。60秒。',
+  sound:'色の名前・数字の読み上げ、または効果音が、決めた間隔で鳴ります。'
 };
 function flashMathUI(on){
   $('fnMathBox').style.display=on?'block':'none';
@@ -4232,7 +4248,7 @@ function flashKindUI(k){
   const show_=(id,on)=>{ const e=$(id); if(e) e.style.display=on?'block':'none'; };
   show_('fCardBox',k==='card');
   const mathOn = k==='num' && $('fnMath') && $('fnMath').classList.contains('on');
-  show_('cDurBox',!mathOn); show_('fCardHint',k==='card'); show_('fColorBox',k==='color'); show_('fNumBox',k==='num');
+  show_('cDurBox',!mathOn); show_('fCardHint',k==='card'); show_('fColorBox',k==='color'); show_('fNumBox',k==='num'); show_('fSoundBox',k==='sound');
   if(curTrain==='card' && !LEVEL_TRAININGS.includes('card')) $('quickDesc').textContent=FLASH_QUICK[k];
 }
 const WALL_COLORS={
@@ -4247,6 +4263,31 @@ const WALL_DIRS=['右','左','上','下','斜め上','斜め下'];
 const WALL_BODY=['右手','左手','右足','左足','頭','顔'];
 const WALL_BODY_DEF=['右手','左手','右足','左足'];
 const WALL_DARK=['black','blue','purple','green','red'];
+/* ---- フラッシュ「音」（2026-11-07 持ち主の依頼）：色の名前（日本語・英語）・数字の読み上げ、または効果音（正解＋ダミー）を決めた間隔で鳴らす ---- */
+const SOUND_WHAT={cj:'色（日本語）', ce:'色（英語）', nj:'数字', ne:'数字（英語）', fx:'効果音'};
+const COLOR_JA={red:'あか',yellow:'きいろ',green:'みどり',blue:'あお',white:'しろ',black:'くろ',orange:'オレンジ',purple:'むらさき',pink:'ピンク',sky:'みずいろ'};
+const COLOR_EN={red:'Red',yellow:'Yellow',green:'Green',blue:'Blue',white:'White',black:'Black',orange:'Orange',purple:'Purple',pink:'Pink',sky:'Light blue'};
+const NUM_JA=['いち','に','さん','よん','ご','ろく','なな','はち','きゅう','じゅう'];
+const NUM_EN=['One','Two','Three','Four','Five','Six','Seven','Eight','Nine','Ten'];
+// 効果音は Web Audio で作る（ファイル不要）。耳ざわりにならないよう、強いブザー系は入れない
+function fxOsc(t,f0,f1,dur,vol,type){
+  if(!AU.ctx||!AU.out) return;
+  const c=AU.ctx, o=c.createOscillator(), g=c.createGain();
+  o.type=type||'sine'; o.frequency.setValueAtTime(f0,t); if(f1!==f0) o.frequency.exponentialRampToValueAtTime(f1,t+dur*0.8);
+  g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(vol*sfxGain(),t+0.006); g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+  o.connect(g); g.connect(AU.out); o.start(t); o.stop(t+dur+0.03);
+}
+const FX={
+  bell   :{n:'ベル',     p:t=>{ fxOsc(t,1568,1568,0.9,0.4); fxOsc(t,3136,3136,0.45,0.12); fxOsc(t,4704,4704,0.25,0.05); }},
+  drum   :{n:'たいこ',   p:t=>{ fxOsc(t,170,55,0.35,0.9); fxOsc(t,340,110,0.12,0.25,'triangle'); }},
+  whistle:{n:'ふえ',     p:t=>{ fxOsc(t,880,1760,0.38,0.32); }},
+  wood   :{n:'ポコポコ', p:t=>{ fxOsc(t,820,780,0.09,0.55,'triangle'); fxOsc(t+0.14,620,590,0.1,0.55,'triangle'); }},
+  pinpon :{n:'ピンポン', p:t=>{ fxOsc(t,1319,1319,0.45,0.35); fxOsc(t+0.22,1047,1047,0.7,0.35); }},
+  spark  :{n:'キラキラ', p:t=>{ [2093,2637,3136,4186].forEach((f,i)=>fxOsc(t+i*0.06,f,f,0.35,0.16)); }}
+};
+function fxPlay(k){ if(!FX[k]) return; audioOn(); FX[k].p(now()+0.03); }
+const soundPool=c=>c.sWhat==='cj'||c.sWhat==='ce' ? (c.sColors&&c.sColors.length?c.sColors:['red','yellow','green','blue'])
+  : c.sWhat==='fx' ? Object.keys(FX) : [...Array(c.sRange||5)].map((_,i)=>i);
 // ルール変更の合図（2026-11-07 持ち主の指示）：カラーの途中、ランダムな間隔でやわらかいチャイムが鳴る。鳴ったらトレーナーがルールを変える
 const RULE_GAP={r1015:[10,15], r1520:[15,20], r2030:[20,30]};
 const RULE_GAP_JP={off:'なし', r1015:'10〜15秒ごと', r1520:'15〜20秒ごと', r2030:'20〜30秒ごと'};
@@ -4301,7 +4342,7 @@ let C=null;
 function stopCard(){ $('cWall').style.display='none'; if(C){ C.stops.forEach(f=>f&&f()); clearTimeout(C.to); clearTimeout(C.to2); clearTimeout(C.to3); clearInterval(C.clock); C=null; } }
 $('cWallX').onclick=()=>{ if(C) cardDone(true); };
 function runCard(cfg){
-  stopAll(); if(cfg.beep || RULE_GAP[cfg.ruleCue]) audioOn();
+  stopAll(); if(cfg.beep || RULE_GAP[cfg.ruleCue] || cfg.kind==='sound') audioOn();
   C={cfg, count:0, cur:null, stops:[], to:null, clock:null, seen:[], quiz:null};
   $('cLeft').textContent=cfg.dur; $('cCount').textContent='0'; $('cIvLbl').textContent=cardIvTxt(cfg);
   $('cCard').innerHTML=''; $('cCard').style.visibility='hidden'; $('cNumOnly').textContent=''; $('cWallOv').innerHTML='';
@@ -4317,6 +4358,11 @@ function runCard(cfg){
       sub:`${cardIvTxt(cfg)}に、画面いっぱいの色が変わります（${cfg.wallColors.length}色）。${RULE_GAP[cfg.ruleCue]?'<b>チャイムが鳴ったらルール変更</b>です。':''}左上の × でやめられます。`,
       ex:`<div class="prep-ex">${cfg.wallColors.map(k=>`<span class="cdot" style="width:22px;height:22px;margin:0;background:${WALL_COLORS[k].c}"></span>`).join('')}</div>`
         +(wallOverKinds(cfg).some(k=>k!=='none')?`<div class="prep-ex" style="font-size:26px;font-weight:800;gap:14px">${wallOverKinds(cfg).filter(k=>k!=='none').map(k=>`<span>${({dir:'右',body:'右手',num:'7',card:'♠'})[k]}</span>`).join('')}</div>`:'')
+    } : kind==='sound' ? {
+      title: cfg.sWhat==='fx' ? '正解の音が鳴ったら動く' : '読み上げに合わせて動く',
+      sub: cfg.sWhat==='fx' ? `いくつかの音がまざって鳴ります。<b>この音（${FX[cfg.sFx].n}）が正解</b>です。`
+                            : `${SOUND_WHAT[cfg.sWhat]}を${cardIvTxt(cfg)}に読み上げます。`,
+      ex: cfg.sWhat==='fx' ? `<div class="prep-ex"><button class="btn" style="width:auto;padding:10px 22px" onclick="fxPlay('${cfg.sFx}')">▶ 正解の音（${FX[cfg.sFx].n}）</button></div>` : ''
     } : kind==='num' ? {
       title:'数字がパッと切り替わる',
       sub:`${cardIvTxt(cfg)}に、${cfg.nchange.map(x=>x==='num'?'数字':'色').join('と')}が変わります。`,
@@ -4342,6 +4388,7 @@ function runCard(cfg){
     info.ex='';
   }
   C.stops.push(veilPrepare($('cVeil'),info,cardBegin));
+  if(kind==='sound' && cfg.sWhat==='fx') setTimeout(()=>{ if(C) fxPlay(cfg.sFx); },350);
 }
 function cardChangeTxt(c){
   const m={suit:'記号',num:'数字',scol:'記号の色',ncol:'数字の色'};
@@ -4541,7 +4588,26 @@ function cardRoll(prev){
 function flashNext(){
   const c=C.cfg, kind=flashKindOf(c), prev=C.cur||{};
   let st={...prev}, n=0;
-  if(kind==='color'){
+  if(kind==='sound'){
+    const pool=soundPool(c), el=$('cNumOnly');
+    if(c.sWhat==='fx'){
+      const dummies=pool.filter(k=>k!==c.sFx);
+      st.ok = Math.random()<(c.sRate||0.33) && !(prev.ok && prev.ok2);   // 正解は3回続けない
+      st.ok2 = st.ok && prev.ok;
+      if(st.ok) st.x=c.sFx; else { do{ st.x=pick(dummies); n++; }while(dummies.length>1 && st.x===prev.x && n<20); }
+      if(st.ok) C.hits=(C.hits||0)+1;
+      FX[st.x].p(now()+0.01);
+      el.textContent='♪'; el.style.color=st.ok?'#1e6fe0':'#9aa3ad';
+    }else{
+      do{ st.x=pick(pool); n++; }while(pool.length>1 && st.x===prev.x && n<30);
+      const word = c.sWhat==='cj'?COLOR_JA[st.x] : c.sWhat==='ce'?COLOR_EN[st.x] : c.sWhat==='nj'?NUM_JA[st.x] : NUM_EN[st.x];
+      say(word,true);
+      if(c.sShow){ const isCol=c.sWhat==='cj'||c.sWhat==='ce'; el.textContent=isCol?(c.sWhat==='ce'?COLOR_EN[st.x]:WALL_COLORS[st.x].n):String(st.x+1);
+        el.style.color=isCol?WALL_COLORS[st.x].c:'#111'; el.style.fontSize=isCol&&c.sWhat==='ce'?'min(18vw,20vh,140px)':''; }
+      else { el.textContent='♪'; el.style.color='#9aa3ad'; el.style.fontSize=''; }
+    }
+    el.classList.remove('flip'); void el.offsetWidth; el.classList.add('flip');
+  }else if(kind==='color'){
     do{ st.wall=pick(c.wallColors); n++; }while(c.wallColors.length>1 && st.wall===prev.wall && n<30);
     $('cWall').style.background=WALL_COLORS[st.wall].c;
     st.ov=wallOverPick(c,prev.ov);
@@ -4567,7 +4633,7 @@ function cardNext(){
   if(flashKindOf(C.cfg)!=='card'){
     flashNext(); C.count++;
     $('cCount').textContent=C.count; $('cWallCount').textContent=C.count;
-    if(C.cfg.beep){ tone(now()+0.01,1200,0.05,0.3); }
+    if(C.cfg.beep && flashKindOf(C.cfg)!=='sound'){ tone(now()+0.01,1200,0.05,0.3); }
     const c=C.cfg, iv=c.timing==='fixed'?c.iv:(()=>{ const [a,b]=CARD_RAND[c.rand]; return a+Math.random()*(b-a); })();
     C.to=setTimeout(cardNext,Math.round(iv*1000));
     return;
@@ -4708,10 +4774,10 @@ function cardDone(early){
     clearTimeout(C.to); clearTimeout(C.to2); clearTimeout(C.to3); clearInterval(C.clock); C.to=C.to2=C.clock=null;
     quizAsk(); return;
   }
-  const c=C.cfg, n=C.count, kind=flashKindOf(c), cues=C.cues||0; stopCard();
-  const what = kind==='color' ? ['色',c.wallColors.length+'色'+(wallOverKinds(c).some(k=>k!=='none')?'・'+wallOverKinds(c).map(k=>WALL_OVER[k]).join('・'):'')] : kind==='num' ? ['変わったもの',c.nchange.map(x=>x==='num'?'数字':'色').join('・')] : ['変わったもの',cardChangeTxt(c)];
+  const c=C.cfg, n=C.count, kind=flashKindOf(c), cues=C.cues||0, hits=C.hits||0; stopCard();
+  const what = kind==='sound' ? (c.sWhat==='fx'?['正解の音',FX[c.sFx].n+' '+hits+'回']:['鳴らしたもの',SOUND_WHAT[c.sWhat]]) : kind==='color' ? ['色',c.wallColors.length+'色'+(wallOverKinds(c).some(k=>k!=='none')?'・'+wallOverKinds(c).map(k=>WALL_OVER[k]).join('・'):'')] : kind==='num' ? ['変わったもの',c.nchange.map(x=>x==='num'?'数字':'色').join('・')] : ['変わったもの',cardChangeTxt(c)];
   finish({ type:'card', cfg:c, title:early?'途中で終了':'完了', note:'おつかれさまでした',
-    stats:[[kind==='color'?'見た色':kind==='num'?'見た数字':'見たカード',n+'枚'],['種類',FLASH_KINDS[kind]],['切り替え',cardIvTxt(c)],what,...(kind==='color'&&RULE_GAP[c.ruleCue]?[['ルール変更の合図',cues+'回']]:[])] });
+    stats:[[kind==='sound'?'鳴らした数':kind==='color'?'見た色':kind==='num'?'見た数字':'見たカード',n+(kind==='sound'?'回':'枚')],['種類',FLASH_KINDS[kind]],['切り替え',cardIvTxt(c)],what,...(kind==='color'&&RULE_GAP[c.ruleCue]?[['ルール変更の合図',cues+'回']]:[])] });
 }
 
 /* ============================================================
@@ -5148,7 +5214,7 @@ goHome();
    Version check — 古い保存済みの画面が出ていたら、新しい版に切り替える
    （GitHub Pages は更新後しばらく古い版を返すことがあるため）
    ============================================================ */
-const APP_VER='2026-11-07 15:20';   // 更新のたびにこの日時を書き換える
+const APP_VER='2026-11-07 16:10';   // 更新のたびにこの日時を書き換える
 $('appVer').textContent='更新 '+APP_VER;
 (function checkVer(){
   if(location.protocol==='file:') return;
