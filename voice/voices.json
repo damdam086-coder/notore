@@ -1,9 +1,9 @@
 {
- "updated": "2026-11-07T16:03",
+ "updated": "2026-11-07T16:04",
  "voices": {
   "kore": {
    "ready": false,
-   "count": 239,
+   "count": 244,
    "total": 250,
    "ver": 1
   },
