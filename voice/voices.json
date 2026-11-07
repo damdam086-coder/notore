@@ -1,5 +1,5 @@
 {
- "updated": "2026-11-07T17:10",
+ "updated": "2026-11-07T17:14",
  "voices": {
   "kore": {
    "ready": false,
@@ -15,7 +15,7 @@
   },
   "leda": {
    "ready": false,
-   "count": 0,
+   "count": 131,
    "total": 250,
    "ver": 1
   },
