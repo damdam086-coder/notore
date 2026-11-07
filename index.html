@@ -356,6 +356,10 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 .lvres-s{font-size:18px;margin-top:6px}
 .lvres-s b{color:var(--accent)}
 .lvnext{margin-top:var(--s4)}
+/* 呼吸調整のリズム（丸いボタン・押すとすぐ始まる・2026-11-07） */
+.lvgrid.brgrid{display:flex;flex-wrap:wrap;justify-content:center;gap:12px}
+.brbtn{width:100px;height:100px;border-radius:50%;display:grid;place-items:center;border:1px solid var(--line-2);border-top:5px solid var(--lc);background:var(--surface);color:var(--lc);font-size:17px;font-weight:800;letter-spacing:-.02em;white-space:nowrap;padding:0;cursor:pointer}
+.brbtn:active{transform:scale(.97)}
 
 .quick .qk{display:none;font-size:11px;font-weight:700;letter-spacing:.14em;color:var(--accent)}
 .quick .qt{margin:0 0 var(--s4);font-size:23px;font-weight:700;letter-spacing:.01em}
@@ -724,7 +728,7 @@ body.proj .hud{font-size:15px}
         <button class="btn" id="quickStart">トレーニング開始</button>
       </div>
       <div id="hubLevelsWrap" style="display:none">
-        <div class="seclbl">レベルを選んでチャレンジ</div>
+        <div class="seclbl" id="hubLevelsLbl">レベルを選んでチャレンジ</div>
         <div id="hubLevelsSex"></div>
         <div class="lvgrid" id="hubLevels"></div>
       </div>
@@ -1304,7 +1308,16 @@ function levelResult(r){
 // ホーム・各トレーニングの画面
 function levelHubRender(t){
   const lv=$('hubLevels'), isL=LEVEL_TRAININGS.includes(t);
-  document.querySelector('#hub .quick').style.display = t==='hands' ? 'none' : '';   // 手まねはレベルを選んで始める（2026-11-07 持ち主の指示）
+  document.querySelector('#hub .quick').style.display = (t==='hands'||t==='breath') ? 'none' : '';   // 手まね・呼吸は「設定なしで始める」を出さない（2026-11-07 持ち主の指示）
+  $('hubLevelsLbl').textContent = t==='breath' ? 'リズムを選んではじめる' : 'レベルを選んでチャレンジ';
+  lv.classList.toggle('brgrid', t==='breath');
+  if(t==='breath'){
+    $('hubLevelsWrap').style.display='block'; $('trainerHead').style.display='flex'; $('customLbl').style.display='none'; $('hubLevelsSex').innerHTML='';
+    const N=BREATH_PRESETS.length;
+    lv.innerHTML=BREATH_PRESETS.map((p,i)=>`<button class="brbtn" data-i="${i}" style="--lc:hsl(${215-Math.round(i*180/(N-1))},62%,44%)">${breathPat(p)}</button>`).join('');
+    lv.querySelectorAll('.brbtn').forEach(b=>b.onclick=()=>runBreath({...BREATH_DEF, ...BREATH_PRESETS[+b.dataset.i]}));
+    trainerOpen(false,t); return;
+  }
   $('hubLevelsWrap').style.display=isL?'block':'none';
   $('trainerHead').style.display=isL?'flex':'none';
   $('customLbl').style.display=isL?'none':'block';
@@ -1488,7 +1501,7 @@ function startAuto(t){
   if(t==='step'){ runStep(stepAutoCfg()); return; }
   if(t==='card'){ runCard(flashAutoCfg(flashKindPref())); return; }
   if(t==='mem'){ runMem({auto:true,count:4,grid:'m',after:segVal('wAfterQ')||memAfterPref(),total:10}); return; }
-  if(t==='breath'){ runBreath({min:5,out:8,hold:8,in:8,count:'up',snd:'clock',minute:true}); return; }
+  if(t==='breath'){ runBreath({...BREATH_DEF, out:8,hold:8,in:8}); return; }
   PROG={type:t, stages:t==='arrow'?buildArrowProgram():t==='hands'?buildHandsProgram():buildStroopProgram(),
         i:0, count:0, secs:0, bkTick:null};
   progStage();
@@ -1799,21 +1812,16 @@ function renderCustom(t){
   if(t==='breath'){
     box.innerHTML=`<div class="card pad">
       ${rowRange('時間','bMin',3,10,1,5,v=>v+'分')}
-      ${rowSeg('リズム','bPat',[{v:'5',l:'5-5-5'},{v:'6',l:'6-6-6'},{v:'8',l:'8-8-8'},{v:'10',l:'10-10-10'},{v:'c',l:'自分で'}],'8',v=>{
-        $('bCustom').style.display=v==='c'?'block':'none';
-      })}
-      <div id="bCustom" style="display:none">
-        ${rowRange('吐く','bOut',3,20,1,8,v=>v+'秒')}
-        ${rowRange('止める','bHold',0,20,1,8,v=>v==0?'止めない':v+'秒')}
-        ${rowRange('吸う','bIn',3,20,1,8,v=>v+'秒')}
-      </div>
-      ${rowSeg('声で数える','bCount',[{v:'up',l:'最後まで'},{v:'last3',l:'残り3秒だけ'},{v:'off',l:'数えない'}],'up',v=>{
+      ${rowRange('吐く','bOut',3,30,1,8,v=>v+'秒')}
+      ${rowRange('止める','bHold',0,30,1,8,v=>v==0?'止めない':v+'秒')}
+      ${rowRange('吸う','bIn',3,30,1,8,v=>v+'秒')}
+      ${rowSeg('声で数える','bCount',[{v:'up',l:'最後まで'},{v:'last3',l:'残り3秒だけ'},{v:'off',l:'数えない'}],'last3',v=>{
         $('bCountHint').textContent = v==='up' ? '「いち・に・さん…」と、その段の最後の秒まで声で数えます。'
           : v==='last3' ? '残り3秒だけ「さん・に・いち」と数えます。それまでは下の音が1秒ごとに鳴ります。'
           : '声では数えません。下の音が1秒ごとに鳴ります。';
       })}
-      <div class="hint" id="bCountHint" style="margin-top:0;padding-bottom:var(--s2)">「いち・に・さん…」と、その段の最後の秒まで声で数えます。</div>
-      <div class="row"><span class="lbl">カチカチ音</span>${seg('bSnd',[{v:'clock',l:'時計'},{v:'wood',l:'木の音'},{v:'beep',l:'電子音'},{v:'soft',l:'やさしい'},{v:'click',l:'クリック'},{v:'none',l:'なし'}],'clock',beatPreview)}</div>
+      <div class="hint" id="bCountHint" style="margin-top:0;padding-bottom:var(--s2)">残り3秒だけ「さん・に・いち」と数えます。それまでは下の音が1秒ごとに鳴ります。</div>
+      <div class="row"><span class="lbl">カチカチ音</span>${seg('bSnd',[{v:'clock',l:'時計'},{v:'wood',l:'木の音'},{v:'beep',l:'電子音'},{v:'soft',l:'やさしい'},{v:'click',l:'クリック'},{v:'none',l:'なし'}],'soft',beatPreview)}</div>
       ${rowToggle('1分ごとの声かけ','bMinute',true)}
       <div class="hint" style="margin-top:0;padding-bottom:var(--s2)">カチカチ音は、声で数えない秒に鳴ります。1分ごとに「1分経過」とお知らせし、最後の2分は「残り2分です」「残り1分です」も言います。</div>
       <div class="hint">吐く → 止める → 吸う の順にくり返します。10-10-10 なら、10秒で吐いて、10秒止めて、10秒で吸います。</div>
@@ -1943,8 +1951,7 @@ $('customStart').onclick=()=>{
     count:+$('wCount').value, grid:segVal('wGridSel'), after:segVal('wAfterQ')||memAfterPref(), total:+segVal('wQ')
   });
   if(curTrain==='breath'){
-    const pt=segVal('bPat');
-    const c = pt==='c' ? {out:+$('bOut').value, hold:+$('bHold').value, in:+$('bIn').value} : {out:+pt, hold:+pt, in:+pt};
+    const c = {out:+$('bOut').value, hold:+$('bHold').value, in:+$('bIn').value};
     runBreath({min:+$('bMin').value, ...c, count:segVal('bCount'), snd:segVal('bSnd'), minute:$('bMinute').classList.contains('on')});
   }
   if(curTrain==='hands') runHands({
@@ -3281,6 +3288,9 @@ const BREATH_STEPS=[
   {k:'in',  n:'吸う',   say:'吸います'}
 ];
 const breathPat=c=>`${c.out}-${c.hold}-${c.in}`;
+// 2026-11-07 持ち主の指示：あらかじめ決めておくリズム（吐く-止める-吸う）。声は残り3秒だけ・音はやさしいが初期値
+const BREATH_PRESETS=[[5,5,5],[6,6,6],[8,8,8],[10,10,10],[10,10,15],[15,15,15],[20,20,25]].map(([o,h,i])=>({out:o,hold:h,in:i}));
+const BREATH_DEF={min:5, count:'last3', snd:'soft', minute:true};
 // 声の数え方：up=最後まで数える／last3=残り3秒だけ「さん・に・いち」／off=数えない（古い設定も読む）
 const breathCount=c=>({up:'up',last3:'last3',off:'off',voice:'up'})[c.count]||'last3';
 const breathSnd=c=>(c.count==='none'||c.tick===false)?'none':(c.snd||'clock');
@@ -5120,7 +5130,7 @@ goHome();
    Version check — 古い保存済みの画面が出ていたら、新しい版に切り替える
    （GitHub Pages は更新後しばらく古い版を返すことがあるため）
    ============================================================ */
-const APP_VER='2026-11-07 12:40';   // 更新のたびにこの日時を書き換える
+const APP_VER='2026-11-07 14:00';   // 更新のたびにこの日時を書き換える
 $('appVer').textContent='更新 '+APP_VER;
 (function checkVer(){
   if(location.protocol==='file:') return;
