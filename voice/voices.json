@@ -1,5 +1,5 @@
 {
- "updated": "2026-11-08T17:25",
+ "updated": "2026-11-08T17:31",
  "voices": {
   "kore": {
    "ready": false,
@@ -27,7 +27,7 @@
   },
   "sulafat": {
    "ready": false,
-   "count": 0,
+   "count": 135,
    "total": 250,
    "ver": 1
   },
