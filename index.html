@@ -2744,12 +2744,33 @@ function audioOn(){
       k.connect(AU.ctx.destination); AU.master=k;
     }
     if(!AU.out){ AU.out=AU.ctx.createGain(); AU.out.connect(AU.master); }
-    voxDecode();
+    voxDecode(); iosUnmute();
     // iOS: a silent blip inside the tap unlocks output
     const b=AU.ctx.createBuffer(1,1,22050), s=AU.ctx.createBufferSource(); s.buffer=b; s.connect(AU.out); s.start(0);
   }catch(e){ return null; }
   return AU.ctx;
 }
+/* iPhone：横のスイッチが消音（マナーモード）だと Web Audio は鳴らない（2026-11-19 持ち主の指摘「スマホだと音声が流れない」）。
+   「再生」の扱いにすると消音でも鳴る。iOS 17〜は navigator.audioSession、それより前は無音の <audio> を流しておく。
+   代わりに、ほかのアプリの音楽はこちらが鳴り始めると止まる（iOS の決まり）。マイクを使うときは play-and-record に切り替える */
+function iosSession(type){ try{ if(navigator.audioSession && navigator.audioSession.type!==type) navigator.audioSession.type=type; }catch(e){} }
+function iosUnmute(){
+  try{
+    if(navigator.audioSession){ if(!(SG&&SG.stream)) iosSession('playback'); return; }
+    const ios=/iP(hone|ad|od)/.test(navigator.userAgent) || (/Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints>1);
+    if(!ios) return;
+    if(!AU.mute){
+      const n=8000, buf=new ArrayBuffer(44+n*2), v=new DataView(buf), w=(o,s)=>{ for(let i=0;i<s.length;i++) v.setUint8(o+i,s.charCodeAt(i)); };
+      w(0,'RIFF'); v.setUint32(4,36+n*2,true); w(8,'WAVE'); w(12,'fmt '); v.setUint32(16,16,true); v.setUint16(20,1,true); v.setUint16(22,1,true);
+      v.setUint32(24,8000,true); v.setUint32(28,16000,true); v.setUint16(32,2,true); v.setUint16(34,16,true); w(36,'data'); v.setUint32(40,n*2,true);
+      const a=document.createElement('audio'); a.setAttribute('x-webkit-airplay','deny'); a.setAttribute('playsinline',''); a.preload='auto'; a.loop=true;
+      a.src=URL.createObjectURL(new Blob([buf],{type:'audio/wav'})); AU.mute=a;
+    }
+    if(AU.mute.paused){ const p=AU.mute.play(); if(p&&p.catch) p.catch(()=>{}); }
+  }catch(e){}
+}
+// iPhone は電話・ほかのアプリ・画面ロックのあとで音が止まった（interrupted）ままになるので、次に触ったときに戻す
+document.addEventListener('pointerdown',()=>{ if(AU.ctx && AU.ctx.state!=='running') audioOn(); },true);
 // drop everything already queued (used when stopping / skipping)
 function audioCut(keep){
   if(AU.out){ try{ AU.out.disconnect(); }catch(e){} AU.out=null; }
@@ -4086,7 +4107,7 @@ function runSing(cfg){
 }
 async function singBegin(){
   if(!SG) return;
-  audioOn();
+  audioOn(); iosSession('play-and-record');      // 「再生」のままだと iPhone でマイクが使えない
   try{
     SG.stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false, noiseSuppression:false, autoGainControl:false}});
   }catch(e){
@@ -5335,7 +5356,7 @@ goHome();
    Version check — 古い保存済みの画面が出ていたら、新しい版に切り替える
    （GitHub Pages は更新後しばらく古い版を返すことがあるため）
    ============================================================ */
-const APP_VER='2026-11-07 16:01';   // 更新のたびにこの日時を書き換える
+const APP_VER='2026-11-19 06:29';   // 更新のたびにこの日時を書き換える
 $('appVer').textContent='更新 '+APP_VER;
 (function checkVer(){
   if(location.protocol==='file:') return;
