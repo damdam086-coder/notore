@@ -1,5 +1,5 @@
 {
- "updated": "2026-11-19T12:23",
+ "updated": "2026-11-19T17:03",
  "voices": {
   "kore": {
    "ready": false,
@@ -21,7 +21,7 @@
   },
   "despina": {
    "ready": false,
-   "count": 257,
+   "count": 274,
    "total": 277,
    "ver": 1
   },
