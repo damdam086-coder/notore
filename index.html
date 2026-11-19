@@ -362,6 +362,7 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 .lvgrid.brgrid{display:flex;flex-wrap:wrap;justify-content:center;gap:12px}
 .brbtn{width:100px;height:100px;border-radius:50%;display:grid;place-items:center;border:1px solid var(--line-2);border-top:5px solid var(--lc);background:var(--surface);color:var(--lc);font-size:17px;font-weight:800;letter-spacing:-.02em;white-space:nowrap;padding:0;cursor:pointer}
 .brbtn:active{transform:scale(.97)}
+@media (max-width:480px){ .rxgrid .brbtn{width:76px;height:76px;font-size:18px} }   /* 緊張緩和の丸4つをスマホで1列に */
 .brbtn.mvbtn{white-space:normal;font-size:15px;line-height:1.25;padding:0 10px;word-break:keep-all}
 
 .quick .qk{display:none;font-size:11px;font-weight:700;letter-spacing:.14em;color:var(--accent)}
@@ -491,6 +492,21 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 .bfig{position:relative;width:min(84vw,40vh,420px);aspect-ratio:1}
 .bfig img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;opacity:0;transition:opacity .45s ease}
 .bfig img.on{opacity:1}
+/* 緊張緩和：グー（力を入れる）とパー（抜けた）を重ね、--grip（1＝ぎゅっ・0＝抜けた）で入れ替える */
+.xcol{display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;height:100%;gap:min(2vh,14px);padding:16px 12px}
+.xhands{display:grid;grid-template-columns:1fr 1fr;gap:12px;width:min(92vw,520px)}
+.xhand{display:flex;flex-direction:column;align-items:center;opacity:.2;transition:opacity .4s ease;--grip:0;--dur:0s}
+.xhand.on{opacity:1}
+.xhl{font-size:16px;font-weight:720;color:var(--text-2);letter-spacing:.06em;margin-bottom:6px}
+.xim{position:relative;width:100%;max-width:220px;aspect-ratio:210/256}
+.xhand.L .xim{transform:scaleX(-1)}
+.xim img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
+.xim img.g{opacity:var(--grip);transition:opacity var(--dur) linear}
+.xim img.p{opacity:calc(1 - var(--grip));transition:opacity var(--dur) linear}
+.xhand.shake .xim img.g{animation:xshake .14s linear infinite}
+@keyframes xshake{0%{transform:translate(0,0)}25%{transform:translate(1.5px,-1px)}50%{transform:translate(-1px,1px)}75%{transform:translate(1px,1px)}100%{transform:translate(0,0)}}
+.xphase{font-size:32px;font-weight:760;letter-spacing:.04em;min-height:40px;text-align:center}
+.xnum{font-size:72px;font-weight:750;line-height:1;color:var(--text-2);min-height:72px}
 #bField .bwrap{width:min(62vw,28vh,240px)}
 
 /* ============================================================
@@ -987,6 +1003,29 @@ body.proj .hud{font-size:15px}
     </div>
   </section>
 
+  <!-- ============ PLAY: RELAX（緊張緩和） ============ -->
+  <section class="screen" id="playRelax">
+    <div class="stage">
+      <div class="hud">
+        <span><b class="tnum" id="xRep">0/3</b>回</span>
+        <span id="xSide">両手</span>
+        <span>抜く <b class="tnum" id="xRel">10秒</b></span>
+      </div>
+      <div class="field" id="xField">
+        <div class="xcol">
+          <div class="xhands">
+            <div class="xhand L" id="xL"><div class="xhl">左手</div><div class="xim"><img class="p" alt=""><img class="g" alt=""></div></div>
+            <div class="xhand R" id="xR"><div class="xhl">右手</div><div class="xim"><img class="p" alt=""><img class="g" alt=""></div></div>
+          </div>
+          <div class="xphase" id="xPhase"></div>
+          <div class="xnum tnum" id="xNum"></div>
+        </div>
+        <div class="veil" id="xVeil" style="display:none"></div>
+      </div>
+      <button class="btn quiet" id="xStop" style="margin-top:var(--s3)">終える</button>
+    </div>
+  </section>
+
   <!-- ============ PLAY: RHYTHM EXERCISE ============ -->
   <section class="screen" id="playMove">
     <div class="stage">
@@ -1118,6 +1157,7 @@ const TRAININGS={
   move  :{icon:'metro',name:'リズム運動',      desc:'読めないテンポや秒数に合わせて回す'},
   hands :{icon:'hand', name:'左右の手まね',    desc:'左右ちがう手の形をすぐにまねる'},
   breath:{icon:'wind', name:'呼吸調整',        desc:'吐く・止める・吸うを秒数どおりに'},
+  relax :{icon:'hand', name:'緊張緩和',        desc:'ぎゅーっと力を入れて、ふっと抜く'},
   mem   :{icon:'grid', name:'数字の位置記憶',  desc:'数字の場所を覚えて、1から順に押す'},
   card  :{icon:'spade',name:'フラッシュ',      desc:'トランプ・色・数字がパッと切り替わる'},
   ear   :{icon:'note', name:'音感トレーニング',desc:'伴奏の上で鳴るフレーズを聴いて、鍵盤で答える'},
@@ -1141,7 +1181,7 @@ function show(id,title,sub){
 }
 $('back').innerHTML=ICON.back;
 $('back').onclick=()=>{ stopAll(); stopProg(); if(['hub','results'].includes(document.querySelector('.screen.on').id)) goHome(); else if(curTrain) openHub(curTrain); else goHome(); };
-function stopAll(){ slStop(); stopArrow(); stopNum(); stopStroop(); stopVoice(); stopGrid(); stopMove(); stopHands(); stopBreath(); stopMem(); stopCard(); stopSpot(); stopStep(); stopEar(); stopSing(); }
+function stopAll(){ slStop(); stopArrow(); stopNum(); stopStroop(); stopVoice(); stopGrid(); stopMove(); stopHands(); stopBreath(); stopRelax(); stopMem(); stopCard(); stopSpot(); stopStep(); stopEar(); stopSing(); }
 
 /* ============================================================
    Home
@@ -1343,15 +1383,27 @@ function levelResult(r){
 // ホーム・各トレーニングの画面
 function levelHubRender(t){
   const lv=$('hubLevels'), isL=LEVEL_TRAININGS.includes(t);
-  document.querySelector('#hub .quick').style.display = (t==='hands'||t==='breath'||t==='card'||t==='move') ? 'none' : '';   // 手まね・呼吸・フラッシュは「設定なしで始める」を出さない（2026-11-07 持ち主の指示）
+  document.querySelector('#hub .quick').style.display = (t==='hands'||t==='breath'||t==='relax'||t==='card'||t==='move') ? 'none' : '';   // 手まね・呼吸・フラッシュは「設定なしで始める」を出さない（2026-11-07 持ち主の指示）
   $('hubLevelsLbl').textContent = t==='breath' ? 'リズムを選んではじめる' : 'レベルを選んでチャレンジ';
   lv.classList.toggle('brgrid', t==='breath');
+  lv.classList.toggle('rxgrid', t==='relax');
   if(t==='move'){
     $('hubLevelsWrap').style.display='block'; $('trainerHead').style.display='flex'; $('customLbl').style.display='none'; $('hubLevelsSex').innerHTML='';
     lv.classList.add('brgrid'); $('hubLevelsLbl').textContent='動き方を選んではじめる';
     const N=MOVE_PRESETS.length;
     lv.innerHTML=MOVE_PRESETS.map((p,i)=>`<button class="brbtn mvbtn" data-i="${i}" style="--lc:hsl(${215-Math.round(i*180/Math.max(1,N-1))},62%,44%)">${p.n}</button>`).join('');
     lv.querySelectorAll('.brbtn').forEach(b=>b.onclick=()=>{ LVNOW=null; const ly=lyRead(); runMove({...MOVE_BASE, rounds:5, dur:40, ...MOVE_PRESETS[+b.dataset.i].cfg}); LY_NEXT=ly; });
+    trainerOpen(false,t); return;
+  }
+  if(t==='relax'){   // 2026-11-19 持ち主の依頼：部位を選んで、抜き方の丸ボタンですぐ始まる
+    $('hubLevelsWrap').style.display='block'; $('trainerHead').style.display='flex'; $('customLbl').style.display='none';
+    lv.classList.add('brgrid'); $('hubLevelsLbl').textContent='選んではじめる';
+    const sx=$('hubLevelsSex');
+    sx.innerHTML=`<div class="seg singsex">${Object.keys(RELAX_SIDES).map(k=>`<button data-v="${k}" class="${relaxSidePref()===k?'on':''}">${RELAX_SIDES[k]}</button>`).join('')}</div>`;
+    sx.querySelectorAll('button').forEach(b=>b.onclick=()=>{ setSave('relax-side',b.dataset.v); sx.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b)); });
+    const N=RELAX_PRESETS.length;
+    lv.innerHTML=RELAX_PRESETS.map((r,i)=>`<button class="brbtn" data-r="${r}" style="--lc:hsl(${215-Math.round(i*180/(N-1))},62%,44%)">${r?r+'秒':'ふっと'}</button>`).join('');
+    lv.querySelectorAll('.brbtn').forEach(b=>b.onclick=()=>runRelax({...RELAX_DEF, side:relaxSidePref(), rel:+b.dataset.r}));
     trainerOpen(false,t); return;
   }
   if(t==='breath'){
@@ -1433,7 +1485,7 @@ function goHome(){
     b.onclick=()=>openHub(t);
     box.appendChild(b);
   };
-  lbl('まずはウォーミングアップ'); item('breath','','warm');
+  lbl('まずはウォーミングアップ'); item('breath','','warm'); item('relax','','warm');
   lbl('トレーニング'); LEVEL_TRAININGS.forEach(t=>item(t,t==='move'?'':`Lv.1〜${lvMax(t)}`));   // リズム運動はレベルなし
   lbl('開発中'); ['spot','step'].forEach(t=>item(t,'','dev'));
   show('home','NoTore','脳のトレーニング');
@@ -1453,6 +1505,7 @@ const QUICK_DESC={
   ear   :'',
   sing  :'',
   mem   :'1回目は見ながら 1 から順に押し、2回目は場所を思い出して 1 から順に押します（白い四角を出すか、枠だけにするかを下で選べます）。4個からスタートし、正解で1個増え、まちがえで1個減ります（3〜10個）。全10問。',
+  relax :'',
   breath:'8-8-8（8秒で吐く・8秒止める・8秒で吸う）を5分。はじまりの声と「いち・に・さん…はち」の数に合わせるだけです。1分ごとに残り時間をお知らせします。',
   hands :'お題が出たら、バーが消えるまでに覚えてから、テンポ（BPM）に合わせて2拍ごと（カチッ）に左右の形を入れ替えます。数字（グー〜5）・1.5秒ごとの入れ替えから始めて、1秒ごと、キツネやグッドなどのポーズも混ざり、お題はどれも5〜8秒で変わります。1ステージ30秒×4本。',
   move  :'メトロノーム（4拍で1周・周の変わり目でテンポが変わる）と、秒数（4〜12秒のランダムを3セット連続）を交互に全6ラウンド。動きも毎回ランダム。同じテンポは1〜3周続いてから変わり、最後は1周の拍数もランダムになります。'
@@ -1920,6 +1973,15 @@ function renderCustom(t){
       ${rowSeg('合格の幅','gTol',[{v:'60',l:'ゆるめ'},{v:'50',l:'ふつう'},{v:'35',l:'きびしめ'}],'50')}
     </div>`;
   }
+  if(t==='relax'){
+    box.innerHTML=`<div class="card pad">
+      ${rowSeg('部位','xSideSel',Object.keys(RELAX_SIDES).map(k=>({v:k,l:RELAX_SIDES[k]})),relaxSidePref())}
+      ${rowSeg('力を入れる','xHold',[3,5,7,10].map(v=>({v:String(v),l:v+'秒'})),String(RELAX_DEF.hold))}
+      ${rowSeg('抜き方','xRelSel',RELAX_REL.map(v=>({v:String(v),l:v?v+'秒':'ふっと'})),'10')}
+      ${rowSeg('休む','xRest',[5,10,15,20,30].map(v=>({v:String(v),l:v+'秒'})),String(RELAX_DEF.rest))}
+      ${rowSeg('回数','xReps',[1,2,3,5,8].map(v=>({v:String(v),l:v+'回'})),String(RELAX_DEF.reps))}
+    </div>`;
+  }
   if(t==='breath'){
     box.innerHTML=`<div class="card pad">
       ${rowRange('時間','bMin',3,10,1,5,v=>v+'分')}
@@ -2061,6 +2123,7 @@ $('customStart').onclick=()=>{
   if(curTrain==='mem') runMem({
     count:+$('wCount').value, grid:segVal('wGridSel'), after:segVal('wAfterQ')||memAfterPref(), total:+segVal('wQ')
   });
+  if(curTrain==='relax') runRelax({side:segVal('xSideSel'), hold:+segVal('xHold'), rel:+segVal('xRelSel'), rest:+segVal('xRest'), reps:+segVal('xReps')});
   if(curTrain==='breath'){
     const c = {out:+$('bOut').value, hold:+$('bHold').value, in:+$('bIn').value};
     runBreath({min:+$('bMin').value, ...c, count:segVal('bCount'), snd:segVal('bSnd'), minute:$('bMinute').classList.contains('on')});
@@ -2808,7 +2871,7 @@ const SND={
 /* ---- voice ----
    まずは録音した声（voice/*.mp3）を Web Audio で鳴らす。ブラウザの読み上げ機能は
    ブラウザによって鳴らない（Brave など）ので、録音が読めないときだけ代わりに使う。 */
-const VOX_MAP={'はじめます':'hajime','吐きます':'haku','止めます':'tomeru','吸います':'suu','おわりです。ふつうの呼吸に戻しましょう':'owari','休憩':'kyukei','逆回し':'gyaku','おつかれさまでした':'otsukare','足首回し':'ankle','肩回し':'shoulder','手首回し':'wrist','腕回し':'arm','股関節回し':'hip','腰回し':'waist','ひざ回し':'knee','いち':'n1','に':'n2','さん':'n3','よん':'n4','ご':'n5','ろく':'n6','なな':'n7','はち':'n8','きゅう':'n9','じゅう':'n10','11':'n11','12':'n12','13':'n13','14':'n14','15':'n15','16':'n16','17':'n17','18':'n18','19':'n19','20':'n20','21':'n21','22':'n22','23':'n23','24':'n24','25':'n25','26':'n26','27':'n27','28':'n28','29':'n29','30':'n30','5秒':'s5','10秒':'s10','15秒':'s15','20秒':'s20','30秒':'s30','40秒':'s40','50秒':'s50','60秒':'s60','70秒':'s70','80秒':'s80','90秒':'s90','1拍で1周':'b1','2拍で1周':'b2','3拍で1周':'b3','4拍で1周':'b4','5拍で1周':'b5','6拍で1周':'b6','7拍で1周':'b7','8拍で1周':'b8','9拍で1周':'b9','10拍で1周':'b10','11拍で1周':'b11','12拍で1周':'b12','この呼吸で終わりです':'konokokyu','1分経過':'m1','2分経過':'m2','3分経過':'m3','4分経過':'m4','5分経過':'m5','6分経過':'m6','7分経過':'m7','8分経過':'m8','9分経過':'m9','10分経過':'m10','残り1分です':'r1','残り2分です':'r2','残り3分です':'r3','残り4分です':'r4','残り5分です':'r5','残り6分です':'r6','残り7分です':'r7','残り8分です':'r8','残り9分です':'r9','あか':'c_red','きいろ':'c_yellow','みどり':'c_green','あお':'c_blue','しろ':'c_white','オレンジ':'c_orange','むらさき':'c_purple','ピンク':'c_pink','みずいろ':'c_sky','おわりです':'owari2','1秒':'s1','2秒':'s2','3秒':'s3','4秒':'s4','6秒':'s6','7秒':'s7','8秒':'s8','9秒':'s9','11秒':'s11','12秒':'s12','13秒':'s13','14秒':'s14','16秒':'s16','17秒':'s17','18秒':'s18','19秒':'s19','21秒':'s21','22秒':'s22','23秒':'s23','24秒':'s24','25秒':'s25','26秒':'s26','27秒':'s27','28秒':'s28','29秒':'s29','左右ジャンプ':'st_lr','前後ジャンプ':'st_fb','右足ケンケン':'st_hopR','左足ケンケン':'st_hopL','グーパー':'st_gupa','開く・クロス':'st_cross','イン・イン・アウト・アウト':'st_inout','右足2歩・戻る':'st_walk2','シンコペーション':'st_sync','3拍子ステップ':'st_waltz','ランダム':'st_rand','レベル1':'lv1','レベル2':'lv2','レベル3':'lv3','レベル4':'lv4','レベル5':'lv5','レベル6':'lv6','レベル7':'lv7','レベル8':'lv8','レベル9':'lv9','レベル10':'lv10','難問です':'nanmon','矢印と同じ方向を向きます':'r_ar_same','矢印と反対の方向を向きます':'r_ar_anti','矢印の色で向きが変わります':'r_ar_color','暗算もします':'r_math_too','数字を覚えてそのまま答えます':'r_num','数字を覚えて逆から答えます':'r_num_rev','文字を読みます':'r_st_read','インクの色を答えます':'r_st_color','一覧を順番にインクの色で答えます':'r_st_grid','背景の色でルールが変わります':'r_st_cell','音に合わせて大きく回します':'r_mv_metro','秒数のあいだ回し続けます':'r_mv_sec','音と秒数に合わせて回します':'r_mv_mix','左右で違う形をまねします':'r_hd','カチッという音で左右を入れ替えます':'r_hd_swap','数字の場所を覚えて1から順に押します':'r_mem','画面の色が変わるのを見ていましょう':'r_cd_color','お題の数を数えながら見ます':'r_cd_quiz','数字を頭の中で計算します':'r_cd_math','クリアです':'clear','難問クリアです':'clear10','次は':'tsugiwa','チャレンジしましょう':'challenge','もう一度チャレンジしましょう':'again','音を聴いて鍵盤で答えます':'r_ear','音を聴いて同じ高さで声を出します':'r_sing','ドレミ以外の音も出ます':'r_ear_chr','くろ':'c_black','Red':'e_red','Blue':'e_blue','Yellow':'e_yellow','Green':'e_green','White':'e_white','Black':'e_black','Orange':'e_orange','Purple':'e_purple','Pink':'e_pink','Light blue':'e_sky','One':'e_n1','Two':'e_n2','Three':'e_n3','Four':'e_n4','Five':'e_n5','Six':'e_n6','Seven':'e_n7','Eight':'e_n8','Nine':'e_n9','Ten':'e_n10','くろは足します':'m_black_add','くろは引きます':'m_black_sub','くろの数字だけ足します':'m_black_only','くろと':'m_black_to','あかは足します':'m_red_add','あかは引きます':'m_red_sub','あかの数字だけ足します':'m_red_only','あかと':'m_red_to','みどりは足します':'m_green_add','みどりは引きます':'m_green_sub','みどりの数字だけ足します':'m_green_only','みどりと':'m_green_to','あおは足します':'m_blue_add','あおは引きます':'m_blue_sub','あおの数字だけ足します':'m_blue_only','あおと':'m_blue_to','きいろは足します':'m_yellow_add','きいろは引きます':'m_yellow_sub','きいろの数字だけ足します':'m_yellow_only','きいろと':'m_yellow_to','むらさきは足します':'m_purple_add','むらさきは引きます':'m_purple_sub','むらさきの数字だけ足します':'m_purple_only','むらさきと':'m_purple_to','オレンジは足します':'m_orange_add','オレンジは引きます':'m_orange_sub','オレンジの数字だけ足します':'m_orange_only','オレンジと':'m_orange_to','からスタートします':'m_start','出てくる数字をぜんぶ足します':'m_add_all','から出てくる数字をぜんぶ引きます':'m_sub_all','ほかの色は引きます':'m_other_sub','ほかの色は無視します':'m_other_ign','偶数は足して奇数は引きます':'m_even_sub','奇数は足して偶数は引きます':'m_odd_sub','偶数だけ足して奇数は無視します':'m_even_ign','奇数だけ足して偶数は無視します':'m_odd_ign','10':'n10','40':'n40','50':'n50','60':'n60','70':'n70','80':'n80','90':'n90','100':'n100','110':'n110','120':'n120','130':'n130','140':'n140','150':'n150','160':'n160','170':'n170','180':'n180','190':'n190','200':'n200','210':'n210','220':'n220','230':'n230','240':'n240','250':'n250','260':'n260','270':'n270','280':'n280','290':'n290','300':'n300','310':'n310','320':'n320','330':'n330','340':'n340','350':'n350','360':'n360','370':'n370','380':'n380','390':'n390','400':'n400','音が鳴ったらルールが逆になります':'r_cue_flip','ほかの音は無視します':'r_cue_ign','この音です':'r_cue_this'};
+const VOX_MAP={'はじめます':'hajime','吐きます':'haku','止めます':'tomeru','吸います':'suu','おわりです。ふつうの呼吸に戻しましょう':'owari','休憩':'kyukei','逆回し':'gyaku','おつかれさまでした':'otsukare','足首回し':'ankle','肩回し':'shoulder','手首回し':'wrist','腕回し':'arm','股関節回し':'hip','腰回し':'waist','ひざ回し':'knee','いち':'n1','に':'n2','さん':'n3','よん':'n4','ご':'n5','ろく':'n6','なな':'n7','はち':'n8','きゅう':'n9','じゅう':'n10','11':'n11','12':'n12','13':'n13','14':'n14','15':'n15','16':'n16','17':'n17','18':'n18','19':'n19','20':'n20','21':'n21','22':'n22','23':'n23','24':'n24','25':'n25','26':'n26','27':'n27','28':'n28','29':'n29','30':'n30','5秒':'s5','10秒':'s10','15秒':'s15','20秒':'s20','30秒':'s30','40秒':'s40','50秒':'s50','60秒':'s60','70秒':'s70','80秒':'s80','90秒':'s90','1拍で1周':'b1','2拍で1周':'b2','3拍で1周':'b3','4拍で1周':'b4','5拍で1周':'b5','6拍で1周':'b6','7拍で1周':'b7','8拍で1周':'b8','9拍で1周':'b9','10拍で1周':'b10','11拍で1周':'b11','12拍で1周':'b12','この呼吸で終わりです':'konokokyu','1分経過':'m1','2分経過':'m2','3分経過':'m3','4分経過':'m4','5分経過':'m5','6分経過':'m6','7分経過':'m7','8分経過':'m8','9分経過':'m9','10分経過':'m10','残り1分です':'r1','残り2分です':'r2','残り3分です':'r3','残り4分です':'r4','残り5分です':'r5','残り6分です':'r6','残り7分です':'r7','残り8分です':'r8','残り9分です':'r9','あか':'c_red','きいろ':'c_yellow','みどり':'c_green','あお':'c_blue','しろ':'c_white','オレンジ':'c_orange','むらさき':'c_purple','ピンク':'c_pink','みずいろ':'c_sky','おわりです':'owari2','1秒':'s1','2秒':'s2','3秒':'s3','4秒':'s4','6秒':'s6','7秒':'s7','8秒':'s8','9秒':'s9','11秒':'s11','12秒':'s12','13秒':'s13','14秒':'s14','16秒':'s16','17秒':'s17','18秒':'s18','19秒':'s19','21秒':'s21','22秒':'s22','23秒':'s23','24秒':'s24','25秒':'s25','26秒':'s26','27秒':'s27','28秒':'s28','29秒':'s29','左右ジャンプ':'st_lr','前後ジャンプ':'st_fb','右足ケンケン':'st_hopR','左足ケンケン':'st_hopL','グーパー':'st_gupa','開く・クロス':'st_cross','イン・イン・アウト・アウト':'st_inout','右足2歩・戻る':'st_walk2','シンコペーション':'st_sync','3拍子ステップ':'st_waltz','ランダム':'st_rand','レベル1':'lv1','レベル2':'lv2','レベル3':'lv3','レベル4':'lv4','レベル5':'lv5','レベル6':'lv6','レベル7':'lv7','レベル8':'lv8','レベル9':'lv9','レベル10':'lv10','難問です':'nanmon','矢印と同じ方向を向きます':'r_ar_same','矢印と反対の方向を向きます':'r_ar_anti','矢印の色で向きが変わります':'r_ar_color','暗算もします':'r_math_too','数字を覚えてそのまま答えます':'r_num','数字を覚えて逆から答えます':'r_num_rev','文字を読みます':'r_st_read','インクの色を答えます':'r_st_color','一覧を順番にインクの色で答えます':'r_st_grid','背景の色でルールが変わります':'r_st_cell','音に合わせて大きく回します':'r_mv_metro','秒数のあいだ回し続けます':'r_mv_sec','音と秒数に合わせて回します':'r_mv_mix','左右で違う形をまねします':'r_hd','カチッという音で左右を入れ替えます':'r_hd_swap','数字の場所を覚えて1から順に押します':'r_mem','画面の色が変わるのを見ていましょう':'r_cd_color','お題の数を数えながら見ます':'r_cd_quiz','数字を頭の中で計算します':'r_cd_math','クリアです':'clear','難問クリアです':'clear10','次は':'tsugiwa','チャレンジしましょう':'challenge','もう一度チャレンジしましょう':'again','音を聴いて鍵盤で答えます':'r_ear','音を聴いて同じ高さで声を出します':'r_sing','ドレミ以外の音も出ます':'r_ear_chr','くろ':'c_black','Red':'e_red','Blue':'e_blue','Yellow':'e_yellow','Green':'e_green','White':'e_white','Black':'e_black','Orange':'e_orange','Purple':'e_purple','Pink':'e_pink','Light blue':'e_sky','One':'e_n1','Two':'e_n2','Three':'e_n3','Four':'e_n4','Five':'e_n5','Six':'e_n6','Seven':'e_n7','Eight':'e_n8','Nine':'e_n9','Ten':'e_n10','くろは足します':'m_black_add','くろは引きます':'m_black_sub','くろの数字だけ足します':'m_black_only','くろと':'m_black_to','あかは足します':'m_red_add','あかは引きます':'m_red_sub','あかの数字だけ足します':'m_red_only','あかと':'m_red_to','みどりは足します':'m_green_add','みどりは引きます':'m_green_sub','みどりの数字だけ足します':'m_green_only','みどりと':'m_green_to','あおは足します':'m_blue_add','あおは引きます':'m_blue_sub','あおの数字だけ足します':'m_blue_only','あおと':'m_blue_to','きいろは足します':'m_yellow_add','きいろは引きます':'m_yellow_sub','きいろの数字だけ足します':'m_yellow_only','きいろと':'m_yellow_to','むらさきは足します':'m_purple_add','むらさきは引きます':'m_purple_sub','むらさきの数字だけ足します':'m_purple_only','むらさきと':'m_purple_to','オレンジは足します':'m_orange_add','オレンジは引きます':'m_orange_sub','オレンジの数字だけ足します':'m_orange_only','オレンジと':'m_orange_to','からスタートします':'m_start','出てくる数字をぜんぶ足します':'m_add_all','から出てくる数字をぜんぶ引きます':'m_sub_all','ほかの色は引きます':'m_other_sub','ほかの色は無視します':'m_other_ign','偶数は足して奇数は引きます':'m_even_sub','奇数は足して偶数は引きます':'m_odd_sub','偶数だけ足して奇数は無視します':'m_even_ign','奇数だけ足して偶数は無視します':'m_odd_ign','10':'n10','40':'n40','50':'n50','60':'n60','70':'n70','80':'n80','90':'n90','100':'n100','110':'n110','120':'n120','130':'n130','140':'n140','150':'n150','160':'n160','170':'n170','180':'n180','190':'n190','200':'n200','210':'n210','220':'n220','230':'n230','240':'n240','250':'n250','260':'n260','270':'n270','280':'n280','290':'n290','300':'n300','310':'n310','320':'n320','330':'n330','340':'n340','350':'n350','360':'n360','370':'n370','380':'n380','390':'n390','400':'n400','音が鳴ったらルールが逆になります':'r_cue_flip','ほかの音は無視します':'r_cue_ign','この音です':'r_cue_this','両手でいきます':'rx_i_both','右手でいきます':'rx_i_R','左手でいきます':'rx_i_L','右手と左手を交互にいきます':'rx_i_alt','両手にぎゅーっと力を入れてください':'rx_t_both','右手にぎゅーっと力を入れてください':'rx_t_R','左手にぎゅーっと力を入れてください':'rx_t_L','ふっと力を抜きます':'rx_fu','3秒かけて力を抜きます':'rx_s3','5秒かけて力を抜きます':'rx_s5','7秒かけて力を抜きます':'rx_s7','10秒かけて力を抜きます':'rx_s10','15秒かけて力を抜きます':'rx_s15','20秒かけて力を抜きます':'rx_s20','30秒かけて力を抜きます':'rx_s30','10%ずつ落としてください':'rx_p10','20%ずつ落としてください':'rx_p20','少しずつ落としてください':'rx_bit','いきます':'rx_go','そのまま力が抜けた感じを味わいましょう':'rx_rest'};
 const VOICE_VER='kokoro6';   // 今の声（Kokoro）を作り直したら変える（古い声が残らないように）
 // 声の種類。今の声は voice/ 直下、Gemini で作った声は voice/<id>/。どれだけ出来ているかは voice/voices.json（作る係が書く）
 const VOICE_SETS=[
@@ -3609,6 +3672,127 @@ function bDone(secs){
   const c=B.cfg, n=B.cycles; stopBreath();
   finish({ type:'breath', cfg:c, title:'完了', note:'おつかれさまでした',
     stats:[['呼吸した時間',fmtSecs(secs)],['呼吸',n+'回'],['リズム',breathPat(c)],['設定',c.min+'分']] });
+}
+
+/* ============================================================
+   緊張緩和（2026-11-19 持ち主の依頼）：「右手にぎゅーっと力を入れてください」→ 力を入れたまま ○秒
+   → 「ふっと力を抜きます」か「10秒かけて力を抜きます、10%ずつ落としてください、いきます」＋ 10・9・8…いち → 休む。
+   部位は 両手・右手・左手・交互（右→左…）。時間は音の時計ではなく performance.now()（音が止まっていても進む）
+   ============================================================ */
+const RELAX_SIDES={both:'両手',R:'右手',L:'左手',alt:'交互'};
+const RELAX_REL=[0,3,5,7,10,15,20,30];          // 抜く秒数。0＝ふっと抜く
+const RELAX_PRESETS=[0,5,10,15];                 // ハブの丸ボタン
+const RELAX_DEF={hold:5, rest:10, reps:3};       // 交互は「左右○回ずつ」
+const relaxSidePref=()=>{ const v=setPref('relax-side','both'); return RELAX_SIDES[v]?v:'both'; };
+const relaxRelTxt=r=>r?r+'秒で抜く':'ふっと抜く';
+const RX_SAY={
+  intro:{both:'両手でいきます',R:'右手でいきます',L:'左手でいきます',alt:'右手と左手を交互にいきます'},
+  tense:{both:'両手にぎゅーっと力を入れてください',R:'右手にぎゅーっと力を入れてください',L:'左手にぎゅーっと力を入れてください'}
+};
+function relaxRelSay(n){
+  if(!n) return 'ふっと力を抜きます';
+  return [`${n}秒かけて力を抜きます`, n===10?'10%ずつ落としてください':n===5?'20%ずつ落としてください':'少しずつ落としてください', 'いきます'].join('、');
+}
+// 鳴らさずに声の長さを測る（録音が無いときはおおよそ）
+function voxDur(text){
+  const cur=VOX.buf[VOX.cur]||{}, base=VOX.buf.kokoro||{}, ps=text.split('、');
+  const bufs=ps.map(p=>{ const f=VOX_MAP[p.trim()]; return cur[f]||base[f]; });
+  if(!bufs.length || bufs.some(b=>!b)) return text.length*0.14;
+  return bufs.reduce((s,b,i)=>s+b.duration+(i<bufs.length-1?(/^から/.test(ps[i+1].trim())?0.02:0.12):0),0.01);
+}
+let RX=null;
+const rxNow=()=>performance.now()/1000;
+function stopRelax(){
+  if(!RX) return;
+  RX.timers.forEach(clearTimeout); clearInterval(RX.clock);
+  audioCut(false); sayStop(); wakeOff();
+  RX=null;
+}
+function rxLater(fn,ms){
+  const r=RX; const id=setTimeout(()=>{ if(RX===r && !r.over) fn(); },Math.max(0,ms));
+  r.timers.push(id); if(r.timers.length>300) r.timers.splice(0,150);
+}
+const rxAt=(t,fn)=>rxLater(fn,(t-rxNow())*1000);
+// side＝力を入れる手（null で両方とも薄いパー）、grip 1＝ぎゅっ 0＝抜けた、dur＝入れ替わる秒数
+function rxPose(side,grip,dur,shake){
+  ['L','R'].forEach(s=>{
+    const el=$('x'+s), on=side==='both'||side===s;
+    el.classList.toggle('on',on); el.classList.toggle('shake',!!shake&&on);
+    el.style.setProperty('--dur',(dur||0)+'s');
+    el.style.setProperty('--grip',on?grip:0);
+  });
+}
+function runRelax(cfg){
+  stopAll(); audioOn();
+  cfg={...RELAX_DEF,...cfg};
+  const seq = cfg.side==='alt' ? Array.from({length:cfg.reps*2},(_,i)=>i%2?'L':'R') : Array(cfg.reps).fill(cfg.side);
+  RX={cfg, seq, i:-1, done:0, timers:[], clock:null, over:false, started:false, t0:0, until:null};
+  document.querySelectorAll('#playRelax .xim img').forEach(im=>{ const u=HAND_IMAGES[im.classList.contains('g')?'g':'p5']; if(im.getAttribute('src')!==u) im.src=u; });
+  $('xRep').textContent=`0/${seq.length}`; $('xSide').textContent=RELAX_SIDES[cfg.side]; $('xRel').textContent=cfg.rel?cfg.rel+'秒':'ふっと';
+  rxPose(null,0,0); $('xPhase').textContent=''; $('xNum').textContent=''; $('xStop').style.display='none';
+  show('playRelax','緊張緩和',`${RELAX_SIDES[cfg.side]} ・ ${relaxRelTxt(cfg.rel)}`);
+  const rows=[['力を入れる',cfg.hold+'秒'],['抜く',cfg.rel?cfg.rel+'秒':'ふっと'],['休む',cfg.rest+'秒']]
+    .map(r=>`<div class="prep-li"><span>${r[0]}</span><span class="act">${r[1]}</span></div>`).join('');
+  veilShow($('xVeil'),`<div class="prep">
+      <div class="prep-k">${RELAX_SIDES[cfg.side]} ・ ${seq.length}回</div>
+      <div class="prep-t">ぎゅーっと入れて、抜く</div>
+      <div class="prep-list">${rows}</div>
+      <button class="btn prep-b" id="xGo">はじめる</button>
+    </div>`);
+  $('xGo').onclick=()=>{
+    if(!RX) return;
+    audioOn(); wakeOn();      // unlock sound & voice inside the tap
+    const d=say('はじめます、'+RX_SAY.intro[cfg.side],true)||2;
+    veilHide($('xVeil'));
+    RX.started=true; RX.t0=rxNow(); $('xStop').style.display='block';
+    RX.clock=setInterval(()=>{ if(RX) $('xNum').textContent = RX.until ? Math.max(1,Math.ceil(RX.until-rxNow()-0.05)) : ''; },100);
+    rxLater(rxNext,(d+0.8)*1000);
+  };
+}
+function rxNext(){
+  const r=RX, c=r.cfg; r.i++;
+  if(r.i>=r.seq.length) return rxEnd(false);
+  const side=r.seq[r.i];
+  $('xRep').textContent=`${r.i+1}/${r.seq.length}`; $('xSide').textContent=RELAX_SIDES[side];
+  $('xPhase').textContent='ぎゅーっと'; r.until=null;
+  rxPose(side,1,0.35,true);
+  const T0=rxNow(), d=say(RX_SAY.tense[side],true)||2.5;
+  const relTxt=relaxRelSay(c.rel), A=voxDur(relTxt);
+  const Trel=Math.max(T0+d+c.hold, T0+d+1+A)+(c.rel?0.25:0);   // 抜く合図は力を入れている間に言い、言い終わりで抜く
+  rxAt(T0+d,()=>{ r.until=Trel; });
+  rxAt(Trel-A-(c.rel?0.25:0),()=>say(relTxt,true));
+  rxAt(Trel,()=>{
+    $('xPhase').textContent='抜く';
+    if(!c.rel){ r.until=null; rxPose(side,0,0.25,false); rxLater(()=>rxRest(side),1500); return; }
+    r.until=Trel+c.rel;
+    rxPose(side,0,c.rel,false);
+    for(let k=0;k<c.rel;k++) rxAt(Trel+k,()=>say(numTxt(c.rel-k),true));
+    rxAt(Trel+c.rel,()=>rxRest(side));
+  });
+}
+function rxRest(side){
+  const r=RX, c=r.cfg; r.done++;
+  rxPose(side,0,0.3,false); $('xPhase').textContent='休む';
+  const d=say('そのまま力が抜けた感じを味わいましょう',true)||3;
+  const end=rxNow()+Math.max(c.rest,d+1);
+  r.until=end;
+  rxAt(end,()=>{ r.until=null; rxNext(); });
+}
+function rxEnd(early){
+  const r=RX; if(!r || r.over) return;
+  if(early){ audioCut(true); sayStop(); }
+  r.over=true; r.until=null;
+  const secs=rxNow()-r.t0;
+  rxPose(null,0,0.5); $('xPhase').textContent='おわり'; $('xNum').textContent=''; $('xStop').style.display='none';
+  SND.end(now()+0.02);
+  setTimeout(()=>{ if(RX===r) say('おわりです、おつかれさまでした',true); },700);
+  setTimeout(()=>{ if(RX===r) rxDone(secs); },3800);
+}
+$('xStop').onclick=()=>{ if(RX && RX.started && !RX.over) rxEnd(true); };
+function rxDone(secs){
+  const c=RX.cfg, n=RX.done; stopRelax();
+  finish({ type:'relax', cfg:c, title:'完了', note:'おつかれさまでした',
+    stats:[['時間',fmtSecs(secs)],['力を抜いた',n+'回'],['抜き方',relaxRelTxt(c.rel)],['部位',RELAX_SIDES[c.side]]] });
 }
 
 /* ============================================================
@@ -5287,7 +5471,7 @@ const stepAutoCfg=()=>({drills:['lr','fb','hopR','hopL','gupa','cross','inout','
    Results
    ============================================================ */
 let last=null;
-const TYPE_NAME={step:'リズムステップ',spot:'丸タッチ',arrow:'方向トレーニング',num:'数字記憶',stroop:'ストループ',voice:'ストループ（音声）',grid:'ストループ 一覧',move:'リズム運動',hands:'左右の手まね',breath:'呼吸調整',mem:'数字の位置記憶',card:'フラッシュ',ear:'音感トレーニング',sing:'発声トレーニング'};
+const TYPE_NAME={relax:'緊張緩和',step:'リズムステップ',spot:'丸タッチ',arrow:'方向トレーニング',num:'数字記憶',stroop:'ストループ',voice:'ストループ（音声）',grid:'ストループ 一覧',move:'リズム運動',hands:'左右の手まね',breath:'呼吸調整',mem:'数字の位置記憶',card:'フラッシュ',ear:'音感トレーニング',sing:'発声トレーニング'};
 function finish(r){
   if(LY && LY.c.flip && r.stats) r.stats.push(['ルールが逆になった',LY.hits+'回']);
   slStop();
@@ -5337,6 +5521,7 @@ function rerun(type,cfg){
   else if(type==='move') runMove(cfg);
   else if(type==='hands') runHands(cfg);
   else if(type==='breath') runBreath(cfg);
+  else if(type==='relax') runRelax(cfg);
   else if(type==='mem') runMem(cfg);
   else if(type==='card') runCard(cfg);
   else if(type==='ear') runEar(cfg);
@@ -5356,7 +5541,7 @@ goHome();
    Version check — 古い保存済みの画面が出ていたら、新しい版に切り替える
    （GitHub Pages は更新後しばらく古い版を返すことがあるため）
    ============================================================ */
-const APP_VER='2026-11-19 06:29';   // 更新のたびにこの日時を書き換える
+const APP_VER='2026-11-19 10:54';   // 更新のたびにこの日時を書き換える
 $('appVer').textContent='更新 '+APP_VER;
 (function checkVer(){
   if(location.protocol==='file:') return;
