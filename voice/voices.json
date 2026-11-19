@@ -1,40 +1,40 @@
 {
- "updated": "2026-11-09T18:18",
+ "updated": "2026-11-19T11:13",
  "voices": {
   "kore": {
    "ready": false,
-   "count": 244,
-   "total": 250,
+   "count": 257,
+   "total": 263,
    "ver": 1
   },
   "aoede": {
    "ready": false,
    "count": 244,
-   "total": 250,
+   "total": 263,
    "ver": 1
   },
   "leda": {
    "ready": false,
    "count": 240,
-   "total": 250,
+   "total": 263,
    "ver": 1
   },
   "despina": {
    "ready": false,
    "count": 244,
-   "total": 250,
+   "total": 263,
    "ver": 1
   },
   "sulafat": {
    "ready": false,
    "count": 242,
-   "total": 250,
+   "total": 263,
    "ver": 1
   },
   "charon": {
    "ready": false,
    "count": 243,
-   "total": 250,
+   "total": 263,
    "ver": 1
   }
  }
