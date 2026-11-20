@@ -428,7 +428,7 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 @keyframes kzsw{0%{transform:scale(.72);opacity:.25}100%{transform:none;opacity:1}}
 .kz-card.hit{animation:kzhit .2s ease-out}
 @keyframes kzhit{0%{background:color-mix(in srgb,var(--kc) 16%,transparent)}100%{background:transparent}}
-.kz-next{min-height:34px;font-size:18px;font-weight:650;color:var(--text-2);margin-top:4px}
+.kz-next{min-height:0;font-size:18px;font-weight:650;color:var(--text-2);margin-top:4px}
 .kz-next b{font-size:26px;font-weight:800;letter-spacing:.04em}
 .kz-bpm{font-size:15px;font-weight:600;color:var(--text-3)}
 .kz-bpm b{font-size:24px;font-weight:780;color:var(--text);margin:0 4px}
@@ -2049,7 +2049,7 @@ function renderCustom(t){
       <div class="row"><span class="lbl">言葉</span>${chips('kWords',KZ_WORDS.map(w=>({v:w.id,l:w.big})),kzWordsOf(kzPartPref()))}</div>
       ${rowRange('テンポ','kBpmIn',60,300,10,180,v=>v)}
       ${rowSeg('テンポの変化','kSwing',[{v:'0',l:'変えない'},{v:'20',l:'±20'},{v:'40',l:'±40'},{v:'60',l:'±60'}],kzTempoPref()==='wave'?'40':'0')}
-      ${rowSeg('言葉が変わる','kEvery',[{v:'4',l:'4拍ごと'},{v:'8',l:'8拍ごと'},{v:'16',l:'16拍ごと'},{v:'0',l:'ランダム'}],'8')}
+      ${rowSeg('言葉が変わる','kEvery',[{v:'8',l:'2小節'},{v:'0',l:'3〜4小節'},{v:'16',l:'4小節'},{v:'32',l:'8小節'}],'0')}
       ${rowSeg('時間','kDur',[30,60,90,120,180].map(v=>({v:String(v),l:v+'秒'})),'60')}
       <div class="row"><span class="lbl">メトロノームの音</span>${seg('kSnd',[{v:'clock',l:'時計'},{v:'wood',l:'木の音'},{v:'beep',l:'電子音'},{v:'soft',l:'やさしい'},{v:'click',l:'クリック'}],'click',beatPreview)}</div>
     </div>`;
@@ -3949,8 +3949,8 @@ const KZ_WORDS=[
 ];
 const KZ_SEL={lips:'唇',tip:'舌先',root:'舌根',all:'ぜんぶ'};
 const KZ_TEMPO={fix:'テンポ一定',wave:'テンポが変わる'};
-const KZ_PRESETS=[100,140,180,220];               // ハブの丸ボタン（テンポ）
-const KZ_DEF={dur:60, every:8, swing:40, snd:'click'};
+const KZ_PRESETS=[150,160,170,180,190,200,210,220,230,240,250,260];   // ハブの丸ボタン（テンポ）。2026-11-20 持ち主の指示：150〜260 を10刻み
+const KZ_DEF={dur:60, every:0, swing:40, snd:'click'};   // every 0＝3〜4小節ごと（同日 持ち主：1小節で変わるのは早すぎる）
 const kzPartPref=()=>{ const v=setPref('kz-part','all'); return KZ_SEL[v]?v:'all'; };
 const kzTempoPref=()=>{ const v=setPref('kz-tempo','fix'); return KZ_TEMPO[v]?v:'fix'; };
 const kzW=id=>KZ_WORDS.find(w=>w.id===id);
@@ -3958,8 +3958,8 @@ const kzWordsOf=p=>KZ_WORDS.filter(w=>p==='all'||w.part===p).map(w=>w.id);
 const kzPartsTxt=ids=>{ const ps=[...new Set(ids.map(id=>kzW(id).part))]; return ps.length===3?'ぜんぶ':ps.map(p=>KZ_PARTS[p].n).join('・'); };
 // 次の言葉（同じ言葉は続けない）
 function kzPick(cur){ const pool=KZ.words.length>1?KZ.words.filter(x=>x!==cur):KZ.words; return pool[rnd(pool.length)]; }
-// 言葉が変わるまでの拍数（every=0 はランダム）
-const kzSegLen=()=>KZ.cfg.every||[4,8,12,16][rnd(4)];
+// 言葉が変わるまでの拍数（every=0 は 3〜4小節＝12か16拍）
+const kzSegLen=()=>KZ.cfg.every||[12,16][rnd(2)];
 // 前のテンポから 1回最大30・10以上は離す。範囲は はじめのテンポ ±swing（60〜300）
 function kzPickBpm(base,old,swing){
   const lo=Math.max(60,base-swing), hi=Math.min(300,base+swing), a=Math.max(lo,old-30), b=Math.min(hi,old+30);
@@ -4048,18 +4048,18 @@ function kzGo(t0){
           k.tempoAt=k.beatN+16+rnd(17);
         }
       }
-      const bar=k.beatN%4, pos=k.pos, segLen=k.segLen, word=k.word, next=k.next, bpm=k.bpm;
+      const bar=k.beatN%4, next=k.next, bpm=k.bpm;
+      // 同日 持ち主の指摘：1拍目に変わると、もう言い始めていて間に合わない → 区切りの前の小節の3拍目で先に切り替える（チンもここ）
+      const early=k.words.length>1 && k.pos===k.segLen-2 && bt+2*60/k.bpm<k.tEnd-0.05;
       beatSound(k.cfg.snd,bt,bar%2===1,bar===0);
-      if(sw && k.words.length>1) kzDing(bt);
-      const pre=Math.min(4,segLen/2);
+      if(early) kzDing(bt);
       kzAt(bt,()=>{
-        if(sw) kzShow(word,k.words.length>1);
+        if(early) kzShow(next,true);
         if(chg) kzBpmTxt(bpm,true);
         const dots=$('kDots');
         if(dots.children.length!==4) dots.innerHTML='<i></i><i></i><i></i><i></i>';
         [...dots.children].forEach((d,i)=>d.className=i===bar?'on':i<bar?'done':'');
         const c=$('kCard'); c.classList.remove('hit'); void c.offsetWidth; c.classList.add('hit');
-        kzNextTxt(k.words.length>1 && pos>=segLen-pre ? next : null);
       });
       k.nextBeat+=60/k.bpm; k.beatN++;
       k.pos=(k.pos+1)%k.segLen;
@@ -5831,7 +5831,7 @@ goHome();
    Version check — 古い保存済みの画面が出ていたら、新しい版に切り替える
    （GitHub Pages は更新後しばらく古い版を返すことがあるため）
    ============================================================ */
-const APP_VER='2026-11-20 12:03';   // 更新のたびにこの日時を書き換える
+const APP_VER='2026-11-20 12:43';   // 更新のたびにこの日時を書き換える
 $('appVer').textContent='更新 '+APP_VER;
 (function checkVer(){
   if(location.protocol==='file:') return;
