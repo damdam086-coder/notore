@@ -1,5 +1,5 @@
 {
- "updated": "2026-11-20T12:22",
+ "updated": "2026-11-20T17:05",
  "voices": {
   "kore": {
    "ready": false,
@@ -33,7 +33,7 @@
   },
   "charon": {
    "ready": false,
-   "count": 273,
+   "count": 274,
    "total": 278,
    "ver": 1
   }
