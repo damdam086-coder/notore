@@ -416,6 +416,30 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
    Rhythm exercise (metronome / seconds)
    ============================================================ */
 .mv{display:flex;flex-direction:column;align-items:center;gap:4px;padding:40px 16px 18px;width:100%}
+/* 滑舌（2026-11-20）：言葉を画面の主役の大きさで。色は 唇・舌先・舌根 で分ける */
+.kz{display:flex;flex-direction:column;align-items:center;gap:6px;padding:24px 12px 16px;width:100%;container-type:inline-size}
+.kz-card{--kc:var(--accent);display:flex;flex-direction:column;align-items:center;padding:10px 12px 8px;border-radius:28px;width:min(100%,640px)}
+.kz-part{font-size:18px;font-weight:750;letter-spacing:.12em;color:var(--kc);border:2px solid var(--kc);border-radius:999px;padding:2px 16px}
+.kz-big{font-size:min(210px,29cqw);font-weight:850;line-height:1;letter-spacing:.04em;color:var(--kc);margin-top:10px;white-space:nowrap}
+.kz-card.long .kz-big{font-size:min(170px,22cqw)}
+.kz-kana{font-size:clamp(32px,11cqw,64px);font-weight:760;line-height:1.25;color:var(--text)}
+.kz-note{font-size:clamp(18px,4.6vw,26px);font-weight:720;color:var(--kc);min-height:1.35em}
+.kz-card.sw .kz-big,.kz-card.sw .kz-kana{animation:kzsw .32s cubic-bezier(.2,.8,.3,1)}
+@keyframes kzsw{0%{transform:scale(.72);opacity:.25}100%{transform:none;opacity:1}}
+.kz-card.hit{animation:kzhit .2s ease-out}
+@keyframes kzhit{0%{background:color-mix(in srgb,var(--kc) 16%,transparent)}100%{background:transparent}}
+.kz-next{min-height:34px;font-size:18px;font-weight:650;color:var(--text-2);margin-top:4px}
+.kz-next b{font-size:26px;font-weight:800;letter-spacing:.04em}
+.kz-bpm{font-size:15px;font-weight:600;color:var(--text-3)}
+.kz-bpm b{font-size:24px;font-weight:780;color:var(--text);margin:0 4px}
+.kz-bpm b.chg{display:inline-block;animation:chg .9s ease-out}
+.kz-cnt{position:absolute;top:10px;left:0;right:0;text-align:center;font-size:44px;font-weight:800;color:var(--accent);pointer-events:none}
+.kz-cnt.hit{animation:pop .25s cubic-bezier(.2,.8,.3,1)}
+.kz-list{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin:var(--s4) 0 var(--s2)}
+.kz-chip{display:flex;flex-direction:column;align-items:center;border:2px solid var(--kc);border-radius:14px;padding:6px 14px}
+.kz-chip b{font-size:24px;font-weight:820;color:var(--kc);letter-spacing:.04em}
+.kz-chip span{font-size:13px;font-weight:600;color:var(--text-2)}
+#kzPartSeg button{flex:1 1 20%}
 .mv-ex{font-size:30px;font-weight:750;letter-spacing:.02em;text-align:center;line-height:1.2}
 .mv-d{font-size:13.5px;color:var(--text-3);text-align:center}
 .pulse{--p:0;position:relative;width:min(60vw,230px);aspect-ratio:1;border-radius:50%;margin-top:var(--s4);
@@ -1032,6 +1056,31 @@ body.proj .hud{font-size:15px}
     </div>
   </section>
 
+  <!-- ============ PLAY: 滑舌 ============ -->
+  <section class="screen" id="playKz">
+    <div class="stage">
+      <div class="hud">
+        <span>残り <b class="tnum" id="kClock">60</b>s</span>
+      </div>
+      <div class="field" id="kField">
+        <div class="kz">
+          <div class="kz-card" id="kCard">
+            <div class="kz-part" id="kPart"></div>
+            <div class="kz-big" id="kBig"></div>
+            <div class="kz-kana" id="kKana"></div>
+            <div class="kz-note" id="kNote"></div>
+          </div>
+          <div class="beats" id="kDots"></div>
+          <div class="kz-next" id="kNext"></div>
+          <div class="kz-bpm">テンポ <b class="tnum" id="kBpm">—</b><span id="kTempoLbl"></span></div>
+        </div>
+        <div class="kz-cnt tnum" id="kCnt"></div>
+        <div class="veil" id="kVeil" style="display:none"></div>
+      </div>
+      <button class="btn quiet" id="kStop" style="margin-top:var(--s3)">終える</button>
+    </div>
+  </section>
+
   <!-- ============ PLAY: RHYTHM EXERCISE ============ -->
   <section class="screen" id="playMove">
     <div class="stage">
@@ -1112,6 +1161,7 @@ const ICON={
   target: svg('<circle cx="6.5" cy="7" r="3.25"/><circle cx="17.5" cy="7" r="3.25"/><circle cx="12" cy="17" r="3.25"/>'),
   spade : svg('<path d="M12 3.5c1.6 3 6.5 5.6 6.5 9.4a3.2 3.2 0 0 1-5.6 2.1c.2 1.9.9 3.2 2.4 4.5H8.7c1.5-1.3 2.2-2.6 2.4-4.5a3.2 3.2 0 0 1-5.6-2.1c0-3.8 4.9-6.4 6.5-9.4z"/>'),
   grid  : svg('<rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.5"/><path d="M15.6 5.2l1.4-1v6.3"/><path d="M5.2 15.2a1.9 1.9 0 0 1 3.6.8c0 1.3-3.7 3.3-3.7 4.5h3.9"/>'),
+  lips  : svg('<path d="M2.75 12c2.6-3.6 5.1-5.25 6.75-5.25 1.05 0 1.8.55 2.5 1.15.7-.6 1.45-1.15 2.5-1.15 1.65 0 4.15 1.65 6.75 5.25-2.6 3.6-5.6 5.5-9.25 5.5S5.35 15.6 2.75 12z"/><path d="M2.75 12h18.5"/>'),
   note  : svg('<path d="M9 18.5V5.5l11-2v13"/><circle cx="6.5" cy="18.5" r="2.5"/><circle cx="17.5" cy="16.5" r="2.5"/>'),
   wind  : svg('<path d="M3 8.5h10.5a3 3 0 1 0-3-3"/><path d="M3 12.5h15a3 3 0 1 1-3 3"/><path d="M3 16.5h6"/>'),
   metro : svg('<path d="M9.5 3h5l4 18h-13z"/><path d="M7 16.5h10"/><path d="M12 16.5l4.5-9.5"/>')
@@ -1168,6 +1218,7 @@ const TRAININGS={
   card  :{icon:'spade',name:'フラッシュ',      desc:'トランプ・色・数字がパッと切り替わる'},
   ear   :{icon:'note', name:'音感トレーニング',desc:'伴奏の上で鳴るフレーズを聴いて、鍵盤で答える'},
   sing  :{icon:'mic',  name:'発声トレーニング',desc:'お題の高さで声をのばす・3音を正しい高さで'},
+  kz    :{icon:'lips', name:'滑舌',            desc:'テンポに合わせて「バベ」「ラロ」などをくり返す'},
   step  :{icon:'steps', name:'リズムステップ', desc:'床の線や枠で、リズムに合わせて足でステップ'},
   spot  :{icon:'target',name:'丸タッチ',       desc:'壁や床に映した丸を、言われたとおりに触る・飛び移る'}
 };
@@ -1187,7 +1238,7 @@ function show(id,title,sub){
 }
 $('back').innerHTML=ICON.back;
 $('back').onclick=()=>{ stopAll(); stopProg(); if(['hub','results'].includes(document.querySelector('.screen.on').id)) goHome(); else if(curTrain) openHub(curTrain); else goHome(); };
-function stopAll(){ slStop(); stopArrow(); stopNum(); stopStroop(); stopVoice(); stopGrid(); stopMove(); stopHands(); stopBreath(); stopRelax(); stopMem(); stopCard(); stopSpot(); stopStep(); stopEar(); stopSing(); }
+function stopAll(){ slStop(); stopArrow(); stopNum(); stopStroop(); stopVoice(); stopGrid(); stopMove(); stopHands(); stopBreath(); stopRelax(); stopKz(); stopMem(); stopCard(); stopSpot(); stopStep(); stopEar(); stopSing(); }
 
 /* ============================================================
    Home
@@ -1389,16 +1440,28 @@ function levelResult(r){
 // ホーム・各トレーニングの画面
 function levelHubRender(t){
   const lv=$('hubLevels'), isL=LEVEL_TRAININGS.includes(t);
-  document.querySelector('#hub .quick').style.display = (t==='hands'||t==='breath'||t==='relax'||t==='card'||t==='move') ? 'none' : '';   // 手まね・呼吸・フラッシュは「設定なしで始める」を出さない（2026-11-07 持ち主の指示）
+  document.querySelector('#hub .quick').style.display = (t==='hands'||t==='breath'||t==='relax'||t==='card'||t==='move'||t==='kz') ? 'none' : '';   // 手まね・呼吸・フラッシュは「設定なしで始める」を出さない（2026-11-07 持ち主の指示）
   $('hubLevelsLbl').textContent = t==='breath' ? 'リズムを選んではじめる' : 'レベルを選んでチャレンジ';
   lv.classList.toggle('brgrid', t==='breath');
-  lv.classList.toggle('rxgrid', t==='relax');
+  lv.classList.toggle('rxgrid', t==='relax'||t==='kz');
   if(t==='move'){
     $('hubLevelsWrap').style.display='block'; $('trainerHead').style.display='flex'; $('customLbl').style.display='none'; $('hubLevelsSex').innerHTML='';
     lv.classList.add('brgrid'); $('hubLevelsLbl').textContent='動き方を選んではじめる';
     const N=MOVE_PRESETS.length;
     lv.innerHTML=MOVE_PRESETS.map((p,i)=>`<button class="brbtn mvbtn" data-i="${i}" style="--lc:hsl(${215-Math.round(i*180/Math.max(1,N-1))},62%,44%)">${p.n}</button>`).join('');
     lv.querySelectorAll('.brbtn').forEach(b=>b.onclick=()=>{ LVNOW=null; const ly=lyRead(); runMove({...MOVE_BASE, rounds:5, dur:40, ...MOVE_PRESETS[+b.dataset.i].cfg}); LY_NEXT=ly; });
+    trainerOpen(false,t); return;
+  }
+  if(t==='kz'){   // 2026-11-20 持ち主の依頼：部位とテンポの動きを選んで、テンポの丸ボタンですぐ始まる
+    $('hubLevelsWrap').style.display='block'; $('trainerHead').style.display='flex'; $('customLbl').style.display='none';
+    lv.classList.add('brgrid'); $('hubLevelsLbl').textContent='選んではじめる';
+    const sx=$('hubLevelsSex');
+    sx.innerHTML=`<div class="seg singsex rxside" id="kzPartSeg">${Object.keys(KZ_SEL).map(k=>`<button data-v="${k}" class="${kzPartPref()===k?'on':''}">${KZ_SEL[k]}</button>`).join('')}</div>
+      <div class="seg singsex" id="kzTempoSeg">${Object.keys(KZ_TEMPO).map(k=>`<button data-v="${k}" class="${kzTempoPref()===k?'on':''}">${KZ_TEMPO[k]}</button>`).join('')}</div>`;
+    [['kzPartSeg','kz-part'],['kzTempoSeg','kz-tempo']].forEach(([id,key])=>{ const g=$(id); g.querySelectorAll('button').forEach(b=>b.onclick=()=>{ setSave(key,b.dataset.v); g.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b)); }); });
+    const N=KZ_PRESETS.length;
+    lv.innerHTML=KZ_PRESETS.map((v,i)=>`<button class="brbtn" data-b="${v}" style="--lc:hsl(${215-Math.round(i*180/(N-1))},62%,44%)">${v}</button>`).join('');
+    lv.querySelectorAll('.brbtn').forEach(b=>b.onclick=()=>runKz({...KZ_DEF, words:kzWordsOf(kzPartPref()), tempo:kzTempoPref(), bpm:+b.dataset.b}));
     trainerOpen(false,t); return;
   }
   if(t==='relax'){   // 2026-11-19 持ち主の依頼：部位を選んで、抜き方の丸ボタンですぐ始まる
@@ -1493,6 +1556,7 @@ function goHome(){
   };
   lbl('まずはウォーミングアップ'); item('breath','','warm'); item('relax','','warm');
   lbl('トレーニング'); LEVEL_TRAININGS.forEach(t=>item(t,t==='move'?'':`Lv.1〜${lvMax(t)}`));   // リズム運動はレベルなし
+  item('kz','');                                                                                    // 滑舌はレベルなし（2026-11-20）
   lbl('開発中'); ['spot','step'].forEach(t=>item(t,'','dev'));
   show('home','NoTore','脳のトレーニング');
   curTrain=null;
@@ -1512,6 +1576,7 @@ const QUICK_DESC={
   sing  :'',
   mem   :'1回目は見ながら 1 から順に押し、2回目は場所を思い出して 1 から順に押します（白い四角を出すか、枠だけにするかを下で選べます）。4個からスタートし、正解で1個増え、まちがえで1個減ります（3〜10個）。全10問。',
   relax :'',
+  kz    :'',
   breath:'8-8-8（8秒で吐く・8秒止める・8秒で吸う）を5分。はじまりの声と「いち・に・さん…はち」の数に合わせるだけです。1分ごとに残り時間をお知らせします。',
   hands :'お題が出たら、バーが消えるまでに覚えてから、テンポ（BPM）に合わせて2拍ごと（カチッ）に左右の形を入れ替えます。数字（グー〜5）・1.5秒ごとの入れ替えから始めて、1秒ごと、キツネやグッドなどのポーズも混ざり、お題はどれも5〜8秒で変わります。1ステージ30秒×4本。',
   move  :'メトロノーム（4拍で1周・周の変わり目でテンポが変わる）と、秒数（4〜12秒のランダムを3セット連続）を交互に全6ラウンド。動きも毎回ランダム。同じテンポは1〜3周続いてから変わり、最後は1周の拍数もランダムになります。'
@@ -1979,6 +2044,16 @@ function renderCustom(t){
       ${rowSeg('合格の幅','gTol',[{v:'60',l:'ゆるめ'},{v:'50',l:'ふつう'},{v:'35',l:'きびしめ'}],'50')}
     </div>`;
   }
+  if(t==='kz'){
+    box.innerHTML=`<div class="card pad">
+      <div class="row"><span class="lbl">言葉</span>${chips('kWords',KZ_WORDS.map(w=>({v:w.id,l:w.big})),kzWordsOf(kzPartPref()))}</div>
+      ${rowRange('テンポ','kBpmIn',60,300,10,180,v=>v)}
+      ${rowSeg('テンポの変化','kSwing',[{v:'0',l:'変えない'},{v:'20',l:'±20'},{v:'40',l:'±40'},{v:'60',l:'±60'}],kzTempoPref()==='wave'?'40':'0')}
+      ${rowSeg('言葉が変わる','kEvery',[{v:'4',l:'4拍ごと'},{v:'8',l:'8拍ごと'},{v:'16',l:'16拍ごと'},{v:'0',l:'ランダム'}],'8')}
+      ${rowSeg('時間','kDur',[30,60,90,120,180].map(v=>({v:String(v),l:v+'秒'})),'60')}
+      <div class="row"><span class="lbl">メトロノームの音</span>${seg('kSnd',[{v:'clock',l:'時計'},{v:'wood',l:'木の音'},{v:'beep',l:'電子音'},{v:'soft',l:'やさしい'},{v:'click',l:'クリック'}],'click',beatPreview)}</div>
+    </div>`;
+  }
   if(t==='relax'){
     box.innerHTML=`<div class="card pad">
       ${rowSeg('部位','xSideSel',Object.keys(RELAX_SIDES).map(k=>({v:k,l:RELAX_SIDES[k]})),relaxSidePref())}
@@ -2128,6 +2203,7 @@ $('customStart').onclick=()=>{
     count:+$('wCount').value, grid:segVal('wGridSel'), after:segVal('wAfterQ')||memAfterPref(), total:+segVal('wQ')
   });
   if(curTrain==='relax') runRelax({side:segVal('xSideSel'), rel:+segVal('xRelSel'), reps:+segVal('xReps')});
+  if(curTrain==='kz'){ const sw=+segVal('kSwing'); runKz({words:(cfgUI.kWords||[]).slice(), bpm:+$('kBpmIn').value, tempo:sw?'wave':'fix', swing:sw||40, every:+segVal('kEvery'), dur:+segVal('kDur'), snd:segVal('kSnd')}); }
   if(curTrain==='breath'){
     const c = {out:+$('bOut').value, hold:+$('bHold').value, in:+$('bIn').value};
     runBreath({min:+$('bMin').value, ...c, count:segVal('bCount'), snd:segVal('bSnd'), minute:$('bMinute').classList.contains('on')});
@@ -2875,7 +2951,7 @@ const SND={
 /* ---- voice ----
    まずは録音した声（voice/*.mp3）を Web Audio で鳴らす。ブラウザの読み上げ機能は
    ブラウザによって鳴らない（Brave など）ので、録音が読めないときだけ代わりに使う。 */
-const VOX_MAP={'はじめます':'hajime','吐きます':'haku','止めます':'tomeru','吸います':'suu','おわりです。ふつうの呼吸に戻しましょう':'owari','休憩':'kyukei','逆回し':'gyaku','おつかれさまでした':'otsukare','足首回し':'ankle','肩回し':'shoulder','手首回し':'wrist','腕回し':'arm','股関節回し':'hip','腰回し':'waist','ひざ回し':'knee','いち':'n1','に':'n2','さん':'n3','よん':'n4','ご':'n5','ろく':'n6','なな':'n7','はち':'n8','きゅう':'n9','じゅう':'n10','11':'n11','12':'n12','13':'n13','14':'n14','15':'n15','16':'n16','17':'n17','18':'n18','19':'n19','20':'n20','21':'n21','22':'n22','23':'n23','24':'n24','25':'n25','26':'n26','27':'n27','28':'n28','29':'n29','30':'n30','5秒':'s5','10秒':'s10','15秒':'s15','20秒':'s20','30秒':'s30','40秒':'s40','50秒':'s50','60秒':'s60','70秒':'s70','80秒':'s80','90秒':'s90','1拍で1周':'b1','2拍で1周':'b2','3拍で1周':'b3','4拍で1周':'b4','5拍で1周':'b5','6拍で1周':'b6','7拍で1周':'b7','8拍で1周':'b8','9拍で1周':'b9','10拍で1周':'b10','11拍で1周':'b11','12拍で1周':'b12','この呼吸で終わりです':'konokokyu','1分経過':'m1','2分経過':'m2','3分経過':'m3','4分経過':'m4','5分経過':'m5','6分経過':'m6','7分経過':'m7','8分経過':'m8','9分経過':'m9','10分経過':'m10','残り1分です':'r1','残り2分です':'r2','残り3分です':'r3','残り4分です':'r4','残り5分です':'r5','残り6分です':'r6','残り7分です':'r7','残り8分です':'r8','残り9分です':'r9','あか':'c_red','きいろ':'c_yellow','みどり':'c_green','あお':'c_blue','しろ':'c_white','オレンジ':'c_orange','むらさき':'c_purple','ピンク':'c_pink','みずいろ':'c_sky','おわりです':'owari2','1秒':'s1','2秒':'s2','3秒':'s3','4秒':'s4','6秒':'s6','7秒':'s7','8秒':'s8','9秒':'s9','11秒':'s11','12秒':'s12','13秒':'s13','14秒':'s14','16秒':'s16','17秒':'s17','18秒':'s18','19秒':'s19','21秒':'s21','22秒':'s22','23秒':'s23','24秒':'s24','25秒':'s25','26秒':'s26','27秒':'s27','28秒':'s28','29秒':'s29','左右ジャンプ':'st_lr','前後ジャンプ':'st_fb','右足ケンケン':'st_hopR','左足ケンケン':'st_hopL','グーパー':'st_gupa','開く・クロス':'st_cross','イン・イン・アウト・アウト':'st_inout','右足2歩・戻る':'st_walk2','シンコペーション':'st_sync','3拍子ステップ':'st_waltz','ランダム':'st_rand','レベル1':'lv1','レベル2':'lv2','レベル3':'lv3','レベル4':'lv4','レベル5':'lv5','レベル6':'lv6','レベル7':'lv7','レベル8':'lv8','レベル9':'lv9','レベル10':'lv10','難問です':'nanmon','矢印と同じ方向を向きます':'r_ar_same','矢印と反対の方向を向きます':'r_ar_anti','矢印の色で向きが変わります':'r_ar_color','暗算もします':'r_math_too','数字を覚えてそのまま答えます':'r_num','数字を覚えて逆から答えます':'r_num_rev','文字を読みます':'r_st_read','インクの色を答えます':'r_st_color','一覧を順番にインクの色で答えます':'r_st_grid','背景の色でルールが変わります':'r_st_cell','音に合わせて大きく回します':'r_mv_metro','秒数のあいだ回し続けます':'r_mv_sec','音と秒数に合わせて回します':'r_mv_mix','左右で違う形をまねします':'r_hd','カチッという音で左右を入れ替えます':'r_hd_swap','数字の場所を覚えて1から順に押します':'r_mem','画面の色が変わるのを見ていましょう':'r_cd_color','お題の数を数えながら見ます':'r_cd_quiz','数字を頭の中で計算します':'r_cd_math','クリアです':'clear','難問クリアです':'clear10','次は':'tsugiwa','チャレンジしましょう':'challenge','もう一度チャレンジしましょう':'again','音を聴いて鍵盤で答えます':'r_ear','音を聴いて同じ高さで声を出します':'r_sing','ドレミ以外の音も出ます':'r_ear_chr','くろ':'c_black','Red':'e_red','Blue':'e_blue','Yellow':'e_yellow','Green':'e_green','White':'e_white','Black':'e_black','Orange':'e_orange','Purple':'e_purple','Pink':'e_pink','Light blue':'e_sky','One':'e_n1','Two':'e_n2','Three':'e_n3','Four':'e_n4','Five':'e_n5','Six':'e_n6','Seven':'e_n7','Eight':'e_n8','Nine':'e_n9','Ten':'e_n10','くろは足します':'m_black_add','くろは引きます':'m_black_sub','くろの数字だけ足します':'m_black_only','くろと':'m_black_to','あかは足します':'m_red_add','あかは引きます':'m_red_sub','あかの数字だけ足します':'m_red_only','あかと':'m_red_to','みどりは足します':'m_green_add','みどりは引きます':'m_green_sub','みどりの数字だけ足します':'m_green_only','みどりと':'m_green_to','あおは足します':'m_blue_add','あおは引きます':'m_blue_sub','あおの数字だけ足します':'m_blue_only','あおと':'m_blue_to','きいろは足します':'m_yellow_add','きいろは引きます':'m_yellow_sub','きいろの数字だけ足します':'m_yellow_only','きいろと':'m_yellow_to','むらさきは足します':'m_purple_add','むらさきは引きます':'m_purple_sub','むらさきの数字だけ足します':'m_purple_only','むらさきと':'m_purple_to','オレンジは足します':'m_orange_add','オレンジは引きます':'m_orange_sub','オレンジの数字だけ足します':'m_orange_only','オレンジと':'m_orange_to','からスタートします':'m_start','出てくる数字をぜんぶ足します':'m_add_all','から出てくる数字をぜんぶ引きます':'m_sub_all','ほかの色は引きます':'m_other_sub','ほかの色は無視します':'m_other_ign','偶数は足して奇数は引きます':'m_even_sub','奇数は足して偶数は引きます':'m_odd_sub','偶数だけ足して奇数は無視します':'m_even_ign','奇数だけ足して偶数は無視します':'m_odd_ign','10':'n10','40':'n40','50':'n50','60':'n60','70':'n70','80':'n80','90':'n90','100':'n100','110':'n110','120':'n120','130':'n130','140':'n140','150':'n150','160':'n160','170':'n170','180':'n180','190':'n190','200':'n200','210':'n210','220':'n220','230':'n230','240':'n240','250':'n250','260':'n260','270':'n270','280':'n280','290':'n290','300':'n300','310':'n310','320':'n320','330':'n330','340':'n340','350':'n350','360':'n360','370':'n370','380':'n380','390':'n390','400':'n400','音が鳴ったらルールが逆になります':'r_cue_flip','ほかの音は無視します':'r_cue_ign','この音です':'r_cue_this','ふっと力を抜きます':'rx_fu','はい抜きます':'rx_hai','グーッと力を入れてゆっくり力を抜いていきましょう':'rx_in1','しっかり力を抜きながらパーにしていきます':'rx_in2','両手をグーにしてグーッと力を入れてください':'rx_gg_both','右手をグーにしてグーッと力を入れてください':'rx_gg_R','左手をグーにしてグーッと力を入れてください':'rx_gg_L','左右を入れ替えていきます':'rx_xi1','片方の手をゆっくりグーにして力を入れながら':'rx_xi2','反対の手はゆっくりパーにして力を抜いていきます':'rx_xi3','それを交互に繰り返します':'rx_xi4','はい入れ替えます':'rx_xx','3秒かけて入れ替えます':'rx_xs3','5秒かけて入れ替えます':'rx_xs5','7秒かけて入れ替えます':'rx_xs7','10秒かけて入れ替えます':'rx_xs10','15秒かけて入れ替えます':'rx_xs15','20秒かけて入れ替えます':'rx_xs20','30秒かけて入れ替えます':'rx_xs30','力を抜いた感覚を味わいながら終わりましょう':'rx_fin','3秒かけて力を抜いていきます':'rx_r3','5秒かけて力を抜いていきます':'rx_r5','7秒かけて力を抜いていきます':'rx_r7','10秒かけて力を抜いていきます':'rx_r10','15秒かけて力を抜いていきます':'rx_r15','20秒かけて力を抜いていきます':'rx_r20','30秒かけて力を抜いていきます':'rx_r30'};
+const VOX_MAP={'はじめます':'hajime','吐きます':'haku','止めます':'tomeru','吸います':'suu','おわりです。ふつうの呼吸に戻しましょう':'owari','休憩':'kyukei','逆回し':'gyaku','おつかれさまでした':'otsukare','足首回し':'ankle','肩回し':'shoulder','手首回し':'wrist','腕回し':'arm','股関節回し':'hip','腰回し':'waist','ひざ回し':'knee','いち':'n1','に':'n2','さん':'n3','よん':'n4','ご':'n5','ろく':'n6','なな':'n7','はち':'n8','きゅう':'n9','じゅう':'n10','11':'n11','12':'n12','13':'n13','14':'n14','15':'n15','16':'n16','17':'n17','18':'n18','19':'n19','20':'n20','21':'n21','22':'n22','23':'n23','24':'n24','25':'n25','26':'n26','27':'n27','28':'n28','29':'n29','30':'n30','5秒':'s5','10秒':'s10','15秒':'s15','20秒':'s20','30秒':'s30','40秒':'s40','50秒':'s50','60秒':'s60','70秒':'s70','80秒':'s80','90秒':'s90','1拍で1周':'b1','2拍で1周':'b2','3拍で1周':'b3','4拍で1周':'b4','5拍で1周':'b5','6拍で1周':'b6','7拍で1周':'b7','8拍で1周':'b8','9拍で1周':'b9','10拍で1周':'b10','11拍で1周':'b11','12拍で1周':'b12','この呼吸で終わりです':'konokokyu','1分経過':'m1','2分経過':'m2','3分経過':'m3','4分経過':'m4','5分経過':'m5','6分経過':'m6','7分経過':'m7','8分経過':'m8','9分経過':'m9','10分経過':'m10','残り1分です':'r1','残り2分です':'r2','残り3分です':'r3','残り4分です':'r4','残り5分です':'r5','残り6分です':'r6','残り7分です':'r7','残り8分です':'r8','残り9分です':'r9','あか':'c_red','きいろ':'c_yellow','みどり':'c_green','あお':'c_blue','しろ':'c_white','オレンジ':'c_orange','むらさき':'c_purple','ピンク':'c_pink','みずいろ':'c_sky','おわりです':'owari2','1秒':'s1','2秒':'s2','3秒':'s3','4秒':'s4','6秒':'s6','7秒':'s7','8秒':'s8','9秒':'s9','11秒':'s11','12秒':'s12','13秒':'s13','14秒':'s14','16秒':'s16','17秒':'s17','18秒':'s18','19秒':'s19','21秒':'s21','22秒':'s22','23秒':'s23','24秒':'s24','25秒':'s25','26秒':'s26','27秒':'s27','28秒':'s28','29秒':'s29','左右ジャンプ':'st_lr','前後ジャンプ':'st_fb','右足ケンケン':'st_hopR','左足ケンケン':'st_hopL','グーパー':'st_gupa','開く・クロス':'st_cross','イン・イン・アウト・アウト':'st_inout','右足2歩・戻る':'st_walk2','シンコペーション':'st_sync','3拍子ステップ':'st_waltz','ランダム':'st_rand','レベル1':'lv1','レベル2':'lv2','レベル3':'lv3','レベル4':'lv4','レベル5':'lv5','レベル6':'lv6','レベル7':'lv7','レベル8':'lv8','レベル9':'lv9','レベル10':'lv10','難問です':'nanmon','矢印と同じ方向を向きます':'r_ar_same','矢印と反対の方向を向きます':'r_ar_anti','矢印の色で向きが変わります':'r_ar_color','暗算もします':'r_math_too','数字を覚えてそのまま答えます':'r_num','数字を覚えて逆から答えます':'r_num_rev','文字を読みます':'r_st_read','インクの色を答えます':'r_st_color','一覧を順番にインクの色で答えます':'r_st_grid','背景の色でルールが変わります':'r_st_cell','音に合わせて大きく回します':'r_mv_metro','秒数のあいだ回し続けます':'r_mv_sec','音と秒数に合わせて回します':'r_mv_mix','左右で違う形をまねします':'r_hd','カチッという音で左右を入れ替えます':'r_hd_swap','数字の場所を覚えて1から順に押します':'r_mem','画面の色が変わるのを見ていましょう':'r_cd_color','お題の数を数えながら見ます':'r_cd_quiz','数字を頭の中で計算します':'r_cd_math','クリアです':'clear','難問クリアです':'clear10','次は':'tsugiwa','チャレンジしましょう':'challenge','もう一度チャレンジしましょう':'again','音を聴いて鍵盤で答えます':'r_ear','音を聴いて同じ高さで声を出します':'r_sing','ドレミ以外の音も出ます':'r_ear_chr','くろ':'c_black','Red':'e_red','Blue':'e_blue','Yellow':'e_yellow','Green':'e_green','White':'e_white','Black':'e_black','Orange':'e_orange','Purple':'e_purple','Pink':'e_pink','Light blue':'e_sky','One':'e_n1','Two':'e_n2','Three':'e_n3','Four':'e_n4','Five':'e_n5','Six':'e_n6','Seven':'e_n7','Eight':'e_n8','Nine':'e_n9','Ten':'e_n10','くろは足します':'m_black_add','くろは引きます':'m_black_sub','くろの数字だけ足します':'m_black_only','くろと':'m_black_to','あかは足します':'m_red_add','あかは引きます':'m_red_sub','あかの数字だけ足します':'m_red_only','あかと':'m_red_to','みどりは足します':'m_green_add','みどりは引きます':'m_green_sub','みどりの数字だけ足します':'m_green_only','みどりと':'m_green_to','あおは足します':'m_blue_add','あおは引きます':'m_blue_sub','あおの数字だけ足します':'m_blue_only','あおと':'m_blue_to','きいろは足します':'m_yellow_add','きいろは引きます':'m_yellow_sub','きいろの数字だけ足します':'m_yellow_only','きいろと':'m_yellow_to','むらさきは足します':'m_purple_add','むらさきは引きます':'m_purple_sub','むらさきの数字だけ足します':'m_purple_only','むらさきと':'m_purple_to','オレンジは足します':'m_orange_add','オレンジは引きます':'m_orange_sub','オレンジの数字だけ足します':'m_orange_only','オレンジと':'m_orange_to','からスタートします':'m_start','出てくる数字をぜんぶ足します':'m_add_all','から出てくる数字をぜんぶ引きます':'m_sub_all','ほかの色は引きます':'m_other_sub','ほかの色は無視します':'m_other_ign','偶数は足して奇数は引きます':'m_even_sub','奇数は足して偶数は引きます':'m_odd_sub','偶数だけ足して奇数は無視します':'m_even_ign','奇数だけ足して偶数は無視します':'m_odd_ign','10':'n10','40':'n40','50':'n50','60':'n60','70':'n70','80':'n80','90':'n90','100':'n100','110':'n110','120':'n120','130':'n130','140':'n140','150':'n150','160':'n160','170':'n170','180':'n180','190':'n190','200':'n200','210':'n210','220':'n220','230':'n230','240':'n240','250':'n250','260':'n260','270':'n270','280':'n280','290':'n290','300':'n300','310':'n310','320':'n320','330':'n330','340':'n340','350':'n350','360':'n360','370':'n370','380':'n380','390':'n390','400':'n400','音が鳴ったらルールが逆になります':'r_cue_flip','ほかの音は無視します':'r_cue_ign','この音です':'r_cue_this','ふっと力を抜きます':'rx_fu','はい抜きます':'rx_hai','グーッと力を入れてゆっくり力を抜いていきましょう':'rx_in1','しっかり力を抜きながらパーにしていきます':'rx_in2','両手をグーにしてグーッと力を入れてください':'rx_gg_both','右手をグーにしてグーッと力を入れてください':'rx_gg_R','左手をグーにしてグーッと力を入れてください':'rx_gg_L','左右を入れ替えていきます':'rx_xi1','片方の手をゆっくりグーにして力を入れながら':'rx_xi2','反対の手はゆっくりパーにして力を抜いていきます':'rx_xi3','それを交互に繰り返します':'rx_xi4','はい入れ替えます':'rx_xx','3秒かけて入れ替えます':'rx_xs3','5秒かけて入れ替えます':'rx_xs5','7秒かけて入れ替えます':'rx_xs7','10秒かけて入れ替えます':'rx_xs10','15秒かけて入れ替えます':'rx_xs15','20秒かけて入れ替えます':'rx_xs20','30秒かけて入れ替えます':'rx_xs30','力を抜いた感覚を味わいながら終わりましょう':'rx_fin','3秒かけて力を抜いていきます':'rx_r3','5秒かけて力を抜いていきます':'rx_r5','7秒かけて力を抜いていきます':'rx_r7','10秒かけて力を抜いていきます':'rx_r10','15秒かけて力を抜いていきます':'rx_r15','20秒かけて力を抜いていきます':'rx_r20','30秒かけて力を抜いていきます':'rx_r30','テンポに合わせて言葉をくり返します':'kz_rule'};
 const VOICE_VER='kokoro6';   // 今の声（Kokoro）を作り直したら変える（古い声が残らないように）
 // 声の種類。今の声は voice/ 直下、Gemini で作った声は voice/<id>/。どれだけ出来ているかは voice/voices.json（作る係が書く）
 const VOICE_SETS=[
@@ -3855,6 +3931,157 @@ function rxDone(secs){
   const c=RX.cfg, n=RX.done; stopRelax();
   finish({ type:'relax', cfg:c, title:'完了', note:'おつかれさまでした',
     stats:[['時間',fmtSecs(secs)],['力を抜いた',n+'回'],['抜き方',relaxRelTxt(c.rel)],['部位',RELAX_SIDES[c.side]]] });
+}
+
+/* ============================================================
+   滑舌（2026-11-20 持ち主の依頼）— テンポ（BPM）に合わせて「バベ、バベ…」とくり返す。
+   画面に大きく出た言葉（BABE など）を、鳴っているテンポで言い続ける。決まった拍数ごとに
+   言葉がランダムに変わり（次の言葉は1小節前に小さく出す）、「テンポが変わる」なら
+   16〜32拍ごとに 1回最大30 で上下する（リズム運動と同じ上限）。言葉は KZ_WORDS に足せば増える。
+   ============================================================ */
+const KZ_PARTS={lips:{n:'唇',c:'#e5487f'}, tip:{n:'舌先',c:'#ee8a26'}, root:{n:'舌根',c:'#3f86e6'}};
+const KZ_WORDS=[
+  {id:'babe', part:'lips', big:'BABE', kana:'バベ'},
+  {id:'laro', part:'tip',  big:'LARO', kana:'ラロ'},
+  {id:'dade', part:'tip',  big:'DADE', kana:'ダデ'},
+  {id:'ga',   part:'root', big:'GA',   kana:'ガッ'},
+  {id:'men',  part:'root', big:'MEN',  kana:'メン', note:'舌を出して'}
+];
+const KZ_SEL={lips:'唇',tip:'舌先',root:'舌根',all:'ぜんぶ'};
+const KZ_TEMPO={fix:'テンポ一定',wave:'テンポが変わる'};
+const KZ_PRESETS=[100,140,180,220];               // ハブの丸ボタン（テンポ）
+const KZ_DEF={dur:60, every:8, swing:40, snd:'click'};
+const kzPartPref=()=>{ const v=setPref('kz-part','all'); return KZ_SEL[v]?v:'all'; };
+const kzTempoPref=()=>{ const v=setPref('kz-tempo','fix'); return KZ_TEMPO[v]?v:'fix'; };
+const kzW=id=>KZ_WORDS.find(w=>w.id===id);
+const kzWordsOf=p=>KZ_WORDS.filter(w=>p==='all'||w.part===p).map(w=>w.id);
+const kzPartsTxt=ids=>{ const ps=[...new Set(ids.map(id=>kzW(id).part))]; return ps.length===3?'ぜんぶ':ps.map(p=>KZ_PARTS[p].n).join('・'); };
+// 次の言葉（同じ言葉は続けない）
+function kzPick(cur){ const pool=KZ.words.length>1?KZ.words.filter(x=>x!==cur):KZ.words; return pool[rnd(pool.length)]; }
+// 言葉が変わるまでの拍数（every=0 はランダム）
+const kzSegLen=()=>KZ.cfg.every||[4,8,12,16][rnd(4)];
+// 前のテンポから 1回最大30・10以上は離す。範囲は はじめのテンポ ±swing（60〜300）
+function kzPickBpm(base,old,swing){
+  const lo=Math.max(60,base-swing), hi=Math.min(300,base+swing), a=Math.max(lo,old-30), b=Math.min(hi,old+30);
+  let v,n=0; do{ v=a+rnd(b-a+1); n++; }while(Math.abs(v-old)<10 && n<60);
+  return Math.round(v);
+}
+let KZ=null;
+function stopKz(){
+  if(!KZ) return;
+  KZ.timers.forEach(clearTimeout); clearInterval(KZ.iv);
+  audioCut(false); sayStop(); wakeOff();
+  KZ=null;
+}
+function kzLater(fn,ms){
+  const k=KZ; const id=setTimeout(()=>{ if(KZ===k && !k.over) fn(); },Math.max(0,ms));
+  k.timers.push(id); if(k.timers.length>400) k.timers.splice(0,200);
+}
+const kzAt=(t,fn)=>kzLater(fn,(t-now())*1000);
+function kzShow(id,anim){
+  const w=kzW(id), p=KZ_PARTS[w.part], card=$('kCard');
+  card.style.setProperty('--kc',p.c);
+  $('kPart').textContent=p.n; $('kBig').textContent=w.big; $('kKana').textContent=w.kana; $('kNote').textContent=w.note||'';
+  card.classList.toggle('long',w.big.length>4);
+  if(anim){ card.classList.remove('sw'); void card.offsetWidth; card.classList.add('sw'); }
+}
+function kzNextTxt(id){ const e=$('kNext'); if(!id){ e.innerHTML=''; return; } const w=kzW(id); e.innerHTML=`次 <b style="color:${KZ_PARTS[w.part].c}">${w.big}</b> ${w.kana}`; }
+function kzBpmTxt(bpm,chg){ const b=$('kBpm'); b.textContent=bpm; if(chg){ b.classList.remove('chg'); void b.offsetWidth; b.classList.add('chg'); } }
+// 言葉が変わる拍の合図（クリックとは別の高い音）
+function kzDing(t){ tone(t,1568,0.16,0.4); tone(t,2349,0.1,0.22); }
+function runKz(cfg){
+  stopAll(); audioOn();
+  cfg={...KZ_DEF,...cfg};
+  const words=(cfg.words||[]).filter(kzW); if(!words.length) words.push('babe');
+  cfg.words=words;
+  KZ={cfg, words, timers:[], iv:null, over:false, started:false, bpm:cfg.bpm, bpmMin:cfg.bpm, bpmMax:cfg.bpm,
+      switches:0, changes:0, word:null, next:null, t0:0, tEnd:0};
+  KZ.word=kzPick(null);
+  kzShow(KZ.word,false); kzNextTxt(null); kzBpmTxt(cfg.bpm,false);
+  $('kClock').textContent=cfg.dur; $('kDots').innerHTML=''; $('kCnt').textContent=''; $('kStop').style.display='none';
+  const wave=cfg.tempo==='wave';
+  $('kTempoLbl').textContent=wave?'変わる':'一定';
+  show('playKz','滑舌',`${kzPartsTxt(words)} ・ テンポ ${cfg.bpm}${wave?' から変わる':''}`);
+  const list=words.map(id=>{ const w=kzW(id); return `<div class="kz-chip" style="--kc:${KZ_PARTS[w.part].c}"><b>${w.big}</b><span>${w.kana}${w.note?'（'+w.note+'）':''}</span></div>`; }).join('');
+  veilShow($('kVeil'),`<div class="prep">
+      <div class="prep-k">テンポ ${cfg.bpm}${wave?' から変わる':''} ・ ${cfg.dur}秒</div>
+      <div class="prep-t">テンポに合わせてくり返す</div>
+      <div class="kz-list">${list}</div>
+      <button class="btn prep-b" id="kGo">はじめる</button>
+    </div>`);
+  $('kGo').onclick=()=>{
+    if(!KZ) return;
+    audioOn(); wakeOn();      // unlock sound & voice inside the tap
+    const d=say('テンポに合わせて言葉をくり返します',true)||2.5;
+    veilHide($('kVeil'));
+    KZ.started=true; $('kStop').style.display='block';
+    kzLater(kzCountIn,(d+0.4)*1000);
+  };
+}
+// 1小節（4拍）のカウントイン。言葉は先に出しておく
+function kzCountIn(){
+  const k=KZ, spb=60/k.bpm, t0=now()+0.12;
+  for(let i=0;i<4;i++){
+    const t=t0+i*spb; SND.count(t);
+    kzAt(t,()=>{ const c=$('kCnt'); c.textContent=4-i; c.classList.remove('hit'); void c.offsetWidth; c.classList.add('hit'); });
+  }
+  kzGo(t0+4*spb);
+}
+function kzGo(t0){
+  const k=KZ;
+  k.t0=t0; k.tEnd=t0+k.cfg.dur; k.nextBeat=t0; k.pos=0; k.segLen=kzSegLen(); k.beatN=0;
+  k.next=kzPick(k.word); k.tempoAt=16+rnd(17);      // 「テンポが変わる」：次に変える拍
+  kzAt(t0,()=>{ $('kCnt').textContent=''; });
+  k.iv=setInterval(()=>{
+    const t=now();
+    $('kClock').textContent=Math.max(0,Math.ceil(k.tEnd-Math.max(t,k.t0)));
+    if(k.ending) return;
+    if(k.nextBeat<t-0.05) k.nextBeat=t+0.03;          // tab was asleep: don't burst
+    while(!k.ending && k.nextBeat<t+0.12){
+      const bt=k.nextBeat; let sw=false, chg=false;
+      if(k.pos===0 && k.beatN>0){                      // 言葉の区切り
+        if(bt>=k.tEnd-0.05){ kzFinishAt(bt); break; }   // 区切りの途中では終わらない
+        k.word=k.next; k.next=kzPick(k.word); k.segLen=kzSegLen(); sw=true; if(k.words.length>1) k.switches++;
+        if(k.cfg.tempo==='wave' && k.beatN>=k.tempoAt){
+          k.bpm=kzPickBpm(k.cfg.bpm,k.bpm,k.cfg.swing); k.changes++; chg=true;
+          k.bpmMin=Math.min(k.bpmMin,k.bpm); k.bpmMax=Math.max(k.bpmMax,k.bpm);
+          k.tempoAt=k.beatN+16+rnd(17);
+        }
+      }
+      const bar=k.beatN%4, pos=k.pos, segLen=k.segLen, word=k.word, next=k.next, bpm=k.bpm;
+      beatSound(k.cfg.snd,bt,bar%2===1,bar===0);
+      if(sw && k.words.length>1) kzDing(bt);
+      const pre=Math.min(4,segLen/2);
+      kzAt(bt,()=>{
+        if(sw) kzShow(word,k.words.length>1);
+        if(chg) kzBpmTxt(bpm,true);
+        const dots=$('kDots');
+        if(dots.children.length!==4) dots.innerHTML='<i></i><i></i><i></i><i></i>';
+        [...dots.children].forEach((d,i)=>d.className=i===bar?'on':i<bar?'done':'');
+        const c=$('kCard'); c.classList.remove('hit'); void c.offsetWidth; c.classList.add('hit');
+        kzNextTxt(k.words.length>1 && pos>=segLen-pre ? next : null);
+      });
+      k.nextBeat+=60/k.bpm; k.beatN++;
+      k.pos=(k.pos+1)%k.segLen;
+    }
+  },25);
+}
+function kzFinishAt(bt){
+  const k=KZ; k.ending=true; k.tEnd=bt;
+  SND.end(bt);
+  kzAt(bt,()=>{ $('kDots').innerHTML=''; kzNextTxt(null); $('kCnt').textContent=''; $('kStop').style.display='none'; say('おわりです',true); });
+  kzAt(bt+2.2,()=>kzDone(false));
+}
+$('kStop').onclick=()=>{ if(KZ && KZ.started && !KZ.over) kzDone(true); };
+function kzDone(early){
+  const k=KZ; if(!k || k.over) return;
+  const secs=Math.max(0,(early?now():k.tEnd)-(k.t0||now())), c=k.cfg;
+  const bpmTxt=k.bpmMin===k.bpmMax?String(k.bpm):`${k.bpmMin}〜${k.bpmMax}`;
+  const words=k.words.map(id=>kzW(id).big).join('・');
+  const sw=k.switches;
+  stopKz();
+  finish({ type:'kz', cfg:c, title:early?'途中で終了':'完了', note:'おつかれさまでした',
+    stats:[['時間',fmtSecs(secs)],['テンポ',bpmTxt],...(k.words.length>1?[['言葉が変わった',sw+'回']]:[]),['言葉',words]] });
 }
 
 /* ============================================================
@@ -5533,7 +5760,7 @@ const stepAutoCfg=()=>({drills:['lr','fb','hopR','hopL','gupa','cross','inout','
    Results
    ============================================================ */
 let last=null;
-const TYPE_NAME={relax:'緊張緩和',step:'リズムステップ',spot:'丸タッチ',arrow:'方向トレーニング',num:'数字記憶',stroop:'ストループ',voice:'ストループ（音声）',grid:'ストループ 一覧',move:'リズム運動',hands:'左右の手まね',breath:'呼吸調整',mem:'数字の位置記憶',card:'フラッシュ',ear:'音感トレーニング',sing:'発声トレーニング'};
+const TYPE_NAME={kz:'滑舌',relax:'緊張緩和',step:'リズムステップ',spot:'丸タッチ',arrow:'方向トレーニング',num:'数字記憶',stroop:'ストループ',voice:'ストループ（音声）',grid:'ストループ 一覧',move:'リズム運動',hands:'左右の手まね',breath:'呼吸調整',mem:'数字の位置記憶',card:'フラッシュ',ear:'音感トレーニング',sing:'発声トレーニング'};
 function finish(r){
   if(LY && LY.c.flip && r.stats) r.stats.push(['ルールが逆になった',LY.hits+'回']);
   slStop();
@@ -5584,6 +5811,7 @@ function rerun(type,cfg){
   else if(type==='hands') runHands(cfg);
   else if(type==='breath') runBreath(cfg);
   else if(type==='relax') runRelax(cfg);
+  else if(type==='kz') runKz(cfg);
   else if(type==='mem') runMem(cfg);
   else if(type==='card') runCard(cfg);
   else if(type==='ear') runEar(cfg);
@@ -5603,7 +5831,7 @@ goHome();
    Version check — 古い保存済みの画面が出ていたら、新しい版に切り替える
    （GitHub Pages は更新後しばらく古い版を返すことがあるため）
    ============================================================ */
-const APP_VER='2026-11-19 12:14';   // 更新のたびにこの日時を書き換える
+const APP_VER='2026-11-20 12:03';   // 更新のたびにこの日時を書き換える
 $('appVer').textContent='更新 '+APP_VER;
 (function checkVer(){
   if(location.protocol==='file:') return;
